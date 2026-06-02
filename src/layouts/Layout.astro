@@ -100,6 +100,14 @@ const schema = {
       Skip to main content
     </a>
 
+    <!-- Mouse-follow cursor glow -->
+    <div
+      id="cursor-glow"
+      aria-hidden="true"
+      class="pointer-events-none fixed z-0 transition-opacity duration-500"
+      style="top:0;left:0;width:600px;height:600px;transform:translate(-50%,-50%);background:radial-gradient(circle at center, rgba(254,197,0,0.06) 0%, rgba(0,48,135,0.04) 40%, transparent 70%);border-radius:50%;opacity:0;"
+    ></div>
+
     <!-- Grid Overlay Background -->
     <div aria-hidden="true" class="fixed inset-0 bg-[linear-gradient(to_right,#09090b_1px,transparent_1px),linear-gradient(to_bottom,#09090b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none z-0 opacity-80"></div>
 
@@ -166,5 +174,52 @@ const schema = {
         transform: translateY(-2px);
       }
     </style>
+
+    <!-- Cursor glow follow script -->
+    <script>
+      (function () {
+        // Respect prefers-reduced-motion
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        // Desktop only — skip on touch-primary devices
+        if (window.matchMedia('(hover: none)').matches) return;
+
+        const glow = document.getElementById('cursor-glow');
+        if (!glow) return;
+
+        let raf;
+        let targetX = window.innerWidth / 2;
+        let targetY = window.innerHeight / 2;
+        let currentX = targetX;
+        let currentY = targetY;
+        let visible = false;
+
+        document.addEventListener('mousemove', (e) => {
+          targetX = e.clientX;
+          targetY = e.clientY;
+          if (!visible) {
+            visible = true;
+            glow.style.opacity = '1';
+          }
+        });
+
+        document.addEventListener('mouseleave', () => {
+          visible = false;
+          glow.style.opacity = '0';
+        });
+
+        function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
+
+        function animate() {
+          // Smooth lag — 0.08 gives a nice buttery trail
+          currentX = lerp(currentX, targetX, 0.08);
+          currentY = lerp(currentY, targetY, 0.08);
+          (glow as HTMLElement).style.left = currentX + 'px';
+          (glow as HTMLElement).style.top  = currentY + 'px';
+          raf = requestAnimationFrame(animate);
+        }
+
+        animate();
+      })();
+    </script>
   </body>
 </html>
