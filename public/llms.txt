@@ -1,0 +1,39 @@
+# Workouse — Elite Fullstack Engineering for Scale
+
+> Workouse is a boutique, solo software development house building resilient, high-scale web applications for forward-thinking companies in Europe and the US. Engineered by Emre Yılmaz, a senior software architect with 15+ years of experience.
+
+## About
+
+- Founder: Emre Yılmaz
+- Company: Workouse
+- Website: https://workouse.com
+- Contact: z@emre.xyz
+- GitHub: https://github.com/workouse
+- Twitter: https://x.com/workousecom
+- Personal Hub: https://emre.xyz
+
+## Services
+
+- Fullstack Architecture: End-to-end applications using modern frameworks, robust APIs, and resilient distributed systems.
+- DevOps & Automation: CI/CD pipelines, Infrastructure as Code (IaC), container orchestration, and developer velocity.
+- Performance Engineering: Algorithm optimisation, latency reduction, and sub-millisecond critical path engineering.
+
+## Technical Expertise (Priority Order)
+
+1. PHP / Symfony — Enterprise backends and core frameworks
+2. TypeScript / JS / Node.js / Express.js / Astro.js — Fullstack UI and Edge APIs
+3. Haskell / Nix — Functional systems and reproducible environments
+4. Rust / Go / Python — High-performance tooling and data pipelines
+5. DevOps / Security / Deployment — Hardened CI/CD and secure architecture
+6. AWS / Cloudflare — Highly available and distributed edge hosting
+
+## Open Source
+
+- Sitemap Validation Tools: https://github.com/workouse
+- Custom E-commerce Extensions (Sylius/PHP): https://github.com/workouse
+
+## Niche Interests
+
+- Decentralised networks (Nostr protocol)
+- Peer-to-peer (P2P) architectures
+- Web3 and cryptographic systems

@@ -1,0 +1,170 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Workouse | Elite Fullstack Engineering for Scale",
+  description = "Workouse is a boutique, solo software development house building resilient, high-scale web applications for forward-thinking companies. Engineered by Emre Yılmaz (15+ years experience).",
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, "https://workouse.com");
+const logoURL = "https://avatars.githubusercontent.com/u/55496985?s=400&u=cf5cb2d74029d653813b39d624e44b8f74bc63c1&v=4";
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "Workouse",
+  "url": "https://workouse.com",
+  "image": logoURL,
+  "description": description,
+  "founder": {
+    "@type": "Person",
+    "name": "Emre Yılmaz",
+    "jobTitle": "Senior Software Architect & Founder"
+  },
+  "knowsAbout": [
+    "Software Architecture",
+    "PHP & Symfony development",
+    "TypeScript & AstroJS fullstack development",
+    "Haskell & functional programming",
+    "Nix & reproducible builds",
+    "Rust, Go, & Python engineering",
+    "DevOps, Security & Cloud Deployment",
+    "AWS & Cloudflare Edge Services"
+  ],
+  "sameAs": [
+    "https://github.com/workouse",
+    "https://x.com/workousecom"
+  ]
+};
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href={logoURL} />
+    <link rel="apple-touch-icon" href={logoURL} />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Primary Meta Tags -->
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Theme & Color Scheme -->
+    <meta name="theme-color" content="#003087" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#003087" media="(prefers-color-scheme: light)" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={logoURL} />
+    <meta property="og:site_name" content="Workouse" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary" />
+    <meta property="twitter:site" content="@workousecom" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={logoURL} />
+
+    <!-- Resource Hints: Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+  </head>
+  <body class="bg-zinc-950 text-zinc-50 font-sans selection:bg-brand-blue selection:text-brand-yellow min-h-screen antialiased overflow-x-hidden relative">
+    <!-- Skip to main content (Accessibility) -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[999] focus:px-4 focus:py-2 focus:rounded-md focus:bg-brand-yellow focus:text-zinc-950 focus:font-semibold focus:text-sm focus:outline-none"
+    >
+      Skip to main content
+    </a>
+
+    <!-- Grid Overlay Background -->
+    <div aria-hidden="true" class="fixed inset-0 bg-[linear-gradient(to_right,#09090b_1px,transparent_1px),linear-gradient(to_bottom,#09090b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none z-0 opacity-80"></div>
+
+    <!-- Deep Ambient Glow Accent -->
+    <div aria-hidden="true" class="fixed top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[50vh] bg-brand-blue/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
+
+    <div class="relative z-10 flex flex-col min-h-screen justify-between">
+      <slot />
+    </div>
+
+    <style is:global>
+      /* Prevent layout shift from scrollbar appearance */
+      html {
+        scrollbar-gutter: stable;
+      }
+
+      /* Smooth custom scrollbars */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #09090b;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #27272a;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #3f3f46;
+      }
+
+      /* Visible focus indicators for keyboard navigation */
+      :focus-visible {
+        outline: 2px solid #FEC500;
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
+
+      /* Respect prefers-reduced-motion for all animations */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+
+      /* Glow card transitions */
+      .glow-card {
+        position: relative;
+        background: rgba(18, 18, 24, 0.65);
+        border: 1px solid rgba(39, 39, 42, 0.6);
+        backdrop-filter: blur(12px);
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .glow-card:hover {
+        border-color: rgba(254, 197, 0, 0.4);
+        box-shadow: 0 0 25px rgba(254, 197, 0, 0.05), inset 0 0 12px rgba(254, 197, 0, 0.02);
+        transform: translateY(-2px);
+      }
+    </style>
+  </body>
+</html>

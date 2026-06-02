@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import SoloEdge from '../components/SoloEdge.astro';
+import Competencies from '../components/Competencies.astro';
+import Philosophy from '../components/Philosophy.astro';
+import Expertise from '../components/Expertise.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout>
+  <!-- Sticky Nav Bar -->
+  <Header />
+
+  <!-- Single Page Content Sections -->
+  <main id="main-content" class="flex-grow">
+    <!-- Hero Header Block -->
+    <Hero />
+
+    <!-- Solo Architect Pitch & Profile -->
+    <SoloEdge />
+
+    <!-- Core Services/Competencies Cards -->
+    <Competencies />
+
+    <!-- Simplicity Quote Axiom -->
+    <Philosophy />
+
+    <!-- Stack, Niche tech, and OSS work -->
+    <Expertise />
+  </main>
+
+  <!-- Connect channels and legal info -->
+  <Footer />
+</Layout>
