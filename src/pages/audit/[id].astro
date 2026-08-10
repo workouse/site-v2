@@ -1,0 +1,110 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import AuditProgress from '../../components/AuditProgress.astro';
+import AuditReport from '../../components/AuditReport.astro';
+import NewsletterSubscribe from '../../components/NewsletterSubscribe.astro';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const env = Astro.locals.runtime?.env;
+
+let audit = null;
+let aiOutput = null;
+
+if (id && env?.DB) {
+  try {
+    const auditRow = await env.DB.prepare(
+      'SELECT id, url, email, status, created_at, completed_at FROM audits WHERE id = ?'
+    )
+      .bind(id)
+      .first<{
+        id: string;
+        url: string;
+        email: string;
+        status: string;
+        created_at: number;
+        completed_at: number | null;
+      }>();
+
+    if (auditRow) {
+      audit = {
+        id: auditRow.id,
+        url: auditRow.url,
+        status: auditRow.status,
+        createdAt: auditRow.created_at,
+        completedAt: auditRow.completed_at,
+      };
+
+      if (audit.status === 'complete') {
+        const aiRow = await env.DB.prepare(
+          'SELECT score, issues_json, recommendation, recommendation_reason, summary, processed_at FROM ai_output WHERE audit_id = ?'
+        )
+          .bind(id)
+          .first<{
+            score: number;
+            issues_json: string;
+            recommendation: 'fix' | 'rebuild';
+            recommendation_reason: string;
+            summary: string;
+            processed_at: number;
+          }>();
+
+        if (aiRow) {
+          let issues = [];
+          try {
+            issues = JSON.parse(aiRow.issues_json);
+          } catch {}
+
+          aiOutput = {
+            score: aiRow.score,
+            issues,
+            recommendation: aiRow.recommendation,
+            recommendationReason: aiRow.recommendation_reason,
+            summary: aiRow.summary,
+            processedAt: aiRow.processed_at,
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Audit page SSR query error:', err);
+  }
+}
+
+// Dev mode fallback
+if (!audit && id) {
+  audit = {
+    id,
+    url: 'example.com',
+    status: 'pending_verification',
+    createdAt: Math.floor(Date.now() / 1000),
+    completedAt: null,
+  };
+}
+---
+
+<Layout
+  title={audit ? `Audit Report for ${audit.url} — Workouse` : 'Audit Report — Workouse'}
+  description="Automated website performance, security header, and SEO audit report."
+>
+  <Header />
+
+  <main class="min-h-screen bg-zinc-950 pt-28 pb-20 px-4 sm:px-6 lg:px-8">
+    {audit && audit.status === 'complete' && aiOutput ? (
+      <AuditReport audit={audit} aiOutput={aiOutput} />
+    ) : audit ? (
+      <AuditProgress auditId={audit.id} initialStatus={audit.status} />
+    ) : (
+      <div class="max-w-md mx-auto text-center py-20 font-mono space-y-4">
+        <h1 class="text-xl font-bold text-red-400">Audit Report Not Found</h1>
+        <p class="text-xs text-zinc-400">The requested audit ID does not exist or has expired.</p>
+        <a href="/" class="inline-block px-4 py-2 bg-brand-yellow text-zinc-950 font-bold rounded-lg text-xs">Return Home →</a>
+      </div>
+    )}
+  <NewsletterSubscribe />
+
+  <Footer />
+</Layout>

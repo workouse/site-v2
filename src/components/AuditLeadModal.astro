@@ -1,0 +1,206 @@
+---
+interface Props {
+  auditId: string;
+  targetUrl: string;
+  totalPrice: number;
+  recommendation: 'fix' | 'rebuild';
+}
+
+const { auditId, targetUrl, totalPrice, recommendation } = Astro.props;
+---
+
+<dialog
+  id="lead-modal"
+  class="fixed inset-0 z-50 p-4 bg-transparent backdrop:bg-zinc-950/80 backdrop:backdrop-blur-md max-w-lg w-full m-auto rounded-3xl overflow-hidden border border-zinc-800 text-zinc-100 shadow-2xl"
+  aria-labelledby="modal-title"
+>
+  <div class="glow-card p-6 sm:p-8 bg-zinc-950/95 border border-zinc-800 rounded-3xl space-y-6 relative">
+    <!-- Close button -->
+    <button
+      id="close-modal-btn"
+      type="button"
+      class="absolute top-5 right-5 text-zinc-400 hover:text-white transition p-2 rounded-full hover:bg-zinc-800"
+      aria-label="Close dialog"
+    >
+      ✕
+    </button>
+
+    <div class="space-y-2 pr-6">
+      <span class="text-xs font-mono font-bold uppercase tracking-wider text-brand-yellow px-2.5 py-0.5 rounded-full bg-brand-yellow/10 border border-brand-yellow/20">
+        GET EXPERT REPAIR & REBUILD
+      </span>
+      <h2 id="modal-title" class="font-display text-xl sm:text-2xl font-extrabold text-white">
+        Request Workouse Consultation
+      </h2>
+      <p class="text-xs text-zinc-400 font-sans">
+        Target: <span class="font-mono text-zinc-200">{targetUrl}</span>
+      </p>
+    </div>
+
+    <form id="lead-form" class="space-y-4 font-mono text-xs">
+      <input type="hidden" name="auditId" value={auditId} />
+
+      <!-- Service Selection -->
+      <div class="space-y-2">
+        <label class="block text-zinc-400 font-bold uppercase tracking-wider">Requested Service</label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="p-3 rounded-xl border border-zinc-800 bg-zinc-900/60 cursor-pointer flex items-center gap-2 hover:border-brand-yellow/50 transition">
+            <input
+              type="radio"
+              name="serviceType"
+              value="fix"
+              checked={recommendation === 'fix'}
+              class="accent-brand-yellow"
+            />
+            <div class="space-y-0.5">
+              <div class="font-bold text-white">Targeted Fix</div>
+              <div class="text-[10px] text-zinc-400">${totalPrice} USD Est.</div>
+            </div>
+          </label>
+
+          <label class="p-3 rounded-xl border border-zinc-800 bg-zinc-900/60 cursor-pointer flex items-center gap-2 hover:border-brand-yellow/50 transition">
+            <input
+              type="radio"
+              name="serviceType"
+              value="rebuild"
+              checked={recommendation === 'rebuild'}
+              class="accent-brand-yellow"
+            />
+            <div class="space-y-0.5">
+              <div class="font-bold text-white">Full Rebuild</div>
+              <div class="text-[10px] text-zinc-400">Astro + Cloudflare</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Contact Info -->
+      <div class="space-y-3">
+        <div>
+          <label for="lead-name" class="block text-zinc-400 font-bold uppercase tracking-wider mb-1">Your Name *</label>
+          <input
+            type="text"
+            id="lead-name"
+            name="name"
+            required
+            placeholder="John Doe"
+            class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-brand-yellow transition"
+          />
+        </div>
+
+        <div>
+          <label for="lead-email" class="block text-zinc-400 font-bold uppercase tracking-wider mb-1">Contact Email *</label>
+          <input
+            type="email"
+            id="lead-email"
+            name="email"
+            required
+            placeholder="john@example.com"
+            class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-brand-yellow transition"
+          />
+        </div>
+
+        <div>
+          <label for="lead-budget" class="block text-zinc-400 font-bold uppercase tracking-wider mb-1">Estimated Budget Range</label>
+          <select
+            id="lead-budget"
+            name="budget"
+            class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-brand-yellow transition"
+          >
+            <option value="under_500">Under $500 USD</option>
+            <option value="500_1500" selected>$500 - $1,500 USD</option>
+            <option value="1500_3000">$1,500 - $3,000 USD</option>
+            <option value="3000_plus">$3,000+ USD</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="lead-notes" class="block text-zinc-400 font-bold uppercase tracking-wider mb-1">Additional Project Notes</label>
+          <textarea
+            id="lead-notes"
+            name="notes"
+            rows="3"
+            placeholder="Mention any target launch dates or specific integration needs..."
+            class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-brand-yellow transition"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Feedback Status -->
+      <div id="lead-status-msg" class="hidden text-xs p-3 rounded-xl font-mono"></div>
+
+      <!-- Submit button -->
+      <button
+        type="submit"
+        id="lead-submit-btn"
+        class="w-full py-3.5 rounded-xl font-bold uppercase tracking-wider bg-brand-yellow text-zinc-950 hover:bg-yellow-400 transition shadow-lg shadow-brand-yellow/10"
+      >
+        Submit Consultation Request →
+      </button>
+    </form>
+  </div>
+</dialog>
+
+<script>
+  const dialog = document.getElementById('lead-modal') as HTMLDialogElement | null;
+  const closeBtn = document.getElementById('close-modal-btn');
+  const form = document.getElementById('lead-form') as HTMLFormElement | null;
+  const statusMsg = document.getElementById('lead-status-msg');
+  const submitBtn = document.getElementById('lead-submit-btn') as HTMLButtonElement | null;
+
+  closeBtn?.addEventListener('click', () => {
+    dialog?.close();
+  });
+
+  dialog?.addEventListener('click', (e) => {
+    if (e.target === dialog) {
+      dialog.close();
+    }
+  });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form || !submitBtn || !statusMsg) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting Request...';
+    statusMsg.classList.add('hidden');
+
+    const formData = new FormData(form);
+    const payload = {
+      auditId: formData.get('auditId'),
+      serviceType: formData.get('serviceType'),
+      name: formData.get('name'),
+      email: formData.get('email'),
+      budget: formData.get('budget'),
+      notes: formData.get('notes'),
+    };
+
+    try {
+      const res = await fetch('/api/audit/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data: any = await res.json();
+
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit lead request.');
+      }
+
+      statusMsg.className = 'text-xs p-3 rounded-xl font-mono bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 block';
+      statusMsg.textContent = data.message || 'Request submitted successfully! We will reach out shortly.';
+      
+      setTimeout(() => {
+        dialog?.close();
+      }, 2000);
+    } catch (err: any) {
+      statusMsg.className = 'text-xs p-3 rounded-xl font-mono bg-red-500/10 border border-red-500/30 text-red-400 block';
+      statusMsg.textContent = err.message || 'An error occurred. Please try again.';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Consultation Request →';
+    }
+  });
+</script>

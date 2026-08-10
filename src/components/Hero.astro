@@ -1,22 +1,23 @@
 ---
+import AuditForm from './AuditForm.astro';
 ---
 
-<section class="relative min-h-[85vh] flex items-center justify-center overflow-hidden py-20 px-4 sm:px-6 lg:px-8">
+<section id="audit" class="relative min-h-[85vh] flex items-center justify-center overflow-hidden py-20 px-4 sm:px-6 lg:px-8">
   <!-- Glowing decorative orbs -->
   <div class="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-brand-blue/10 blur-[80px] rounded-full animate-pulse-slow"></div>
   <div class="absolute bottom-1/4 right-1/4 w-[250px] h-[250px] bg-brand-yellow/5 blur-[80px] rounded-full animate-pulse-slow" style="animation-delay: 2s;"></div>
 
-  <div class="max-w-4xl mx-auto text-center relative z-10">
+  <div class="max-w-4xl mx-auto text-center relative z-10 space-y-10">
     <!-- Premium Badge -->
-    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-800 bg-zinc-900/40 backdrop-blur-md mb-8 animate-fade-in">
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-800 bg-zinc-900/40 backdrop-blur-md animate-fade-in">
       <span class="w-1.5 h-1.5 rounded-full bg-brand-yellow animate-pulse"></span>
       <span class="text-[10px] font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-        Boutique Solo Development House
+        Boutique Software Engineering & Automated Site Audits
       </span>
     </div>
 
     <!-- Main Title -->
-    <h1 class="font-display text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.08] mb-8">
+    <h1 class="font-display text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.08]">
       Elite Fullstack Engineering <br class="hidden sm:inline" />
       <span class="bg-gradient-to-r from-brand-yellow via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
         for Scale.
@@ -24,25 +25,30 @@
     </h1>
 
     <!-- Subheadline -->
-    <p class="font-sans text-lg sm:text-xl text-zinc-400 leading-relaxed max-w-2xl mx-auto mb-12">
-      Workouse is a boutique, solo software development house building resilient, high-scale web applications for forward-thinking companies in Europe and the US. <span class="text-zinc-100 font-medium">Engineered by a 15+ year veteran.</span>
+    <p class="font-sans text-lg sm:text-xl text-zinc-400 leading-relaxed max-w-2xl mx-auto">
+      Workouse is a boutique software development house building resilient web applications and automated performance audit engines. <span class="text-zinc-100 font-medium">Engineered for speed, security, and high conversion.</span>
     </p>
 
+    <!-- Interactive Audit URL Bar & Request Form -->
+    <div class="pt-4 max-w-2xl mx-auto text-left">
+      <AuditForm />
+    </div>
+
     <!-- CTAs -->
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
       <!-- Primary CTA -->
       <a 
-        href="#contact" 
-        class="group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-full text-sm font-semibold uppercase tracking-wider bg-brand-yellow text-zinc-950 hover:bg-zinc-950 hover:text-brand-yellow border-2 border-brand-yellow transition-all duration-300 hover:shadow-[0_0_25px_rgba(254,197,0,0.25)]"
+        href="/admin" 
+        class="group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-full text-sm font-semibold uppercase tracking-wider bg-zinc-900 text-zinc-200 hover:text-white border border-zinc-700 transition-all duration-300"
       >
-        <span>Let's Build Together</span>
+        <span>Executive Admin Portal</span>
         <svg 
-          class="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" 
+          class="w-4 h-4 ml-2 text-[#FEC500]" 
           fill="none" 
           viewBox="0 0 24 24" 
           stroke="currentColor"
         >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       </a>
 

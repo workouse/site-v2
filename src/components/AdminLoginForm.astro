@@ -1,0 +1,168 @@
+---
+// Workouse Audit Tool - Executive Admin Login Form Component
+---
+
+<div class="max-w-md w-full mx-auto my-12" id="adminLoginFormContainer">
+  <div class="bg-zinc-900/90 border border-zinc-800 rounded-3xl p-8 shadow-2xl backdrop-blur-xl space-y-6 relative overflow-hidden">
+    <!-- Ambient Glow Accent -->
+    <div class="absolute -top-24 -right-24 w-48 h-48 bg-[#FEC500]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Header Section -->
+    <div class="text-center space-y-2">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-zinc-800/90 border border-zinc-700/80 flex items-center justify-center text-[#FEC500] shadow-lg shadow-black/40">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-black tracking-tight text-white">Admin Console</h2>
+      <p class="text-xs text-zinc-400">Authenticate with your admin email and secret key to access executive controls.</p>
+    </div>
+
+    <!-- Error Alert Box -->
+    <div id="loginErrorAlert" class="hidden p-3.5 rounded-xl bg-rose-950/80 border border-rose-800/80 text-rose-300 text-xs flex items-start gap-2.5">
+      <svg class="w-4 h-4 text-rose-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <span id="loginErrorMessage">Invalid admin credentials.</span>
+    </div>
+
+    <!-- Login Form -->
+    <form id="adminLoginForm" class="space-y-4">
+      <!-- Admin Email Input -->
+      <div class="space-y-1.5">
+        <label for="adminEmail" class="block text-xs font-semibold uppercase tracking-wider text-zinc-300">
+          Admin Email
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <input
+            type="email"
+            id="adminEmail"
+            name="email"
+            required
+            placeholder="admin@workouse.com"
+            class="w-full bg-zinc-950 border border-zinc-700/80 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#FEC500] focus:ring-1 focus:ring-[#FEC500] transition"
+          />
+        </div>
+      </div>
+
+      <!-- Secret Key Input -->
+      <div class="space-y-1.5">
+        <label for="adminSecret" class="block text-xs font-semibold uppercase tracking-wider text-zinc-300">
+          Secret Key
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+            </svg>
+          </div>
+          <input
+            type="password"
+            id="adminSecret"
+            name="secret"
+            required
+            placeholder="Enter your secret key"
+            class="w-full bg-zinc-950 border border-zinc-700/80 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#FEC500] focus:ring-1 focus:ring-[#FEC500] transition font-mono"
+          />
+          <button
+            type="button"
+            id="toggleSecretVisibility"
+            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-500 hover:text-zinc-300 transition"
+            aria-label="Toggle password visibility"
+          >
+            <svg id="eyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        id="loginSubmitBtn"
+        class="w-full bg-[#FEC500] hover:bg-[#e5b200] active:bg-[#cc9f00] text-zinc-950 font-bold px-4 py-3 rounded-xl transition shadow-lg shadow-[#FEC500]/10 flex items-center justify-center gap-2 group mt-2"
+      >
+        <span id="loginSubmitBtnText">Sign In to Dashboard</span>
+        <svg id="loginSubmitIcon" class="w-4 h-4 group-hover:translate-x-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+        </svg>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('adminLoginForm') as HTMLFormElement | null;
+  const emailInput = document.getElementById('adminEmail') as HTMLInputElement | null;
+  const secretInput = document.getElementById('adminSecret') as HTMLInputElement | null;
+  const errorAlert = document.getElementById('loginErrorAlert');
+  const errorMessage = document.getElementById('loginErrorMessage');
+  const submitBtn = document.getElementById('loginSubmitBtn') as HTMLButtonElement | null;
+  const submitBtnText = document.getElementById('loginSubmitBtnText');
+  const toggleVisibilityBtn = document.getElementById('toggleSecretVisibility');
+  const secretField = document.getElementById('adminSecret') as HTMLInputElement | null;
+
+  // Toggle secret field visibility
+  if (toggleVisibilityBtn && secretField) {
+    toggleVisibilityBtn.addEventListener('click', () => {
+      const isPassword = secretField.type === 'password';
+      secretField.type = isPassword ? 'text' : 'password';
+    });
+  }
+
+  if (form && emailInput && secretInput && submitBtn) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = emailInput.value.trim();
+      const secret = secretInput.value.trim();
+
+      if (!email || !secret) return;
+
+      // Hide error alert & set loading state
+      if (errorAlert) errorAlert.classList.add('hidden');
+      submitBtn.disabled = true;
+      if (submitBtnText) submitBtnText.innerText = 'Authenticating...';
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, secret }),
+        });
+
+        const data: any = await res.json();
+
+        if (res.ok && data.success && data.token) {
+          localStorage.setItem('workouse_admin_token', data.token);
+          localStorage.setItem('workouse_admin_email', data.user?.email || email);
+
+          // Dispatch custom authentication event
+          window.dispatchEvent(new CustomEvent('admin-login-success', {
+            detail: { token: data.token, email: data.user?.email || email }
+          }));
+        } else {
+          if (errorAlert && errorMessage) {
+            errorMessage.innerText = data.error || 'Invalid admin credentials.';
+            errorAlert.classList.remove('hidden');
+          }
+        }
+      } catch (err: any) {
+        if (errorAlert && errorMessage) {
+          errorMessage.innerText = err.message || 'Network error during authentication.';
+          errorAlert.classList.remove('hidden');
+        }
+      } finally {
+        submitBtn.disabled = false;
+        if (submitBtnText) submitBtnText.innerText = 'Sign In to Dashboard';
+      }
+    });
+  }
+</script>

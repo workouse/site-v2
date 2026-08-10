@@ -1,0 +1,107 @@
+---
+// Workouse Audit Tool — End-of-Page Newsletter & Campaign Subscription Component
+---
+
+<section class="py-16 px-4 max-w-5xl mx-auto" id="newsletter-subscription">
+  <div class="relative overflow-hidden bg-zinc-900/90 border border-zinc-800 rounded-2xl p-8 md:p-12 backdrop-blur-md shadow-2xl">
+    <!-- Ambient Glow Background Decoration -->
+    <div class="absolute -top-24 -right-24 w-96 h-96 bg-[#FEC500]/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <!-- Left Content Header -->
+      <div class="lg:col-span-7 space-y-3">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FEC500]/10 border border-[#FEC500]/20 text-[#FEC500] text-xs font-semibold tracking-wide uppercase">
+          <span class="w-2 h-2 rounded-full bg-[#FEC500] animate-pulse"></span>
+          Campaign &amp; Security Digest
+        </div>
+        <h3 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight leading-tight">
+          Stay Ahead in Web Performance &amp; Security
+        </h3>
+        <p class="text-zinc-400 text-sm md:text-base leading-relaxed">
+          Get actionable website optimization benchmarks, zero-day vulnerability alerts, and architectural insights directly to your inbox.
+        </p>
+      </div>
+
+      <!-- Right Form Section -->
+      <div class="lg:col-span-5">
+        <form id="newsletter-form" class="flex flex-col gap-3">
+          <div class="relative">
+            <input
+              type="email"
+              id="newsletter-email"
+              name="email"
+              required
+              placeholder="Enter your work email..."
+              class="w-full bg-zinc-950/80 border border-zinc-700/80 rounded-xl px-4 py-3.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#FEC500] focus:ring-2 focus:ring-[#FEC500]/20 transition-all duration-200"
+            />
+          </div>
+          <button
+            type="submit"
+            id="newsletter-btn"
+            class="w-full bg-[#FEC500] hover:bg-[#e5b300] active:scale-[0.99] text-zinc-950 font-bold py-3.5 px-6 rounded-xl text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-[#FEC500]/10 cursor-pointer disabled:opacity-50"
+          >
+            <span id="newsletter-btn-text">Subscribe to Updates →</span>
+            <svg id="newsletter-spinner" class="animate-spin h-4 w-4 text-zinc-950 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+          <p id="newsletter-msg" class="text-xs text-center mt-1 hidden"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
+  const emailInput = document.getElementById('newsletter-email') as HTMLInputElement | null;
+  const btn = document.getElementById('newsletter-btn') as HTMLButtonElement | null;
+  const btnText = document.getElementById('newsletter-btn-text') as HTMLSpanElement | null;
+  const spinner = document.getElementById('newsletter-spinner') as HTMLElement | null;
+  const msg = document.getElementById('newsletter-msg') as HTMLParagraphElement | null;
+
+  if (form && emailInput && btn && btnText && spinner && msg) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      if (!email) return;
+
+      btn.disabled = true;
+      btnText.textContent = 'Subscribing...';
+      spinner.classList.remove('hidden');
+      msg.classList.add('hidden');
+      msg.className = 'text-xs text-center mt-1 hidden';
+
+      try {
+        const response = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            siteUrl: window.location.href,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          msg.textContent = data.message || 'Subscribed successfully!';
+          msg.className = 'text-xs text-center mt-1 text-emerald-400 font-medium block';
+          form.reset();
+        } else {
+          msg.textContent = data.error || 'Failed to subscribe. Please try again.';
+          msg.className = 'text-xs text-center mt-1 text-rose-400 font-medium block';
+        }
+      } catch (err: any) {
+        msg.textContent = 'Network error. Please try again.';
+        msg.className = 'text-xs text-center mt-1 text-rose-400 font-medium block';
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Subscribe to Updates →';
+        spinner.classList.add('hidden');
+      }
+    });
+  }
+</script>

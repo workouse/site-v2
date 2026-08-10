@@ -1,18 +1,32 @@
 {
-  "name": "workouse-portfolio",
+  "name": "workouse",
   "type": "module",
   "version": "1.0.0",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "astro build && esbuild src/workers/entry.ts --bundle --format=esm --platform=neutral --main-fields=module,main --conditions=workerd,worker,browser --target=es2022 --outfile=dist/worker.js && node -e \"fs.writeFileSync('dist/.assetsignore', '_worker.js\\nworker.js')\"",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^11.1.0",
     "@astrojs/tailwind": "^5.1.0",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
     "astro": "^4.10.0",
+    "is-mergeable-object": "^1.1.1",
+    "prismjs": "^1.30.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "tailwindcss": "^3.4.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@cloudflare/workers-types": "^5.20260810.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.119.0"
   }
 }

@@ -1,0 +1,204 @@
+---
+import type { AuditIssue } from '../lib/types';
+import AuditReportActions from './AuditReportActions.astro';
+import AuditLeadModal from './AuditLeadModal.astro';
+
+interface Props {
+  audit: {
+    id: string;
+    url: string;
+    status: string;
+    createdAt: number;
+    completedAt: number | null;
+  };
+  aiOutput: {
+    score: number;
+    issues: AuditIssue[];
+    recommendation: 'fix' | 'rebuild';
+    recommendationReason: string;
+    summary: string;
+    processedAt: number;
+  };
+}
+
+const { audit, aiOutput } = Astro.props;
+
+const totalFixMinutes = aiOutput.issues.reduce((sum, item) => sum + item.estimatedMinutes, 0);
+const totalFixHours = Math.round((totalFixMinutes / 60) * 10) / 10;
+const totalPrice = aiOutput.issues.reduce((sum, item) => sum + item.price, 0);
+
+const criticalIssues = aiOutput.issues.filter(i => i.severity === 'critical');
+const warningIssues = aiOutput.issues.filter(i => i.severity === 'warning');
+const infoIssues = aiOutput.issues.filter(i => i.severity === 'info');
+
+const scoreColor = aiOutput.score >= 80 ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10'
+  : aiOutput.score >= 60 ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
+  : 'text-red-400 border-red-500/30 bg-red-500/10';
+---
+
+<div class="max-w-5xl mx-auto space-y-8">
+  
+  <!-- Action Toolbar (PDF Export, Share Link, Request Quote) -->
+  <AuditReportActions auditId={audit.id} />
+
+  <!-- Header Overview Card -->
+  <div class="glow-card p-6 sm:p-10 rounded-3xl bg-zinc-950/90 border border-zinc-800 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+    <!-- Ambient ambient glow -->
+    <div class="absolute -top-24 -right-24 w-72 h-72 bg-brand-yellow/10 rounded-full blur-3xl"></div>
+
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono font-semibold uppercase tracking-wider text-brand-yellow px-2.5 py-0.5 rounded-full bg-brand-yellow/10 border border-brand-yellow/20">
+            AUDIT REPORT COMPLETE
+          </span>
+          <span class="text-xs font-mono text-zinc-500">ID: {audit.id}</span>
+        </div>
+        <h1 class="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          {audit.url}
+        </h1>
+        <p class="text-xs sm:text-sm text-zinc-400 font-mono">
+          Evaluated via PageSpeed, Security Header Scanner & Workers AI
+        </p>
+      </div>
+
+      <!-- Score Gauge -->
+      <div class="flex items-center gap-4 shrink-0">
+        <div class={`w-28 h-28 rounded-2xl border-2 flex flex-col items-center justify-center p-2 ${scoreColor}`}>
+          <span class="text-3xl font-extrabold font-mono tracking-tight">{aiOutput.score}</span>
+          <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-400 mt-0.5">Health Score</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendation Banner -->
+    <div class="mt-8 p-5 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">Strategic Recommendation</span>
+        {aiOutput.recommendation === 'rebuild' ? (
+          <span class="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 font-mono font-bold text-xs">
+            🚀 Full Rebuild Recommended
+          </span>
+        ) : (
+          <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs">
+            🛠️ Targeted Code Patching
+          </span>
+        )}
+      </div>
+      <p class="text-xs sm:text-sm text-zinc-300 font-sans leading-relaxed">
+        {aiOutput.recommendationReason}
+      </p>
+    </div>
+  </div>
+
+  <!-- Summary & Estimate Metric Bar -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+    <div class="p-6 rounded-2xl bg-zinc-950/90 border border-zinc-800 space-y-1">
+      <div class="text-xs text-zinc-500 uppercase tracking-wider">Identified Issues</div>
+      <div class="text-2xl font-bold text-white">{aiOutput.issues.length} <span class="text-xs text-zinc-400 font-normal">items</span></div>
+      <div class="text-[11px] text-zinc-500 pt-1">
+        <span class="text-red-400 font-bold">{criticalIssues.length} critical</span> · <span class="text-amber-400 font-bold">{warningIssues.length} warnings</span> · <span class="text-blue-400 font-bold">{infoIssues.length} info</span>
+      </div>
+    </div>
+
+    <div class="p-6 rounded-2xl bg-zinc-950/90 border border-zinc-800 space-y-1">
+      <div class="text-xs text-zinc-500 uppercase tracking-wider">Estimated Fix Time</div>
+      <div class="text-2xl font-bold text-brand-yellow">{totalFixHours} <span class="text-xs text-zinc-400 font-normal">hours</span></div>
+      <div class="text-[11px] text-zinc-500 pt-1">
+        Based on itemized repair scope
+      </div>
+    </div>
+
+    <div class="p-6 rounded-2xl bg-zinc-950/90 border border-zinc-800 space-y-1">
+      <div class="text-xs text-zinc-500 uppercase tracking-wider">Total Fix Cost ($35/hr)</div>
+      <div class="text-2xl font-bold text-white">${totalPrice} <span class="text-xs text-zinc-400 font-normal">USD</span></div>
+      <div class="text-[11px] text-emerald-400 font-bold pt-1">
+        Flat rate transparent pricing
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Issues Breakdown -->
+  <div class="glow-card p-6 sm:p-8 rounded-3xl bg-zinc-950/90 border border-zinc-800 space-y-6">
+    <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+      <h2 class="font-display text-xl font-bold text-white">Itemized Issue Breakdown</h2>
+      <span class="text-xs font-mono text-zinc-400">Rate: $35.00 / hr</span>
+    </div>
+
+    {aiOutput.issues.length === 0 ? (
+      <div class="text-center py-12 text-zinc-400 font-mono text-sm">
+        🎉 No critical performance, security, or SEO bottlenecks detected!
+      </div>
+    ) : (
+      <div class="space-y-4 font-mono">
+        {aiOutput.issues.map((issue) => (
+          <div class="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-850 hover:border-zinc-700 transition duration-200 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-3">
+                {issue.severity === 'critical' && (
+                  <span class="px-2.5 py-0.5 rounded text-[10px] uppercase font-bold bg-red-500/10 border border-red-500/30 text-red-400">
+                    CRITICAL
+                  </span>
+                )}
+                {issue.severity === 'warning' && (
+                  <span class="px-2.5 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                    WARNING
+                  </span>
+                )}
+                {issue.severity === 'info' && (
+                  <span class="px-2.5 py-0.5 rounded text-[10px] uppercase font-bold bg-blue-500/10 border border-blue-500/30 text-blue-400">
+                    INFO
+                  </span>
+                )}
+                <span class="text-xs text-zinc-400 uppercase font-semibold">{issue.category}</span>
+              </div>
+              <div class="text-xs text-zinc-300 font-bold">
+                {issue.estimatedMinutes} mins · <span class="text-brand-yellow">${issue.price} USD</span>
+              </div>
+            </div>
+
+            <h3 class="font-bold text-sm text-white font-sans">{issue.title}</h3>
+            <p class="text-xs text-zinc-400 font-sans leading-relaxed">{issue.businessImpact}</p>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <!-- Direct Conversion Hire CTA -->
+  <div class="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-950 to-zinc-900 border border-brand-yellow/30 text-center space-y-6 shadow-2xl relative overflow-hidden">
+    <div class="max-w-2xl mx-auto space-y-3">
+      <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-white">
+        Ready to optimize or rebuild this project?
+      </h2>
+      <p class="text-xs sm:text-sm text-zinc-400 font-sans leading-relaxed">
+        Workouse delivers high-performance, dark-mode-first web engineering on Cloudflare Pages and Astro with zero fluff.
+      </p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 font-mono text-xs">
+      <button
+        onclick="document.getElementById('lead-modal').showModal()"
+        type="button"
+        class="w-full sm:w-auto px-8 py-4 rounded-xl font-bold uppercase tracking-wider bg-brand-yellow text-zinc-950 hover:bg-yellow-400 transition duration-200 shadow-lg shadow-brand-yellow/10"
+      >
+        Request Workouse Consultation (${totalPrice} USD Est.) →
+      </button>
+      <a
+        href="/"
+        class="w-full sm:w-auto px-6 py-4 rounded-xl font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition duration-200"
+      >
+        Audit Another Site
+      </a>
+    </div>
+  </div>
+
+  <!-- Lead Capture Modal Component -->
+  <AuditLeadModal
+    auditId={audit.id}
+    targetUrl={audit.url}
+    totalPrice={totalPrice}
+    recommendation={aiOutput.recommendation}
+  />
+
+</div>

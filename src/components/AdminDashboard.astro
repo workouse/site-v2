@@ -1,0 +1,590 @@
+---
+// Workouse Audit Tool - Executive Admin Dashboard Component
+---
+
+<div class="space-y-8" id="overview">
+  <!-- Top Control & Auth Token Header -->
+  <div class="bg-zinc-900/80 border border-zinc-800 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-[#FEC500]">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-white font-bold text-lg leading-snug">Executive Platform Control</h2>
+        <p class="text-zinc-400 text-xs">Real-time audit performance, consultation pipeline, and batch operations.</p>
+      </div>
+    </div>
+
+    <!-- Logged in Admin Info & Actions -->
+    <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+      <div class="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span id="adminUserEmailDisplay" class="text-zinc-300 font-mono">admin@workouse.com</span>
+      </div>
+
+      <button
+        id="refreshAnalyticsBtn"
+        class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-zinc-700 transition flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Refresh
+      </button>
+
+      <button
+        id="adminLogoutBtn"
+        class="bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 text-xs font-semibold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+        </svg>
+        Sign Out
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Stat 1: Total Audits -->
+    <div class="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl space-y-2">
+      <div class="flex items-center justify-between text-zinc-400 text-xs font-medium">
+        <span>Total Executed Audits</span>
+        <span class="p-1.5 rounded-lg bg-zinc-800/80 text-blue-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+        </span>
+      </div>
+      <div id="statTotalAudits" class="text-3xl font-black text-white tracking-tight">--</div>
+      <div class="text-xs text-zinc-400 flex items-center gap-2">
+        <span id="statCompletedAudits" class="text-emerald-400 font-semibold">-- completed</span>
+        <span>•</span>
+        <span id="statFailedAudits" class="text-zinc-500">-- failed</span>
+      </div>
+    </div>
+
+    <!-- Stat 2: Lead Conversion -->
+    <div class="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl space-y-2">
+      <div class="flex items-center justify-between text-zinc-400 text-xs font-medium">
+        <span>Lead Conversion Rate</span>
+        <span class="p-1.5 rounded-lg bg-zinc-800/80 text-[#FEC500]">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+          </svg>
+        </span>
+      </div>
+      <div id="statConversionRate" class="text-3xl font-black text-[#FEC500] tracking-tight">--%</div>
+      <div class="text-xs text-zinc-400">
+        <span id="statTotalLeads" class="text-white font-semibold">--</span> total consultation leads
+      </div>
+    </div>
+
+    <!-- Stat 3: Repair Pipeline ($) -->
+    <div class="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl space-y-2">
+      <div class="flex items-center justify-between text-zinc-400 text-xs font-medium">
+        <span>Estimated Repair Pipeline</span>
+        <span class="p-1.5 rounded-lg bg-zinc-800/80 text-emerald-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </span>
+      </div>
+      <div id="statPipelineUsd" class="text-3xl font-black text-emerald-400 tracking-tight">$--</div>
+      <div class="text-xs text-zinc-400">Based on $35/hr repair labor quotes</div>
+    </div>
+
+    <!-- Stat 4: Average Score -->
+    <div class="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl space-y-2">
+      <div class="flex items-center justify-between text-zinc-400 text-xs font-medium">
+        <span>Average Health Score</span>
+        <span class="p-1.5 rounded-lg bg-zinc-800/80 text-purple-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 30a1 1 0 000 2h2a1 1 0 000-2h-2z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </span>
+      </div>
+      <div id="statAvgScore" class="text-3xl font-black text-white tracking-tight">-- / 100</div>
+      <div class="text-xs text-zinc-400 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        <span>Across all completed audits</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Re-audit Quick Trigger Box -->
+  <div class="bg-zinc-900/80 border border-zinc-800 p-6 rounded-2xl space-y-4" id="re-audit">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#FEC500]"></span>
+        <h3 class="text-white font-bold text-base">Trigger Automated Re-audit</h3>
+      </div>
+      <span class="text-xs text-zinc-400">Enqueues differential re-scan job</span>
+    </div>
+
+    <form id="reAuditForm" class="flex flex-col sm:flex-row gap-3">
+      <input
+        type="text"
+        id="reAuditInput"
+        placeholder="Enter target URL or existing Audit ID (e.g. https://example.com)"
+        required
+        class="flex-1 bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#FEC500]"
+      />
+      <button
+        type="submit"
+        class="bg-[#FEC500] hover:bg-[#e5b200] text-zinc-950 font-bold px-6 py-2.5 rounded-xl transition shadow-md whitespace-nowrap flex items-center justify-center gap-2"
+      >
+        <span>Initiate Re-audit</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+        </svg>
+      </button>
+    </form>
+    <div id="reAuditFeedback" class="hidden text-xs px-3 py-2 rounded-lg font-mono"></div>
+  </div>
+
+  <!-- Lead Management Section -->
+  <div class="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 space-y-6" id="leads">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
+      <div>
+        <h3 class="text-white font-bold text-lg">Consultation Leads & Inquiries</h3>
+        <p class="text-zinc-400 text-xs">High-intent client submissions captured directly from audit reports.</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <select
+          id="leadFilterService"
+          class="bg-zinc-950 border border-zinc-700 text-zinc-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#FEC500]"
+        >
+          <option value="">All Services</option>
+          <option value="fix">Fix ($700)</option>
+          <option value="rebuild">Rebuild ($2,800)</option>
+          <option value="consultation">Consultation ($350)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Leads Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="text-zinc-400 bg-zinc-950/60 uppercase font-mono tracking-wider border-b border-zinc-800">
+          <tr>
+            <th class="py-3 px-4">Contact</th>
+            <th class="py-3 px-4">Service</th>
+            <th class="py-3 px-4">Target Domain</th>
+            <th class="py-3 px-4">Score</th>
+            <th class="py-3 px-4">Budget</th>
+            <th class="py-3 px-4">Submitted</th>
+            <th class="py-3 px-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="leadsTableBody" class="divide-y divide-zinc-800/60 text-zinc-300">
+          <tr>
+            <td colspan="7" class="py-8 text-center text-zinc-500">Loading audit leads...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Audit Logs & Raw API Debugger Section -->
+  <div class="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 space-y-6" id="audit-logs">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+          <h3 class="text-white font-bold text-lg">Audit Logs & Raw API Debugger</h3>
+        </div>
+        <p class="text-zinc-400 text-xs">Detailed diagnostic log traces and raw API metrics (PageSpeed, Security Headers, SEO Metadata, Audit Engine timeline).</p>
+      </div>
+
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <input
+          type="text"
+          id="auditLogSearchInput"
+          placeholder="Search Audit ID or URL (e.g. uYYWPGp4zRxg)"
+          class="bg-zinc-950 border border-zinc-700 text-zinc-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-[#FEC500] w-full sm:w-64 font-mono"
+        />
+        <button
+          id="fetchAuditLogsBtn"
+          class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold px-4 py-2 rounded-xl border border-zinc-700 transition whitespace-nowrap"
+        >
+          Search Logs
+        </button>
+      </div>
+    </div>
+
+    <!-- Audit Logs List Container -->
+    <div id="auditLogsContainer" class="space-y-4">
+      <div class="py-8 text-center text-zinc-500 font-mono text-xs">Loading diagnostic audit logs...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function getStoredToken(): string {
+    return localStorage.getItem('workouse_admin_token') || '';
+  }
+
+  function getStoredEmail(): string {
+    return localStorage.getItem('workouse_admin_email') || 'admin@workouse.com';
+  }
+
+  function handleUnauthorized() {
+    localStorage.removeItem('workouse_admin_token');
+    localStorage.removeItem('workouse_admin_email');
+    window.dispatchEvent(new CustomEvent('admin-logout'));
+  }
+
+  const refreshBtn = document.getElementById('refreshAnalyticsBtn');
+  const logoutBtn = document.getElementById('adminLogoutBtn');
+  const userEmailDisplay = document.getElementById('adminUserEmailDisplay');
+  const reAuditForm = document.getElementById('reAuditForm') as HTMLFormElement | null;
+  const reAuditInput = document.getElementById('reAuditInput') as HTMLInputElement | null;
+  const reAuditFeedback = document.getElementById('reAuditFeedback');
+  const leadFilterService = document.getElementById('leadFilterService') as HTMLSelectElement | null;
+  const auditLogSearchInput = document.getElementById('auditLogSearchInput') as HTMLInputElement | null;
+  const fetchAuditLogsBtn = document.getElementById('fetchAuditLogsBtn');
+
+  if (userEmailDisplay) {
+    userEmailDisplay.innerText = getStoredEmail();
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      handleUnauthorized();
+    });
+  }
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => loadAdminData());
+  }
+
+  if (leadFilterService) {
+    leadFilterService.addEventListener('change', () => fetchLeads(getStoredToken()));
+  }
+
+  if (fetchAuditLogsBtn) {
+    fetchAuditLogsBtn.addEventListener('click', () => {
+      const token = getStoredToken();
+      const q = auditLogSearchInput ? auditLogSearchInput.value.trim() : '';
+      fetchAuditLogs(token, q);
+    });
+  }
+
+  if (auditLogSearchInput) {
+    auditLogSearchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const token = getStoredToken();
+        fetchAuditLogs(token, auditLogSearchInput.value.trim());
+      }
+    });
+  }
+
+  async function loadAdminData() {
+    const token = getStoredToken();
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+    await Promise.all([fetchAnalytics(token), fetchLeads(token), fetchAuditLogs(token)]);
+  }
+
+  async function fetchAnalytics(token: string) {
+    try {
+      const res = await fetch('/api/admin/analytics', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      const data: any = await res.json();
+      if (res.ok && data.success) {
+        const { analytics } = data;
+        (document.getElementById('statTotalAudits') as HTMLElement).innerText = analytics.totalAudits.toString();
+        (document.getElementById('statCompletedAudits') as HTMLElement).innerText = `${analytics.completedAudits} completed`;
+        (document.getElementById('statFailedAudits') as HTMLElement).innerText = `${analytics.failedAudits} failed`;
+        (document.getElementById('statConversionRate') as HTMLElement).innerText = `${analytics.conversionRatePct}%`;
+        (document.getElementById('statTotalLeads') as HTMLElement).innerText = analytics.totalLeads.toString();
+        (document.getElementById('statPipelineUsd') as HTMLElement).innerText = `$${analytics.totalPipelineValueUsd.toLocaleString()}`;
+        (document.getElementById('statAvgScore') as HTMLElement).innerText = `${analytics.avgScore} / 100`;
+      }
+    } catch (err) {
+      console.warn('Failed to load analytics:', err);
+    }
+  }
+
+  async function fetchLeads(token: string) {
+    const tbody = document.getElementById('leadsTableBody');
+    if (!tbody) return;
+
+    try {
+      const filterVal = leadFilterService ? leadFilterService.value : '';
+      const url = filterVal ? `/api/admin/leads?serviceType=${filterVal}` : '/api/admin/leads';
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      const data: any = await res.json();
+
+      if (res.ok && data.success && data.leads) {
+        if (data.leads.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-zinc-500">No leads recorded yet.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.leads
+          .map((lead: any) => {
+            const dateStr = new Date(lead.created_at * 1000).toLocaleDateString();
+            const badgeClass =
+              lead.service_type === 'rebuild'
+                ? 'bg-amber-950/80 text-amber-400 border-amber-800/60'
+                : lead.service_type === 'fix'
+                ? 'bg-blue-950/80 text-blue-400 border-blue-800/60'
+                : 'bg-zinc-800 text-zinc-300 border-zinc-700';
+
+            return `
+              <tr class="hover:bg-zinc-850/50 transition">
+                <td class="py-3.5 px-4 font-semibold text-white">
+                  <div>${lead.name}</div>
+                  <div class="text-zinc-400 text-[11px] font-normal">${lead.email}</div>
+                </td>
+                <td class="py-3.5 px-4">
+                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${badgeClass}">
+                    ${lead.service_type}
+                  </span>
+                </td>
+                <td class="py-3.5 px-4 font-mono text-zinc-300 text-[11px]">
+                  <a href="/audit/${lead.audit_id}" target="_blank" class="hover:text-[#FEC500] underline">
+                    ${lead.url || lead.audit_id}
+                  </a>
+                </td>
+                <td class="py-3.5 px-4 font-mono font-bold">
+                  <span class="${(lead.score || 0) >= 70 ? 'text-emerald-400' : 'text-amber-400'}">
+                    ${lead.score || '--'}
+                  </span>
+                </td>
+                <td class="py-3.5 px-4 font-mono text-zinc-400">${lead.budget || 'N/A'}</td>
+                <td class="py-3.5 px-4 text-zinc-400">${dateStr}</td>
+                <td class="py-3.5 px-4 text-right">
+                  <a
+                    href="/audit/${lead.audit_id}"
+                    target="_blank"
+                    class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded-lg text-[11px] font-medium transition inline-block"
+                  >
+                    View Audit
+                  </a>
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+      }
+    } catch (err) {
+      console.warn('Failed to load leads:', err);
+    }
+  }
+
+  async function fetchAuditLogs(token: string, searchQuery: string = '') {
+    const container = document.getElementById('auditLogsContainer');
+    if (!container) return;
+
+    try {
+      const url = searchQuery ? `/api/admin/audit-logs?search=${encodeURIComponent(searchQuery)}` : '/api/admin/audit-logs';
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      const data: any = await res.json();
+
+      if (res.ok && data.success && data.logs) {
+        if (data.logs.length === 0) {
+          container.innerHTML = `<div class="py-8 text-center text-zinc-500 font-mono text-xs">No audit logs matching search standard.</div>`;
+          return;
+        }
+
+        container.innerHTML = data.logs
+          .map((item: any, idx: number) => {
+            const { audit, aiOutput, rawResults, auditLogs } = item;
+            const createdDate = new Date(audit.createdAt * 1000).toLocaleString();
+            const completedDate = audit.completedAt ? new Date(audit.completedAt * 1000).toLocaleString() : 'In Progress';
+            const score = aiOutput?.score ?? '--';
+            const issuesCount = aiOutput?.issues?.length ?? 0;
+            const cardId = `audit_card_${audit.id}`;
+
+            return `
+              <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-4 font-mono text-xs">
+                <!-- Header Row -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-zinc-800/80 pb-3">
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-white text-sm">${audit.url}</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                        audit.status === 'complete' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'
+                      }">${audit.status}</span>
+                    </div>
+                    <div class="text-[11px] text-zinc-500 flex flex-wrap gap-x-3">
+                      <span>ID: <strong class="text-zinc-300">${audit.id}</strong></span>
+                      <span>Email: ${audit.email}</span>
+                      <span>Created: ${createdDate}</span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-3">
+                    <div class="text-right">
+                      <div class="text-[10px] text-zinc-400 uppercase">Health Score</div>
+                      <div class="text-lg font-black ${typeof score === 'number' && score >= 70 ? 'text-emerald-400' : 'text-amber-400'}">${score} / 100</div>
+                    </div>
+                    <a
+                      href="/audit/${audit.id}"
+                      target="_blank"
+                      class="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                    >
+                      View Report
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Raw Results & Diagnostics Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <!-- PageSpeed Diagnostics -->
+                  <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-lg space-y-1">
+                    <div class="text-[#FEC500] font-bold text-[11px] uppercase tracking-wider">PageSpeed Metrics</div>
+                    ${
+                      rawResults?.pagespeed
+                        ? `
+                        <div class="text-zinc-300 text-[11px] space-y-0.5">
+                          <div>LCP: <strong class="${rawResults.pagespeed.lcp > 2500 ? 'text-amber-400' : 'text-emerald-400'}">${rawResults.pagespeed.lcp}ms</strong></div>
+                          <div>CLS: <strong class="${rawResults.pagespeed.cls > 0.1 ? 'text-amber-400' : 'text-emerald-400'}">${rawResults.pagespeed.cls}</strong></div>
+                          <div>TBT: <strong>${rawResults.pagespeed.tbt}ms</strong></div>
+                          <div>TTFB: <strong>${rawResults.pagespeed.ttfb}ms</strong></div>
+                          <div>Render Blocking JS: <strong>${rawResults.pagespeed.hasRenderBlockingJs ? 'Yes' : 'No'}</strong></div>
+                          <div>Unoptimized Images: <strong>${rawResults.pagespeed.hasUnoptimizedImages ? 'Yes' : 'No'}</strong></div>
+                        </div>
+                      `
+                        : '<div class="text-zinc-500 text-[11px]">No raw PageSpeed data recorded</div>'
+                    }
+                  </div>
+
+                  <!-- Security Headers Diagnostics -->
+                  <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-lg space-y-1">
+                    <div class="text-blue-400 font-bold text-[11px] uppercase tracking-wider">Security Headers</div>
+                    ${
+                      rawResults?.security
+                        ? `
+                        <div class="text-zinc-300 text-[11px] space-y-0.5">
+                          <div>HTTPS: <strong class="${rawResults.security.isHttps ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.security.isHttps ? 'Yes' : 'No'}</strong></div>
+                          <div>HSTS: <strong class="${rawResults.security.hasHsts ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.security.hasHsts ? 'Present' : 'Missing'}</strong></div>
+                          <div>CSP: <strong class="${rawResults.security.hasCsp ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.security.hasCsp ? 'Present' : 'Missing'}</strong></div>
+                          <div>X-Frame-Options: <strong class="${rawResults.security.hasXFrameOptions ? 'text-emerald-400' : 'text-amber-400'}">${rawResults.security.hasXFrameOptions ? 'Present' : 'Missing'}</strong></div>
+                          <div>Referrer-Policy: <strong class="${rawResults.security.hasReferrerPolicy ? 'text-emerald-400' : 'text-amber-400'}">${rawResults.security.hasReferrerPolicy ? 'Present' : 'Missing'}</strong></div>
+                        </div>
+                      `
+                        : '<div class="text-zinc-500 text-[11px]">No raw security header data recorded</div>'
+                    }
+                  </div>
+
+                  <!-- SEO Metadata Diagnostics -->
+                  <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-lg space-y-1">
+                    <div class="text-purple-400 font-bold text-[11px] uppercase tracking-wider">SEO Crawl Diagnostics</div>
+                    ${
+                      rawResults?.seo
+                        ? `
+                        <div class="text-zinc-300 text-[11px] space-y-0.5">
+                          <div>Title: <strong class="${rawResults.seo.hasTitle ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.seo.hasTitle ? 'Present' : 'Missing'}</strong></div>
+                          <div>Meta Description: <strong class="${rawResults.seo.hasMetaDescription ? 'text-emerald-400' : 'text-amber-400'}">${rawResults.seo.hasMetaDescription ? 'Present' : 'Missing'}</strong></div>
+                          <div>H1 Count: <strong>${rawResults.seo.h1Count}</strong></div>
+                          <div>Canonical Tag: <strong>${rawResults.seo.hasCanonical ? 'Present' : 'Missing'}</strong></div>
+                          <div>Robots.txt: <strong>${rawResults.seo.hasRobotsTxt ? 'Present' : 'Missing'}</strong></div>
+                        </div>
+                      `
+                        : '<div class="text-zinc-500 text-[11px]">No raw SEO data recorded</div>'
+                    }
+                  </div>
+                </div>
+
+                <!-- Raw JSON Accordion -->
+                <details class="bg-zinc-900/60 border border-zinc-800 rounded-lg p-2">
+                  <summary class="cursor-pointer font-bold text-zinc-400 hover:text-white transition text-[11px]">
+                    🔍 View Complete Raw API Payload JSON (Debug Mode)
+                  </summary>
+                  <pre class="mt-2 p-3 bg-black/80 rounded border border-zinc-800 text-[10px] text-emerald-400 overflow-x-auto max-h-60 font-mono">${JSON.stringify({ rawResults, aiOutput, auditLogs }, null, 2)}</pre>
+                </details>
+              </div>
+            `;
+          })
+          .join('');
+      }
+    } catch (err) {
+      console.warn('Failed to load audit logs:', err);
+    }
+  }
+
+  if (reAuditForm) {
+    reAuditForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!reAuditFeedback || !reAuditInput) return;
+
+      const token = getStoredToken();
+      if (!token) {
+        handleUnauthorized();
+        return;
+      }
+
+      const targetVal = reAuditInput.value.trim();
+      if (!targetVal) return;
+
+      reAuditFeedback.className = 'text-xs px-3 py-2 rounded-lg font-mono bg-zinc-800 text-zinc-300 block';
+      reAuditFeedback.innerText = 'Initiating re-audit job...';
+
+      try {
+        const res = await fetch('/api/admin/re-audit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(targetVal.startsWith('http') ? { url: targetVal } : { auditId: targetVal }),
+        });
+
+        if (res.status === 401 || res.status === 403) {
+          handleUnauthorized();
+          return;
+        }
+
+        const data: any = await res.json();
+        if (res.ok && data.success) {
+          reAuditFeedback.className = 'text-xs px-3 py-2 rounded-lg font-mono bg-emerald-950 text-emerald-400 border border-emerald-800 block';
+          reAuditFeedback.innerHTML = `Success! Enqueued Re-audit (ID: <a href="/audit/${data.auditId}" target="_blank" class="underline font-bold">${data.auditId}</a>)`;
+          reAuditInput.value = '';
+          loadAdminData();
+        } else {
+          reAuditFeedback.className = 'text-xs px-3 py-2 rounded-lg font-mono bg-rose-950 text-rose-400 border border-rose-800 block';
+          reAuditFeedback.innerText = data.error || 'Failed to initiate re-audit.';
+        }
+      } catch (err: any) {
+        reAuditFeedback.className = 'text-xs px-3 py-2 rounded-lg font-mono bg-rose-950 text-rose-400 border border-rose-800 block';
+        reAuditFeedback.innerText = err.message || 'Network error.';
+      }
+    });
+  }
+
+  // Initial load
+  loadAdminData();
+</script>
