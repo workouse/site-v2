@@ -1,0 +1,82 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/Header.astro';
+import Footer from '../../../components/Footer.astro';
+import BlogCard from '../../../components/BlogCard.astro';
+import LanguageSwitch from '../../../components/LanguageSwitch.astro';
+import NewsletterSubscribe from '../../../components/NewsletterSubscribe.astro';
+import { getPostsByLang } from '../../../lib/blog';
+
+export const prerender = true;
+
+const posts = await getPostsByLang('tr');
+
+// Extract unique tags
+const allTags = Array.from(new Set(posts.flatMap((p) => p.data.tags)));
+---
+
+<Layout
+  title="Mühendislik Blogu | Workouse"
+  description="Workouse mühendislik ekibinden sistem mimarisi, yüksek performanslı web geliştirme ve ölçeklenebilir altyapı üzerine yazılar."
+  lang="tr"
+>
+  <Fragment slot="head">
+    <link rel="alternate" hreflang="tr" href="https://workouse.com/blog/tr" />
+    <link rel="alternate" hreflang="en" href="https://workouse.com/blog" />
+    <link rel="alternate" hreflang="x-default" href="https://workouse.com/blog" />
+  </Fragment>
+
+  <Header />
+
+  <main id="main-content" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-10 border-b border-zinc-900 mb-12">
+      <div class="space-y-3 max-w-2xl">
+        <div class="inline-flex items-center gap-2 text-xs font-mono font-bold tracking-widest text-brand-yellow uppercase">
+          <span>// MÜHENDİSLİK GÜNLÜĞÜ</span>
+        </div>
+        <h1 class="font-display text-4xl sm:text-5xl font-bold tracking-tight text-zinc-50">
+          Teknik Blog
+        </h1>
+        <p class="text-zinc-400 text-base sm:text-lg leading-relaxed">
+          Yazılım mimarisi, edge computing, Haskell, Rust ve yüksek ölçekli sistemler üzerine teknik yazılar.
+        </p>
+      </div>
+
+      <!-- Language Selector -->
+      <div class="shrink-0">
+        <LanguageSwitch currentLang="tr" targetPathEn="/blog" targetPathTr="/blog/tr" />
+      </div>
+    </div>
+
+    <!-- Tags Filter Header if available -->
+    {allTags.length > 0 && (
+      <div class="flex flex-wrap items-center gap-2 mb-10">
+        <span class="text-xs font-mono text-zinc-500 uppercase mr-2">Konular:</span>
+        {allTags.map((tag) => (
+          <span class="text-xs font-mono px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300">
+            #{tag}
+          </span>
+        ))}
+      </div>
+    )}
+
+    <!-- Posts Grid -->
+    {posts.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+        {posts.map((post) => (
+          <BlogCard post={post} lang="tr" />
+        ))}
+      </div>
+    ) : (
+      <div class="text-center py-20 glow-card rounded-2xl p-8 mb-16">
+        <p class="text-zinc-400 text-base">Henüz yayınlanmış yazı bulunmamaktadır.</p>
+      </div>
+    )}
+
+    <!-- Newsletter Subscription Section -->
+    <NewsletterSubscribe lang="tr" />
+  </main>
+
+  <Footer />
+</Layout>

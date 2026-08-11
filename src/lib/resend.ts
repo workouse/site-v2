@@ -37,6 +37,7 @@ export interface UpsertResendContactOptions {
   apiKey: string;
   email: string;
   siteUrl: string;
+  language?: string;
   firstName?: string;
   lastName?: string;
   segmentId?: string;
@@ -68,7 +69,7 @@ async function sendResendEmail(options: ResendSendOptions): Promise<void> {
 }
 
 /**
- * Upsert contact to Resend Audiences/Contacts with default topics, segment, and site_url custom property.
+ * Upsert contact to Resend Audiences/Contacts with default topics, segment, site_url, and language property.
  */
 export async function upsertResendContact(options: UpsertResendContactOptions): Promise<void> {
   if (!options.apiKey || options.apiKey === 'mock_key_for_dev') {
@@ -77,6 +78,7 @@ export async function upsertResendContact(options: UpsertResendContactOptions): 
 
   const topicsToSubscribe = options.topics ?? RESEND_TOPICS;
   const segmentId = options.segmentId ?? RESEND_AUDIT_SEGMENT_ID;
+  const language = options.language ?? 'en';
 
   const payload = {
     email: options.email,
@@ -91,9 +93,11 @@ export async function upsertResendContact(options: UpsertResendContactOptions): 
     })),
     properties: {
       site_url: options.siteUrl,
+      language: language,
     },
     custom_properties: {
       site_url: options.siteUrl,
+      language: language,
     },
   };
 

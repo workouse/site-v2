@@ -8,7 +8,7 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const env = locals.runtime?.env;
-    let body: { email?: string; siteUrl?: string } = {};
+    let body: { email?: string; siteUrl?: string; language?: string } = {};
 
     try {
       body = await request.json();
@@ -21,6 +21,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const email = body.email?.trim().toLowerCase();
     let siteUrl = body.siteUrl?.trim();
+    const language = (body.language?.trim().toLowerCase() === 'tr' ? 'tr' : 'en');
 
     if (!email) {
       return new Response(
@@ -51,6 +52,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       apiKey: resendApiKey,
       email,
       siteUrl,
+      language,
       segmentId: RESEND_SUBSCRIPTION_SEGMENT_ID,
     });
 

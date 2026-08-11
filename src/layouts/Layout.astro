@@ -2,22 +2,42 @@
 interface Props {
   title?: string;
   description?: string;
+  image?: string;
+  ogType?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  author?: string;
+  canonical?: string;
+  lang?: string;
 }
 
 const {
   title = "Workouse | Elite Fullstack Engineering for Scale",
   description = "Workouse is a boutique, solo software development house building resilient, high-scale web applications for forward-thinking companies. Engineered by Emre Yılmaz (15+ years experience).",
+  image = "https://avatars.githubusercontent.com/u/55496985?s=400&u=cf5cb2d74029d653813b39d624e44b8f74bc63c1&v=4",
+  ogType = "website",
+  publishedTime,
+  modifiedTime,
+  author = "Emre Yılmaz",
+  canonical,
+  lang = "en",
 } = Astro.props;
 
-const canonicalURL = new URL(Astro.url.pathname, "https://workouse.com");
-const logoURL = "https://avatars.githubusercontent.com/u/55496985?s=400&u=cf5cb2d74029d653813b39d624e44b8f74bc63c1&v=4";
+const canonicalURL = canonical
+  ? new URL(canonical, "https://workouse.com")
+  : new URL(Astro.url.pathname, "https://workouse.com");
 
-const schema = {
+const defaultLogo = "https://avatars.githubusercontent.com/u/55496985?s=400&u=cf5cb2d74029d653813b39d624e44b8f74bc63c1&v=4";
+const ogImage = image || defaultLogo;
+
+const professionalServiceSchema = {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
+  "@id": "https://workouse.com/#organization",
   "name": "Workouse",
   "url": "https://workouse.com",
-  "image": logoURL,
+  "logo": defaultLogo,
+  "image": defaultLogo,
   "description": description,
   "founder": {
     "@type": "Person",
@@ -39,18 +59,34 @@ const schema = {
     "https://x.com/workousecom"
   ]
 };
+
+const webSiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "https://workouse.com/#website",
+  "url": "https://workouse.com",
+  "name": "Workouse",
+  "description": "Boutique Software Engineering & Automated Site Audits",
+  "publisher": {
+    "@id": "https://workouse.com/#organization"
+  },
+  "inLanguage": lang === "tr" ? "tr-TR" : "en-US"
+};
 ---
 
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang={lang} class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
 
     <!-- Favicons -->
-    <link rel="icon" type="image/png" href={logoURL} />
-    <link rel="apple-touch-icon" href={logoURL} />
+    <link rel="icon" type="image/png" href={defaultLogo} />
+    <link rel="apple-touch-icon" href={defaultLogo} />
+
+    <!-- RSS Feed Link -->
+    <link rel="alternate" type="application/rss+xml" title="Workouse Blog RSS Feed" href="https://workouse.com/rss.xml" />
 
     <!-- Canonical URL -->
     <link rel="canonical" href={canonicalURL} />
@@ -67,21 +103,31 @@ const schema = {
     <meta name="color-scheme" content="dark" />
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={logoURL} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={title} />
     <meta property="og:site_name" content="Workouse" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content={lang === "tr" ? "tr_TR" : "en_US"} />
+    {ogType === 'article' && publishedTime && (
+      <meta property="article:published_time" content={publishedTime} />
+    )}
+    {ogType === 'article' && modifiedTime && (
+      <meta property="article:modified_time" content={modifiedTime} />
+    )}
+    {ogType === 'article' && author && (
+      <meta property="article:author" content={author} />
+    )}
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary" />
+    <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:site" content="@workousecom" />
     <meta property="twitter:url" content={canonicalURL} />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={logoURL} />
+    <meta property="twitter:image" content={ogImage} />
 
     <!-- Resource Hints: Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -89,7 +135,11 @@ const schema = {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
     <!-- Structured Data -->
-    <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(professionalServiceSchema)} />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(webSiteSchema)} />
+
+    <!-- Custom Head Slot for Page-Specific Meta / Hreflang Tags -->
+    <slot name="head" />
   </head>
   <body class="bg-zinc-950 text-zinc-50 font-sans selection:bg-brand-blue selection:text-brand-yellow min-h-screen antialiased overflow-x-hidden relative">
     <!-- Skip to main content (Accessibility) -->

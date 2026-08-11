@@ -1,5 +1,9 @@
 # Cloudflare Workers & Pages redirects
 # https://developers.cloudflare.com/pages/configuration/redirects/
 
+# Redirect legacy /sitemap.xml requests to auto-generated sitemap index
+/sitemap.xml /sitemap-index.xml 301
+
 # Note: www -> apex domain redirect is handled natively in worker entry
+
 
