@@ -141,6 +141,13 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"blog": {
+"en/cloudflare-os-architecture-and-enterprise-viability.md": {
+	id: "en/cloudflare-os-architecture-and-enterprise-viability.md";
+  slug: "en/cloudflare-os-architecture-and-enterprise-viability";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
 "en/kurumsal-yapay-zeka-api-maliyetleri.md": {
 	id: "en/kurumsal-yapay-zeka-api-maliyetleri.md";
   slug: "en/kurumsal-yapay-zeka-api-maliyetleri";
@@ -158,6 +165,13 @@ declare module 'astro:content' {
 "en/yapay-zeka-ag-gecidi-ai-gateway.md": {
 	id: "en/yapay-zeka-ag-gecidi-ai-gateway.md";
   slug: "en/yapay-zeka-ag-gecidi-ai-gateway";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
+"tr/cloudflare-os-architecture-and-enterprise-viability.md": {
+	id: "tr/cloudflare-os-architecture-and-enterprise-viability.md";
+  slug: "tr/cloudflare-os-architecture-and-enterprise-viability";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">

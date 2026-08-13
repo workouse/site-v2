@@ -4,7 +4,8 @@ export type AuditStatus =
   | 'pending_verification'
   | 'queued'
   | 'running'
-  | 'ai_processing'
+  | 'scoring'
+  | 'enriching'
   | 'complete'
   | 'failed';
 
@@ -32,6 +33,10 @@ export interface RawResults {
 export interface AIOutput {
   audit_id: string;
   score: number;
+  performance_score: number;
+  security_score: number;
+  seo_score: number;
+  standards_score: number;
   issues_json: string;
   recommendation: 'fix' | 'rebuild';
   recommendation_reason: string;
@@ -66,8 +71,9 @@ export interface Env {
   AI: Ai;
   RESEND_API_KEY: string;
   PAGESPEED_API_KEY?: string;
+  CF_AI_GATEWAY_TOKEN: string;
+  CF_AI_GATEWAY_URL: string;
   ADMIN_EMAIL?: string;
   ADMIN_SECRET_KEY?: string;
   APP_URL?: string;
 }
-

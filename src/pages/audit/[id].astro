@@ -39,12 +39,16 @@ if (id && env?.DB) {
       };
 
       if (audit.status === 'complete') {
-        const aiRow = await env.DB.prepare(
-          'SELECT score, issues_json, recommendation, recommendation_reason, summary, processed_at FROM ai_output WHERE audit_id = ?'
+        const resultRow = await env.DB.prepare(
+          'SELECT score, performance_score, security_score, seo_score, standards_score, issues_json, recommendation, recommendation_reason, summary, processed_at FROM audit_results WHERE audit_id = ?'
         )
           .bind(id)
           .first<{
             score: number;
+            performance_score: number;
+            security_score: number;
+            seo_score: number;
+            standards_score: number;
             issues_json: string;
             recommendation: 'fix' | 'rebuild';
             recommendation_reason: string;
@@ -52,19 +56,23 @@ if (id && env?.DB) {
             processed_at: number;
           }>();
 
-        if (aiRow) {
+        if (resultRow) {
           let issues = [];
           try {
-            issues = JSON.parse(aiRow.issues_json);
+            issues = JSON.parse(resultRow.issues_json);
           } catch {}
 
           aiOutput = {
-            score: aiRow.score,
+            score: resultRow.score,
+            performanceScore: resultRow.performance_score,
+            securityScore: resultRow.security_score,
+            seoScore: resultRow.seo_score,
+            standardsScore: resultRow.standards_score,
             issues,
-            recommendation: aiRow.recommendation,
-            recommendationReason: aiRow.recommendation_reason,
-            summary: aiRow.summary,
-            processedAt: aiRow.processed_at,
+            recommendation: resultRow.recommendation,
+            recommendationReason: resultRow.recommendation_reason,
+            summary: resultRow.summary,
+            processedAt: resultRow.processed_at,
           };
         }
       }

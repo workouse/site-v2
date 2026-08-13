@@ -42,6 +42,10 @@ binding = "AI"
 name = "AUDIT_STATUS_DO"
 class_name = "AuditStatusDO"
 
+[vars]
+# CF_AI_GATEWAY_TOKEN is set as a secret via: wrangler secret put CF_AI_GATEWAY_TOKEN
+CF_AI_GATEWAY_URL = "https://ai.workouse.com/compat/chat/completions"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["AuditStatusDO"]

@@ -13,6 +13,10 @@ interface Props {
   };
   aiOutput: {
     score: number;
+    performanceScore: number;
+    securityScore: number;
+    seoScore: number;
+    standardsScore: number;
     issues: AuditIssue[];
     recommendation: 'fix' | 'rebuild';
     recommendationReason: string;
@@ -34,16 +38,29 @@ const infoIssues = aiOutput.issues.filter(i => i.severity === 'info');
 const scoreColor = aiOutput.score >= 80 ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10'
   : aiOutput.score >= 60 ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
   : 'text-red-400 border-red-500/30 bg-red-500/10';
+
+function subScoreColor(score: number): string {
+  if (score >= 80) return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+  if (score >= 60) return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+  return 'text-red-400 bg-red-500/10 border-red-500/20';
+}
+
+const subScores = [
+  { label: 'Performance', value: aiOutput.performanceScore },
+  { label: 'Security',    value: aiOutput.securityScore },
+  { label: 'SEO',         value: aiOutput.seoScore },
+  { label: 'Standards',   value: aiOutput.standardsScore },
+];
 ---
 
 <div class="max-w-5xl mx-auto space-y-8">
-  
+
   <!-- Action Toolbar (PDF Export, Share Link, Request Quote) -->
   <AuditReportActions auditId={audit.id} />
 
   <!-- Header Overview Card -->
   <div class="glow-card p-6 sm:p-10 rounded-3xl bg-zinc-950/90 border border-zinc-800 shadow-2xl backdrop-blur-xl relative overflow-hidden">
-    <!-- Ambient ambient glow -->
+    <!-- Ambient glow -->
     <div class="absolute -top-24 -right-24 w-72 h-72 bg-brand-yellow/10 rounded-full blur-3xl"></div>
 
     <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
@@ -58,15 +75,26 @@ const scoreColor = aiOutput.score >= 80 ? 'text-emerald-400 border-emerald-500/3
           {audit.url}
         </h1>
         <p class="text-xs sm:text-sm text-zinc-400 font-mono">
-          Evaluated via PageSpeed, Security Header Scanner & Workers AI
+          Deep-scan analysis across performance, security, SEO, and web standards.
         </p>
       </div>
 
-      <!-- Score Gauge -->
-      <div class="flex items-center gap-4 shrink-0">
+      <!-- Score Gauge + Sub-Scores -->
+      <div class="flex flex-col items-center gap-3 shrink-0">
+        <!-- Overall Score -->
         <div class={`w-28 h-28 rounded-2xl border-2 flex flex-col items-center justify-center p-2 ${scoreColor}`}>
           <span class="text-3xl font-extrabold font-mono tracking-tight">{aiOutput.score}</span>
           <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-400 mt-0.5">Health Score</span>
+        </div>
+
+        <!-- 4 Sub-score Pills -->
+        <div class="grid grid-cols-2 gap-1.5 w-full">
+          {subScores.map(({ label, value }) => (
+            <div class={`flex items-center justify-between px-2 py-1 rounded-lg border text-[10px] font-mono font-bold ${subScoreColor(value)}`}>
+              <span class="text-zinc-400 font-normal">{label}</span>
+              <span>{value}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -115,6 +143,31 @@ const scoreColor = aiOutput.score >= 80 ? 'text-emerald-400 border-emerald-500/3
       <div class="text-[11px] text-emerald-400 font-bold pt-1">
         Flat rate transparent pricing
       </div>
+    </div>
+  </div>
+
+  <!-- Category Score Breakdown Bar -->
+  <div class="glow-card p-6 sm:p-8 rounded-3xl bg-zinc-950/90 border border-zinc-800 space-y-5">
+    <h2 class="font-display text-lg font-bold text-white">Score Breakdown by Category</h2>
+    <div class="space-y-4">
+      {subScores.map(({ label, value }) => {
+        const barColor = value >= 80 ? 'bg-emerald-500' : value >= 60 ? 'bg-amber-500' : 'bg-red-500';
+        const textColor = value >= 80 ? 'text-emerald-400' : value >= 60 ? 'text-amber-400' : 'text-red-400';
+        return (
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between font-mono text-xs">
+              <span class="text-zinc-300 font-semibold">{label}</span>
+              <span class={`font-bold ${textColor}`}>{value}/100</span>
+            </div>
+            <div class="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                class={`h-full rounded-full transition-all duration-700 ${barColor}`}
+                style={`width: ${value}%`}
+              ></div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   </div>
 

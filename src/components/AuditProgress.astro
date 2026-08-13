@@ -54,19 +54,28 @@ const { auditId, initialStatus } = Astro.props;
         <span class="step-status text-[11px] text-zinc-500">Waiting...</span>
       </div>
 
-      <!-- Step 4: AI Analysis & Pricing Engine -->
-      <div id="step-ai_processing" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-850 bg-zinc-900/50">
+      <!-- Step 4: Scoring Engine -->
+      <div id="step-scoring" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-850 bg-zinc-900/50">
         <div class="flex items-center gap-3">
           <span class="step-icon w-6 h-6 rounded-full flex items-center justify-center bg-zinc-800 text-zinc-400 font-bold text-[10px]">4</span>
-          <span class="text-zinc-300">Workers AI & Pricing Calculation</span>
+          <span class="text-zinc-300">Multi-Dimension Score Engine</span>
         </div>
         <span class="step-status text-[11px] text-zinc-500">Waiting...</span>
       </div>
 
-      <!-- Step 5: Report Synthesis -->
-      <div id="step-complete" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-850 bg-zinc-900/50">
+      <!-- Step 5: Gemini Copy Enrichment -->
+      <div id="step-enriching" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-850 bg-zinc-900/50">
         <div class="flex items-center gap-3">
           <span class="step-icon w-6 h-6 rounded-full flex items-center justify-center bg-zinc-800 text-zinc-400 font-bold text-[10px]">5</span>
+          <span class="text-zinc-300">Translating Findings for Your Business</span>
+        </div>
+        <span class="step-status text-[11px] text-zinc-500">Waiting...</span>
+      </div>
+
+      <!-- Step 6: Report Synthesis -->
+      <div id="step-complete" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-850 bg-zinc-900/50">
+        <div class="flex items-center gap-3">
+          <span class="step-icon w-6 h-6 rounded-full flex items-center justify-center bg-zinc-800 text-zinc-400 font-bold text-[10px]">6</span>
           <span class="text-zinc-300">Generating Full Audit Report</span>
         </div>
         <span class="step-status text-[11px] text-zinc-500">Waiting...</span>
@@ -91,7 +100,7 @@ const { auditId, initialStatus } = Astro.props;
 
     const statusMessage = document.getElementById('statusMessage');
 
-    const stages = ['verification', 'queued', 'running', 'ai_processing', 'complete'];
+    const stages = ['verification', 'queued', 'running', 'scoring', 'enriching', 'complete'];
 
     function updateStepUI(status: string) {
       const idx = stages.indexOf(status);
@@ -141,8 +150,11 @@ const { auditId, initialStatus } = Astro.props;
           case 'running':
             statusMessage.textContent = 'Scraping PageSpeed metrics, security headers & HTML tags...';
             break;
-          case 'ai_processing':
-            statusMessage.textContent = 'Workers AI evaluating findings & mapping fix estimates...';
+          case 'scoring':
+            statusMessage.textContent = 'Computing your performance, security, SEO, and standards scores...';
+            break;
+          case 'enriching':
+            statusMessage.textContent = 'Translating technical findings into clear business insights...';
             break;
           case 'complete':
             statusMessage.textContent = 'Audit complete! Loading full report...';
