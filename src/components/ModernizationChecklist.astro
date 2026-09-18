@@ -1,0 +1,349 @@
+---
+import type { ModernizationReport, ModernizationChecklistItem, DetectedExtension } from '../lib/types';
+
+interface Props {
+  report: ModernizationReport;
+  auditId: string;
+  url: string;
+}
+
+const { report, auditId, url } = Astro.props;
+const { techStack, checklist, overallDebtLevel, targetStackRecommendation, platformContext, platformSummary } = report;
+
+const statusColors: Record<string, { bg: string; border: string; text: string; label: string }> = {
+  'end-of-life': { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400', label: 'End of Life (EOL)' },
+  'deprecated': { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', label: 'Deprecated' },
+  'legacy': { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', label: 'Legacy Stack' },
+  'modern': { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', label: 'Modern Standard' },
+  'cutting-edge': { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', label: 'Cutting Edge' },
+};
+
+const extensionStatusStyles: Record<string, { bg: string; border: string; text: string; label: string }> = {
+  'bloated': { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', label: 'High Overhead' },
+  'legacy': { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', label: 'Legacy Version' },
+  'good': { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', label: 'Standard' },
+  'optimal': { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', label: 'High Performance' },
+};
+
+const debtColor = overallDebtLevel === 'Critical' ? 'text-red-400 border-red-500/40 bg-red-500/10'
+  : overallDebtLevel === 'High' ? 'text-amber-400 border-amber-500/40 bg-amber-500/10'
+  : overallDebtLevel === 'Moderate' ? 'text-yellow-400 border-yellow-500/40 bg-yellow-500/10'
+  : 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10';
+
+const totalEstHours = Math.round(checklist.reduce((acc, i) => acc + i.estimatedMinutes, 0) / 60);
+const totalEstCost = Math.ceil(checklist.reduce((acc, i) => acc + (i.price || 0), 0));
+
+const platformHeadings: Record<string, { badge: string; title: string; subtitle: string; cta: string }> = {
+  wordpress: {
+    badge: 'WORDPRESS ECOSYSTEM AUDIT',
+    title: 'WordPress Performance & Modernization Action Plan',
+    subtitle: 'Tailored WordPress optimization plan designed to eliminate plugin bloat, implement Cloudflare edge caching, and accelerate mobile Core Web Vitals.',
+    cta: 'Request WordPress Optimization Quote →',
+  },
+  shopify: {
+    badge: 'SHOPIFY STOREFRONT AUDIT',
+    title: 'Shopify Storefront & App Optimization Plan',
+    subtitle: 'Streamline third-party app script bloat, upgrade to Online Store 2.0 native sections, and offload analytics pixels to edge servers for higher conversion rates.',
+    cta: 'Request Shopify Speed Optimization Quote →',
+  },
+  wix: {
+    badge: 'WIX ECOSYSTEM AUDIT',
+    title: 'Wix Layout & Studio Modernization Plan',
+    subtitle: 'Upgrade legacy Wix absolute-position rendering to modern Wix Studio or Webflow for smooth, responsive 60fps mobile browsing.',
+    cta: 'Request Wix Studio / Webflow Upgrade Quote →',
+  },
+  webflow: {
+    badge: 'WEBFLOW PERFORMANCE AUDIT',
+    title: 'Webflow Global Edge & Interaction Plan',
+    subtitle: 'Deploy Cloudflare global reverse-proxy HTML caching and optimize animation scripts for instant sub-50ms loading.',
+    cta: 'Request Webflow Edge Optimization Quote →',
+  },
+  squarespace: {
+    badge: 'SQUARESPACE AUDIT',
+    title: 'Squarespace 7.1 Fluid Engine Modernization',
+    subtitle: 'Upgrade to modern CSS Grid layout engines and prune custom code injection scripts.',
+    cta: 'Request Squarespace Optimization Quote →',
+  },
+  magento: {
+    badge: 'MAGENTO / ADOBE COMMERCE AUDIT',
+    title: 'Magento Hyvä Themes & Edge Cache Modernization',
+    subtitle: 'Replace monolithic RequireJS/Knockout.js frontends with lightweight Hyvä Themes for sub-second e-commerce loading.',
+    cta: 'Request Magento Modernization Quote →',
+  },
+  custom: {
+    badge: 'TECH STACK AUDIT & MODERNISATION',
+    title: 'Modern Web Architecture & Modernisation Plan',
+    subtitle: 'Automated architectural inspection identifying obsolete frameworks, End-of-Life (EOL) components, and step-by-step upgrades to modern edge serverless.',
+    cta: 'Request Modernisation Quote →',
+  },
+};
+
+const currentHeading = platformHeadings[platformContext] || platformHeadings.custom;
+---
+
+<div class="glow-card p-6 sm:p-10 rounded-3xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl backdrop-blur-xl space-y-8 relative overflow-hidden transition-colors duration-300">
+  <!-- Ambient background glow -->
+  <div class="absolute -bottom-12 -left-12 sm:-bottom-24 sm:-left-24 w-48 h-48 sm:w-72 sm:h-72 bg-brand-cyan/10 rounded-full blur-2xl sm:blur-3xl pointer-events-none"></div>
+
+  <!-- Section Header -->
+  <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-zinc-200 dark:border-zinc-800/80">
+    <div class="space-y-2">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-mono font-bold uppercase tracking-widest text-brand-blue dark:text-brand-yellow px-2.5 py-0.5 rounded-full bg-brand-yellow/10 border border-brand-yellow/30">
+          {currentHeading.badge}
+        </span>
+        <span class="text-xs font-mono text-zinc-500">Auto-Detected Diagnostics</span>
+      </div>
+      <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white tracking-tight">
+        {currentHeading.title}
+      </h2>
+      <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 max-w-2xl">
+        {platformSummary || currentHeading.subtitle}
+      </p>
+    </div>
+
+    <!-- Tech Debt Gauge -->
+    <div class={`px-5 py-3 rounded-2xl border flex items-center gap-4 shrink-0 ${debtColor}`}>
+      <div class="text-right">
+        <div class="text-[10px] font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Tech Debt Level</div>
+        <div class="text-xl font-extrabold font-display">{overallDebtLevel} Risk</div>
+      </div>
+      <div class="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-900/80 border border-zinc-300 dark:border-zinc-700/50 flex flex-col items-center justify-center font-mono">
+        <span class="text-base font-extrabold">{techStack.techDebtScore}</span>
+        <span class="text-[8px] text-zinc-500">/100</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detected Tech Stack Grid -->
+  <div class="space-y-4">
+    <div class="flex items-center justify-between">
+      <h3 class="text-xs font-mono uppercase tracking-wider font-bold text-zinc-900 dark:text-zinc-300 flex items-center gap-2">
+        <svg class="w-4 h-4 text-brand-blue dark:text-brand-yellow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        Detected Core Tech Stack ({techStack.items.length})
+      </h3>
+      <span class="text-xs text-zinc-600 dark:text-zinc-500 font-mono">{techStack.summary}</span>
+    </div>
+
+    {techStack.items.length === 0 ? (
+      <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400 text-center font-mono">
+        No legacy frameworks or third-party server headers were exposed by the target application.
+      </div>
+    ) : (
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {techStack.items.map((tech) => {
+          const style = statusColors[tech.status] || statusColors['legacy'];
+          return (
+            <div class="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 transition flex flex-col justify-between space-y-3">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h4 class="font-bold text-sm text-zinc-950 dark:text-white">{tech.name}</h4>
+                    {tech.version && (
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300">
+                        v{tech.version}
+                      </span>
+                    )}
+                  </div>
+                  <div class="text-[10px] font-mono text-zinc-600 dark:text-zinc-500 mt-0.5">
+                    Category: {tech.category} · Detected via {tech.detectedVia}
+                  </div>
+                </div>
+
+                <span class={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${style.bg} ${style.border} ${style.text}`}>
+                  {style.label}
+                </span>
+              </div>
+
+              <p class="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2">{tech.description}</p>
+
+              {tech.modernReplacement && (
+                <div class="pt-2 border-t border-zinc-200 dark:border-zinc-800/60 flex items-center gap-2 text-[11px]">
+                  <span class="text-zinc-600 dark:text-zinc-500 font-mono">Optimal Architecture:</span>
+                  <span class="font-semibold text-brand-blue dark:text-brand-cyan">{tech.modernReplacement}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+
+  <!-- Detected Platform Extensions & Plugins Breakdown (WordPress / Shopify / etc.) -->
+  {techStack.detectedExtensions && techStack.detectedExtensions.length > 0 && (
+    <div class="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800/80">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-mono uppercase tracking-wider font-bold text-zinc-900 dark:text-zinc-300 flex items-center gap-2">
+          <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+          </svg>
+          Detected Ecosystem Plugins & Apps ({techStack.detectedExtensions.length})
+        </h3>
+        <span class="text-xs text-zinc-600 dark:text-zinc-500 font-mono">Performance Impact & Alternative Recommendations</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {techStack.detectedExtensions.map((ext: DetectedExtension) => {
+          const style = extensionStatusStyles[ext.currentStatus] || extensionStatusStyles['good'];
+          return (
+            <div class="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 transition flex flex-col justify-between space-y-2 text-xs">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="font-bold text-zinc-950 dark:text-white flex items-center gap-1.5">
+                    <span>{ext.name}</span>
+                    <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 capitalize">
+                      {ext.category.replace('_', ' ')}
+                    </span>
+                  </div>
+                  {ext.description && (
+                    <p class="text-[11px] text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-2">{ext.description}</p>
+                  )}
+                </div>
+
+                <span class={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border shrink-0 ${style.bg} ${style.border} ${style.text}`}>
+                  {style.label}
+                </span>
+              </div>
+
+              {ext.suggestedAlternative && (
+                <div class="pt-2 border-t border-zinc-200 dark:border-zinc-800/50 flex items-start gap-1.5 text-[10px]">
+                  <span class="text-zinc-500 font-mono font-semibold shrink-0">Better Alternative:</span>
+                  <span class="font-bold text-brand-blue dark:text-brand-cyan">{ext.suggestedAlternative}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  )}
+
+  <!-- Recommended Architecture Card -->
+  {techStack.techDebtScore === 0 && checklist.length === 0 ? (
+    <div class="p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-zinc-50 to-emerald-500/10 dark:from-emerald-950/40 dark:via-zinc-900/50 dark:to-zinc-950 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">🎉 Optimal Architecture Verified</div>
+        <div class="text-sm font-bold text-zinc-950 dark:text-white font-mono">{targetStackRecommendation}</div>
+        <div class="text-xs text-zinc-600 dark:text-zinc-400">Your site is already operating on modern standards with minimal technical debt.</div>
+      </div>
+      <div class="shrink-0 font-mono text-xs text-right">
+        <div class="text-zinc-600 dark:text-zinc-500">Est. Modernization Required</div>
+        <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400">0 hrs · $0 USD</div>
+      </div>
+    </div>
+  ) : (
+    <div class="p-5 rounded-2xl bg-gradient-to-r from-zinc-50 via-white to-zinc-50 dark:from-zinc-900/90 dark:via-zinc-900/40 dark:to-zinc-950 border border-brand-yellow/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="text-[10px] font-mono font-bold uppercase tracking-widest text-brand-blue dark:text-brand-yellow">Target Modern Architecture</div>
+        <div class="text-sm font-bold text-zinc-950 dark:text-white font-mono">{targetStackRecommendation}</div>
+        <div class="text-xs text-zinc-600 dark:text-zinc-400">Sub-50ms edge caching, clean responsive layout rendering, and optimized asset pipelines.</div>
+      </div>
+      <div class="shrink-0 font-mono text-xs text-right">
+        <div class="text-zinc-600 dark:text-zinc-500">Est. Total Modernisation</div>
+        <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{totalEstHours} hrs · ${totalEstCost} USD</div>
+      </div>
+    </div>
+  )}
+
+  <!-- Step-by-step Modernisation Checklist -->
+  <div class="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800/80">
+    <div class="flex items-center justify-between">
+      <h3 class="text-xs font-mono uppercase tracking-wider font-bold text-zinc-900 dark:text-zinc-300 flex items-center gap-2">
+        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Prioritized Action Plan ({checklist.length} Tasks)
+      </h3>
+      <span class="text-xs text-zinc-600 dark:text-zinc-500 font-mono">Ranked by Risk & ROI</span>
+    </div>
+
+    {checklist.length === 0 ? (
+      <div class="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2">
+        <div class="text-base font-bold text-emerald-600 dark:text-emerald-400 font-display">🎉 Fully Optimized!</div>
+        <p class="text-xs text-zinc-700 dark:text-zinc-300 font-sans max-w-xl mx-auto">
+          No platform migrations or legacy replacements are required. Your website is built on high-performance architecture and edge infrastructure.
+        </p>
+      </div>
+    ) : (
+      <div class="space-y-4" id="modernization-checklist-container">
+        {checklist.map((item, idx) => {
+          const priorityBadge = item.priority === 'critical'
+            ? 'bg-red-500/10 text-red-500 dark:text-red-400 border-red-500/30'
+            : item.priority === 'recommended'
+            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+            : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30';
+
+          return (
+            <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition space-y-4">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-7 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-xs font-mono font-bold text-brand-blue dark:text-brand-yellow">
+                    0{idx + 1}
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-sm text-zinc-950 dark:text-white">{item.title}</h4>
+                    <span class="text-[10px] font-mono text-zinc-600 dark:text-zinc-500">Category: {item.category}</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${priorityBadge}`}>
+                    {item.priority.replace('_', ' ')}
+                  </span>
+                  <span class="text-xs font-mono font-bold text-zinc-800 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-800 px-2.5 py-0.5 rounded-lg border border-zinc-300 dark:border-zinc-700">
+                    ${item.price}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Tech Transition Pill -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-xl bg-white dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 font-mono text-xs">
+                <div class="flex items-center gap-2 text-red-500 dark:text-red-400/90">
+                  <span class="text-zinc-600 dark:text-zinc-500 shrink-0">CURRENT:</span>
+                  <span class="truncate font-semibold">{item.currentTech}</span>
+                </div>
+                <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                  <span class="text-zinc-600 dark:text-zinc-500 shrink-0">TARGET:</span>
+                  <span class="truncate font-semibold">{item.targetTech}</span>
+                </div>
+              </div>
+
+              <!-- Why Modernize & Business Impact -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div class="space-y-1">
+                  <span class="font-mono text-[10px] uppercase font-bold text-zinc-600 dark:text-zinc-500">Technical Rationale</span>
+                  <p class="text-zinc-800 dark:text-zinc-300 leading-relaxed">{item.whyModernize}</p>
+                </div>
+                <div class="space-y-1">
+                  <span class="font-mono text-[10px] uppercase font-bold text-zinc-600 dark:text-zinc-500">Business & Customer Benefit</span>
+                  <p class="text-zinc-800 dark:text-zinc-300 leading-relaxed">{item.businessImpact}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+
+  <!-- Modernization CTA -->
+  <div class="pt-6 border-t border-zinc-200 dark:border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="space-y-1 text-center sm:text-left">
+      <h4 class="font-bold text-sm text-zinc-950 dark:text-white">Need turn-key optimization or migration?</h4>
+      <p class="text-xs text-zinc-600 dark:text-zinc-400">Our engineering team can execute full platform tuning with zero downtime.</p>
+    </div>
+
+    <button
+      type="button"
+      data-modal-target="audit-lead-modal"
+      data-service-type="rebuild"
+      class="px-6 py-3 rounded-xl bg-brand-blue dark:bg-gradient-to-r dark:from-brand-yellow dark:via-amber-400 dark:to-brand-yellow text-white dark:text-zinc-950 font-bold text-xs uppercase tracking-wider font-mono hover:bg-blue-600 dark:hover:brightness-110 shadow-lg transition cursor-pointer shrink-0"
+    >
+      {currentHeading.cta}
+    </button>
+  </div>
+</div>
+

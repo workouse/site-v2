@@ -89,7 +89,7 @@ const schema = {
     <div class="flex items-center justify-between gap-4 mb-8">
       <a
         href="/blog"
-        class="inline-flex items-center gap-2 text-xs font-mono font-semibold uppercase text-zinc-400 hover:text-brand-yellow transition"
+        class="inline-flex items-center gap-2 text-xs font-mono font-semibold uppercase text-zinc-600 dark:text-zinc-400 hover:text-brand-blue dark:hover:text-brand-yellow transition"
       >
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -101,9 +101,9 @@ const schema = {
     </div>
 
     <!-- Article Header -->
-    <header class="space-y-4 pb-8 border-b border-zinc-900 mb-10">
-      <div class="flex flex-wrap items-center gap-3 text-xs font-mono text-zinc-400">
-        <span class="px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-brand-yellow font-medium">
+    <header class="space-y-4 pb-8 border-b border-zinc-200 dark:border-zinc-900 mb-10">
+      <div class="flex flex-wrap items-center gap-3 text-xs font-mono text-zinc-600 dark:text-zinc-400">
+        <span class="px-2.5 py-0.5 rounded-full bg-brand-yellow/10 border border-brand-yellow/30 text-brand-blue dark:text-brand-yellow font-medium">
           ENGLISH
         </span>
         <time datetime={post.data.pubDate.toISOString()}>{formattedDate}</time>
@@ -113,11 +113,11 @@ const schema = {
         <span>By {post.data.author}</span>
       </div>
 
-      <h1 class="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-zinc-50 leading-tight">
+      <h1 class="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 leading-tight">
         {post.data.title}
       </h1>
 
-      <p class="text-zinc-400 text-lg sm:text-xl leading-relaxed">
+      <p class="text-zinc-600 dark:text-zinc-400 text-lg sm:text-xl leading-relaxed">
         {post.data.description}
       </p>
 
@@ -125,16 +125,19 @@ const schema = {
       <div class="flex flex-wrap items-center justify-between gap-4 pt-4">
         <div class="flex flex-wrap gap-2">
           {post.data.tags.map((tag) => (
-            <span class="text-xs font-mono px-3 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
+            <a
+              href={`/blog?tag=${encodeURIComponent(tag.toLowerCase())}`}
+              class="text-xs font-mono px-3 py-1 rounded bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-300 hover:border-brand-yellow/50 hover:text-brand-blue dark:hover:text-brand-yellow transition duration-200"
+            >
               #{tag}
-            </span>
+            </a>
           ))}
         </div>
 
         {translationPost && (
           <a
             href={trPath}
-            class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-yellow/10 border border-brand-yellow/30 text-brand-yellow text-xs font-medium hover:bg-brand-yellow/20 transition"
+            class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-yellow/10 border border-brand-yellow/30 text-brand-blue dark:text-brand-yellow text-xs font-medium hover:bg-brand-yellow/20 transition"
           >
             <span>🇹🇷 Bu yazıyı Türkçe oku</span>
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -146,20 +149,20 @@ const schema = {
     </header>
 
     <!-- Article Content -->
-    <article class="prose prose-invert max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:text-zinc-50 prose-p:text-zinc-300 prose-p:leading-relaxed prose-a:text-brand-yellow hover:prose-a:underline prose-code:text-brand-yellow prose-code:bg-zinc-900 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-zinc-900 prose-pre:border prose-pre:border-zinc-800 prose-li:text-zinc-300">
+    <article class="prose prose-zinc dark:prose-invert max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:text-zinc-950 dark:prose-headings:text-zinc-50 prose-p:text-zinc-700 dark:prose-p:text-zinc-300 prose-p:leading-relaxed prose-a:text-brand-blue dark:prose-a:text-brand-yellow hover:prose-a:underline prose-code:text-brand-blue dark:prose-code:text-brand-yellow prose-code:bg-zinc-100 dark:prose-code:bg-zinc-900 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-zinc-900 prose-pre:text-zinc-100 prose-pre:border prose-pre:border-zinc-800 prose-li:text-zinc-700 dark:prose-li:text-zinc-300">
       <Content />
     </article>
 
     <!-- Author Callout Box -->
-    <div class="mt-16 pt-8 border-t border-zinc-900 glow-card rounded-2xl p-6 sm:p-8 flex items-center gap-6 mb-12">
+    <div class="mt-16 pt-8 border-t border-zinc-200 dark:border-zinc-900 glow-card rounded-2xl p-6 sm:p-8 flex items-center gap-6 mb-12">
       <img
         src="https://avatars.githubusercontent.com/u/55496985?s=400&u=cf5cb2d74029d653813b39d624e44b8f74bc63c1&v=4"
         alt={post.data.author}
-        class="w-16 h-16 rounded-full border border-zinc-800 shrink-0"
+        class="w-16 h-16 rounded-full border border-zinc-300 dark:border-zinc-800 shrink-0"
       />
       <div>
-        <h4 class="font-display font-bold text-zinc-100 text-lg">{post.data.author}</h4>
-        <p class="text-zinc-400 text-sm mt-1">
+        <h4 class="font-display font-bold text-zinc-950 dark:text-zinc-100 text-lg">{post.data.author}</h4>
+        <p class="text-zinc-600 dark:text-zinc-400 text-sm mt-1">
           Senior Software Architect & Founder at Workouse. Specializing in high-scale microservices, Haskell, Rust, Cloudflare Edge, and resilient cloud architectures.
         </p>
       </div>

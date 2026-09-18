@@ -46,7 +46,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
              a.url, o.score, o.recommendation
       FROM audit_leads l
       JOIN audits a ON l.audit_id = a.id
-      LEFT JOIN ai_output o ON l.audit_id = o.audit_id
+      LEFT JOIN audit_results o ON l.audit_id = o.audit_id
     `;
 
     const bindings: any[] = [];

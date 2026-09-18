@@ -3,37 +3,37 @@ interface Props {
   auditId: string;
   targetUrl: string;
   totalPrice: number;
-  recommendation: 'fix' | 'rebuild';
+  recommendation: 'fix' | 'rebuild' | 'consultation';
 }
 
-const { auditId, targetUrl, totalPrice, recommendation } = Astro.props;
+const { auditId, targetUrl, totalPrice, recommendation = 'fix' } = Astro.props;
 ---
 
 <dialog
   id="lead-modal"
-  class="fixed inset-0 z-50 p-4 bg-transparent backdrop:bg-zinc-950/80 backdrop:backdrop-blur-md max-w-lg w-full m-auto rounded-3xl overflow-hidden border border-zinc-800 text-zinc-100 shadow-2xl"
+  class="fixed inset-0 z-50 p-4 bg-transparent backdrop:bg-zinc-950/80 backdrop:backdrop-blur-md max-w-lg w-full m-auto rounded-3xl overflow-hidden border-0 shadow-2xl"
   aria-labelledby="modal-title"
 >
-  <div class="glow-card p-6 sm:p-8 bg-zinc-950/95 border border-zinc-800 rounded-3xl space-y-6 relative">
+  <div class="glow-card p-6 sm:p-8 bg-white/95 dark:bg-zinc-950/95 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-6 relative">
     <!-- Close button -->
     <button
       id="close-modal-btn"
       type="button"
-      class="absolute top-5 right-5 text-zinc-400 hover:text-white transition p-2 rounded-full hover:bg-zinc-800"
+      class="absolute top-5 right-5 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
       aria-label="Close dialog"
     >
       ✕
     </button>
 
     <div class="space-y-2 pr-6">
-      <span class="text-xs font-mono font-bold uppercase tracking-wider text-brand-yellow px-2.5 py-0.5 rounded-full bg-brand-yellow/10 border border-brand-yellow/20">
+      <span class="text-xs font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-brand-yellow px-2.5 py-0.5 rounded-full bg-brand-yellow/10 border border-brand-yellow/30">
         GET EXPERT REPAIR & REBUILD
       </span>
-      <h2 id="modal-title" class="font-display text-xl sm:text-2xl font-extrabold text-white">
+      <h2 id="modal-title" class="font-display text-xl sm:text-2xl font-extrabold text-zinc-950 dark:text-white">
         Request Workouse Consultation
       </h2>
-      <p class="text-xs text-zinc-400 font-sans">
-        Target: <span class="font-mono text-zinc-200">{targetUrl}</span>
+      <p class="text-xs text-zinc-600 dark:text-zinc-400 font-sans">
+        Target: <span class="font-mono font-medium text-zinc-900 dark:text-zinc-200">{targetUrl}</span>
       </p>
     </div>
 
@@ -42,33 +42,47 @@ const { auditId, targetUrl, totalPrice, recommendation } = Astro.props;
 
       <!-- Service Selection -->
       <div class="space-y-2">
-        <label class="block text-zinc-400 font-bold uppercase tracking-wider">Requested Service</label>
-        <div class="grid grid-cols-2 gap-3">
-          <label class="p-3 rounded-xl border border-zinc-800 bg-zinc-900/60 cursor-pointer flex items-center gap-2 hover:border-brand-yellow/50 transition">
+        <label class="block text-zinc-600 dark:text-zinc-400 font-bold uppercase tracking-wider">Requested Service</label>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <label class="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 cursor-pointer flex sm:flex-col items-center sm:items-start gap-2.5 sm:gap-2 hover:border-brand-yellow/50 transition">
             <input
               type="radio"
               name="serviceType"
               value="fix"
               checked={recommendation === 'fix'}
-              class="accent-brand-yellow"
+              class="accent-brand-yellow shrink-0"
             />
-            <div class="space-y-0.5">
-              <div class="font-bold text-white">Targeted Fix</div>
-              <div class="text-[10px] text-zinc-400">${totalPrice} USD Est.</div>
+            <div class="space-y-0.5 min-w-0">
+              <div class="font-bold text-zinc-950 dark:text-white truncate">Targeted Fix</div>
+              <div class="text-[10px] text-zinc-500 dark:text-zinc-400">${Math.ceil(totalPrice)} USD Est.</div>
             </div>
           </label>
 
-          <label class="p-3 rounded-xl border border-zinc-800 bg-zinc-900/60 cursor-pointer flex items-center gap-2 hover:border-brand-yellow/50 transition">
+          <label class="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 cursor-pointer flex sm:flex-col items-center sm:items-start gap-2.5 sm:gap-2 hover:border-brand-yellow/50 transition">
             <input
               type="radio"
               name="serviceType"
               value="rebuild"
               checked={recommendation === 'rebuild'}
-              class="accent-brand-yellow"
+              class="accent-brand-yellow shrink-0"
             />
-            <div class="space-y-0.5">
-              <div class="font-bold text-white">Full Rebuild</div>
-              <div class="text-[10px] text-zinc-400">Astro + Cloudflare</div>
+            <div class="space-y-0.5 min-w-0">
+              <div class="font-bold text-zinc-950 dark:text-white truncate">Full Rebuild</div>
+              <div class="text-[10px] text-zinc-500 dark:text-zinc-400">Astro + Edge</div>
+            </div>
+          </label>
+
+          <label class="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 cursor-pointer flex sm:flex-col items-center sm:items-start gap-2.5 sm:gap-2 hover:border-brand-yellow/50 transition">
+            <input
+              type="radio"
+              name="serviceType"
+              value="consultation"
+              checked={recommendation === 'consultation'}
+              class="accent-brand-yellow shrink-0"
+            />
+            <div class="space-y-0.5 min-w-0">
+              <div class="font-bold text-zinc-950 dark:text-white truncate">Custom / Advisory</div>
+              <div class="text-[10px] text-zinc-500 dark:text-zinc-400">Other Stack / Scope</div>
             </div>
           </label>
         </div>
@@ -77,35 +91,35 @@ const { auditId, targetUrl, totalPrice, recommendation } = Astro.props;
       <!-- Contact Info -->
       <div class="space-y-3">
         <div>
-          <label for="lead-name" class="block text-zinc-400 font-bold uppercase tracking-wider mb-1">Your Name *</label>
+          <label for="lead-name" class="block text-zinc-600 dark:text-zinc-400 font-bold uppercase tracking-wider mb-1">Your Name *</label>
           <input
             type="text"
             id="lead-name"
             name="name"
             required
             placeholder="John Doe"
-            class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-brand-yellow transition"
+            class="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-950 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition"
           />
         </div>
 
         <div>
-          <label for="lead-email" class="block text-zinc-400 font-bold uppercase tracking-wider mb-1">Contact Email *</label>
+          <label for="lead-email" class="block text-zinc-600 dark:text-zinc-400 font-bold uppercase tracking-wider mb-1">Contact Email *</label>
           <input
             type="email"
             id="lead-email"
             name="email"
             required
             placeholder="john@example.com"
-            class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-brand-yellow transition"
+            class="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-950 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition"
           />
         </div>
 
         <div>
-          <label for="lead-budget" class="block text-zinc-400 font-bold uppercase tracking-wider mb-1">Estimated Budget Range</label>
+          <label for="lead-budget" class="block text-zinc-600 dark:text-zinc-400 font-bold uppercase tracking-wider mb-1">Estimated Budget Range</label>
           <select
             id="lead-budget"
             name="budget"
-            class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-brand-yellow transition"
+            class="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-950 dark:text-white focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition"
           >
             <option value="under_500">Under $500 USD</option>
             <option value="500_1500" selected>$500 - $1,500 USD</option>
@@ -115,16 +129,20 @@ const { auditId, targetUrl, totalPrice, recommendation } = Astro.props;
         </div>
 
         <div>
-          <label for="lead-notes" class="block text-zinc-400 font-bold uppercase tracking-wider mb-1">Additional Project Notes</label>
+          <label for="lead-notes" class="block text-zinc-600 dark:text-zinc-400 font-bold uppercase tracking-wider mb-1">Additional Project Notes</label>
           <textarea
             id="lead-notes"
             name="notes"
             rows="3"
-            placeholder="Mention any target launch dates or specific integration needs..."
-            class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-brand-yellow transition"
+            placeholder="Mention any target launch dates, preferred tech stack, or specific integration needs..."
+            class="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-950 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition"
           ></textarea>
         </div>
       </div>
+
+      <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-sans leading-normal">
+        * Estimates are non-binding baseline quotes based on standard fixes at flat rates ($35/hr). Final pricing depends on project parameters and technical scope.
+      </p>
 
       <!-- Feedback Status -->
       <div id="lead-status-msg" class="hidden text-xs p-3 rounded-xl font-mono"></div>
@@ -133,7 +151,7 @@ const { auditId, targetUrl, totalPrice, recommendation } = Astro.props;
       <button
         type="submit"
         id="lead-submit-btn"
-        class="w-full py-3.5 rounded-xl font-bold uppercase tracking-wider bg-brand-yellow text-zinc-950 hover:bg-yellow-400 transition shadow-lg shadow-brand-yellow/10"
+        class="w-full py-3.5 rounded-xl font-bold uppercase tracking-wider bg-brand-yellow text-zinc-950 hover:bg-yellow-400 active:scale-[0.99] transition duration-200 shadow-lg shadow-brand-yellow/10"
       >
         Submit Consultation Request →
       </button>
@@ -142,11 +160,28 @@ const { auditId, targetUrl, totalPrice, recommendation } = Astro.props;
 </dialog>
 
 <script>
+  import { trackEvent } from '../lib/analytics';
+
   const dialog = document.getElementById('lead-modal') as HTMLDialogElement | null;
   const closeBtn = document.getElementById('close-modal-btn');
   const form = document.getElementById('lead-form') as HTMLFormElement | null;
   const statusMsg = document.getElementById('lead-status-msg');
   const submitBtn = document.getElementById('lead-submit-btn') as HTMLButtonElement | null;
+
+  // Listen for buttons that target this modal
+  document.querySelectorAll<HTMLElement>('[data-modal-target="audit-lead-modal"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const serviceType = btn.getAttribute('data-service-type');
+      if (serviceType && form) {
+        const radio = form.querySelector<HTMLInputElement>(`input[name="serviceType"][value="${serviceType}"]`);
+        if (radio) radio.checked = true;
+      }
+      trackEvent('request-quote-form-opened', {
+        source: serviceType ? `button_${serviceType}` : 'modal_trigger',
+      });
+      dialog?.showModal();
+    });
+  });
 
   closeBtn?.addEventListener('click', () => {
     dialog?.close();
@@ -185,19 +220,27 @@ const { auditId, targetUrl, totalPrice, recommendation } = Astro.props;
 
       const data: any = await res.json();
 
-
       if (!res.ok) {
         throw new Error(data.error || 'Failed to submit lead request.');
       }
 
-      statusMsg.className = 'text-xs p-3 rounded-xl font-mono bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 block';
+      // Track successful quote / consultation submission
+      trackEvent('quote_submitted', {
+        audit_id: payload.auditId,
+        service_type: payload.serviceType,
+        budget_range: payload.budget,
+      });
+
+      statusMsg.className = 'text-xs p-3 rounded-xl font-mono bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 block';
       statusMsg.textContent = data.message || 'Request submitted successfully! We will reach out shortly.';
       
       setTimeout(() => {
         dialog?.close();
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Consultation Request →';
       }, 2000);
     } catch (err: any) {
-      statusMsg.className = 'text-xs p-3 rounded-xl font-mono bg-red-500/10 border border-red-500/30 text-red-400 block';
+      statusMsg.className = 'text-xs p-3 rounded-xl font-mono bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 block';
       statusMsg.textContent = err.message || 'An error occurred. Please try again.';
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit Consultation Request →';

@@ -115,6 +115,50 @@
     </div>
   </div>
 
+  <!-- Debug Console & Real-Time Durable Object Telemetry Panel -->
+  <div class="bg-zinc-900/80 border border-zinc-800 rounded-2xl overflow-hidden" id="debugConsolePanel">
+    <!-- Header — always visible, click to expand/collapse -->
+    <div
+      id="debugConsoleHeader"
+      class="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-zinc-800/30 transition select-none gap-2"
+    >
+      <div class="flex items-center gap-3">
+        <span class="font-mono text-[11px] font-bold text-zinc-300 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-zinc-500" id="debugStatusDot"></span>
+          🖥 Live Durable Object Telemetry
+        </span>
+        <span id="wsStatusBadge" class="bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-mono px-2 py-0.5 rounded-full">Connecting...</span>
+        <span id="debugEntryBadge" class="bg-zinc-800 border border-zinc-700 text-zinc-500 text-[10px] font-mono px-2 py-0.5 rounded-full">0 events</span>
+        <span id="debugErrorBadge" class="hidden bg-rose-950 border border-rose-800 text-rose-400 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- Category filter buttons -->
+        <div class="flex items-center gap-1 font-mono text-[10px]" id="debugFilters">
+          <button data-filter="all"   class="debug-filter-btn bg-zinc-700 text-zinc-300 border-zinc-600 px-2 py-0.5 rounded border transition">ALL</button>
+          <button data-filter="ai"    class="debug-filter-btn text-purple-400 border-zinc-700 px-2 py-0.5 rounded border transition hover:bg-zinc-800">AI GATEWAY</button>
+          <button data-filter="audit" class="debug-filter-btn text-blue-400   border-zinc-700 px-2 py-0.5 rounded border transition hover:bg-zinc-800">AUDIT</button>
+          <button data-filter="lead"  class="debug-filter-btn text-[#FEC500] border-zinc-700 px-2 py-0.5 rounded border transition hover:bg-zinc-800">LEADS</button>
+          <button data-filter="error" class="debug-filter-btn text-rose-400  border-zinc-700 px-2 py-0.5 rounded border transition hover:bg-zinc-800">ERR</button>
+        </div>
+        <button id="debugClearBtn" class="text-[10px] font-mono px-2.5 py-0.5 rounded border border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800 transition">
+          Clear
+        </button>
+        <svg id="debugChevron" class="w-4 h-4 text-zinc-500 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </div>
+    </div>
+    <!-- Console body — hidden by default, auto-expands on first error or active event -->
+    <div id="debugConsoleBody" class="hidden border-t border-zinc-800">
+      <div
+        id="debugLogList"
+        class="font-mono text-[11px] max-h-96 overflow-y-auto p-3 space-y-1.5 bg-black/80"
+      >
+        <div class="text-zinc-600 italic py-1">No telemetry events recorded yet — waiting for system activity...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Re-audit Quick Trigger Box -->
   <div class="bg-zinc-900/80 border border-zinc-800 p-6 rounded-2xl space-y-4" id="re-audit">
     <div class="flex items-center justify-between">
@@ -225,6 +269,241 @@
 </div>
 
 <script>
+  import { validateAuditUrl } from '../lib/url-validator';
+
+  // ─── Real-Time Durable Object Telemetry & Debug Manager ────────────────────
+  const DEBUG_MAX_ENTRIES = 200;
+  let _telemetryEvents: Array<any> = [];
+  let _debugFilter = 'all';
+  let _adminWs: WebSocket | null = null;
+  let _pingInterval: any = null;
+  let _lastPingTime = 0;
+
+  function _debugOpen() {
+    document.getElementById('debugConsoleBody')?.classList.remove('hidden');
+    document.getElementById('debugChevron')?.classList.add('rotate-180');
+  }
+
+  function connectAdminWebSocket() {
+    const token = getStoredToken();
+    if (!token) return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/api/admin/ws?token=${encodeURIComponent(token)}`;
+
+    const statusBadge = document.getElementById('wsStatusBadge');
+    const statusDot = document.getElementById('debugStatusDot');
+
+    if (_adminWs) {
+      try { _adminWs.close(); } catch {}
+    }
+
+    try {
+      _adminWs = new WebSocket(wsUrl);
+
+      _adminWs.onopen = () => {
+        if (statusBadge) {
+          statusBadge.textContent = '🟢 DO Live WS';
+          statusBadge.className = 'bg-emerald-950 border border-emerald-800 text-emerald-400 text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold';
+        }
+        if (statusDot) statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+
+        adminLog('success', 'WS', 'WebSocket connected to Global Telemetry Durable Object (admin-global-telemetry)');
+
+        // Start ping loop
+        if (_pingInterval) clearInterval(_pingInterval);
+        _pingInterval = setInterval(() => {
+          if (_adminWs?.readyState === WebSocket.OPEN) {
+            _lastPingTime = Date.now();
+            _adminWs.send(JSON.stringify({ type: 'ping' }));
+          }
+        }, 15000);
+      };
+
+      _adminWs.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'pong' && _lastPingTime > 0) {
+            const rtt = Date.now() - _lastPingTime;
+            if (statusBadge) {
+              statusBadge.textContent = `🟢 DO Live (${rtt}ms)`;
+            }
+          } else if (msg.type === 'telemetry' && msg.event) {
+            addTelemetryEvent(msg.event);
+          } else if (msg.type === 'telemetry_history' && Array.isArray(msg.events)) {
+            msg.events.forEach((evt: any) => addTelemetryEvent(evt, false));
+            _debugRender();
+          }
+        } catch {}
+      };
+
+      _adminWs.onclose = () => {
+        if (statusBadge) {
+          statusBadge.textContent = '🔴 WS Disconnected';
+          statusBadge.className = 'bg-rose-950 border border-rose-800 text-rose-400 text-[10px] font-mono px-2 py-0.5 rounded-full';
+        }
+        if (statusDot) statusDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
+        if (_pingInterval) clearInterval(_pingInterval);
+        // Reconnect after 5 seconds
+        setTimeout(() => connectAdminWebSocket(), 5000);
+      };
+
+      _adminWs.onerror = () => {
+        adminLog('warn', 'WS', 'WebSocket connection error');
+      };
+    } catch (err: any) {
+      adminLog('warn', 'WS', `Failed to open WebSocket: ${err.message}`);
+    }
+  }
+
+  function addTelemetryEvent(evt: any, shouldRender = true) {
+    // Avoid duplicate events if already present
+    if (_telemetryEvents.some(e => e.id === evt.id)) return;
+    _telemetryEvents.unshift(evt);
+    if (_telemetryEvents.length > DEBUG_MAX_ENTRIES) {
+      _telemetryEvents.length = DEBUG_MAX_ENTRIES;
+    }
+    if (evt.category === 'error' && document.getElementById('debugConsoleBody')?.classList.contains('hidden')) {
+      _debugOpen();
+    }
+    _debugUpdateBadges();
+    if (shouldRender) _debugRender();
+  }
+
+  function _debugRender() {
+    const list = document.getElementById('debugLogList');
+    if (!list) return;
+
+    const filtered = _debugFilter === 'all'
+      ? _telemetryEvents
+      : _telemetryEvents.filter(e => e.category === _debugFilter);
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="text-zinc-600 italic py-1">No ${_debugFilter === 'all' ? '' : _debugFilter + ' '}telemetry events recorded.</div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(e => {
+      const date = new Date(e.timestamp || Date.now());
+      const p2 = (n: number) => String(n).padStart(2, '0');
+      const ts = `[${p2(date.getHours())}:${p2(date.getMinutes())}:${p2(date.getSeconds())}.${String(date.getMilliseconds()).padStart(3, '0')}]`;
+
+      const catBadge =
+        e.category === 'ai'    ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-950 text-purple-400 border border-purple-800 uppercase">AI GATEWAY</span>'
+      : e.category === 'audit' ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950 text-blue-400 border border-blue-800 uppercase">AUDIT</span>'
+      : e.category === 'lead'  ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-950 text-[#FEC500] border border-amber-800 uppercase">LEAD</span>'
+      : e.category === 'error' ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-950 text-rose-400 border border-rose-800 uppercase">ERROR</span>'
+      : '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-zinc-300 border border-zinc-700 uppercase">SYSTEM</span>';
+
+      const actionColor =
+        e.category === 'error' ? 'text-rose-400 font-bold'
+      : e.category === 'ai'    ? 'text-purple-300 font-bold'
+      : 'text-zinc-200 font-bold';
+
+      const detailsStr = e.details ? JSON.stringify(e.details) : '';
+      const hasDetails = Boolean(e.details && Object.keys(e.details).length > 0);
+
+      return `
+        <div class="p-2 rounded bg-zinc-950/90 border border-zinc-850 hover:border-zinc-750 transition space-y-1 font-mono text-[11px]">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-zinc-500">${ts}</span>
+              ${catBadge}
+              <span class="${actionColor}">${e.action}</span>
+              ${e.url ? `<span class="text-zinc-400 text-[10px]">(${e.url})</span>` : ''}
+              ${e.auditId ? `<span class="text-zinc-500 text-[10px]">ID: <strong class="text-zinc-300">${e.auditId}</strong></span>` : ''}
+            </div>
+            ${hasDetails ? `<span class="text-[10px] text-zinc-500 font-mono">click details below</span>` : ''}
+          </div>
+          ${hasDetails ? `
+            <details class="text-[10px] text-zinc-400 pt-1 border-t border-zinc-900">
+              <summary class="cursor-pointer hover:text-zinc-200">🔍 View Event Details JSON</summary>
+              <pre class="mt-1 p-2 bg-black/90 rounded text-emerald-400 overflow-x-auto max-h-36">${JSON.stringify(e.details, null, 2)}</pre>
+            </details>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function _debugUpdateBadges() {
+    const total = _telemetryEvents.length;
+    const errors = _telemetryEvents.filter(e => e.category === 'error').length;
+    const badge = document.getElementById('debugEntryBadge');
+    const errorBadge = document.getElementById('debugErrorBadge');
+    if (badge) badge.textContent = `${total} event${total === 1 ? '' : 's'}`;
+    if (errorBadge) {
+      if (errors > 0) {
+        errorBadge.textContent = `⚠ ${errors} error${errors > 1 ? 's' : ''}`;
+        errorBadge.classList.remove('hidden');
+      } else {
+        errorBadge.classList.add('hidden');
+      }
+    }
+  }
+
+  function adminLog(level: string, tag: string, message: string) {
+    const category = level === 'error' ? 'error' : level === 'warn' ? 'system' : 'system';
+    addTelemetryEvent({
+      id: `client_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      category,
+      action: tag,
+      details: { message, level },
+      timestamp: Date.now(),
+    });
+  }
+
+  // Wire Debug Console header toggle
+  const _debugHeader = document.getElementById('debugConsoleHeader');
+  if (_debugHeader) {
+    _debugHeader.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('#debugFilters, #debugClearBtn')) return;
+      const body    = document.getElementById('debugConsoleBody');
+      const chevron = document.getElementById('debugChevron');
+      if (body?.classList.contains('hidden')) {
+        body.classList.remove('hidden');
+        chevron?.classList.add('rotate-180');
+      } else {
+        body?.classList.add('hidden');
+        chevron?.classList.remove('rotate-180');
+      }
+    });
+  }
+
+  // Wire category filter buttons
+  document.querySelectorAll('.debug-filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _debugFilter = (btn as HTMLElement).dataset.filter || 'all';
+      document.querySelectorAll('.debug-filter-btn').forEach(b => {
+        b.classList.remove('bg-zinc-700', 'text-zinc-300', 'border-zinc-600');
+        b.classList.add('border-zinc-700');
+      });
+      btn.classList.add('bg-zinc-700', 'text-zinc-300', 'border-zinc-600');
+      btn.classList.remove('border-zinc-700');
+      _debugRender();
+    });
+  });
+
+  // Wire Clear button
+  document.getElementById('debugClearBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    _telemetryEvents = [];
+    _debugFilter = 'all';
+    document.querySelectorAll('.debug-filter-btn').forEach(b => {
+      b.classList.remove('bg-zinc-700', 'text-zinc-300', 'border-zinc-600');
+      b.classList.add('border-zinc-700');
+    });
+    const allBtn = document.querySelector('.debug-filter-btn[data-filter="all"]');
+    if (allBtn) {
+      allBtn.classList.add('bg-zinc-700', 'text-zinc-300', 'border-zinc-600');
+      allBtn.classList.remove('border-zinc-700');
+    }
+    _debugUpdateBadges();
+    _debugRender();
+  });
+
+  // ─── Admin Helpers ────────────────────────────────────────────────────────
   function getStoredToken(): string {
     return localStorage.getItem('workouse_admin_token') || '';
   }
@@ -234,6 +513,7 @@
   }
 
   function handleUnauthorized() {
+    adminLog('warn', 'AUTH', 'handleUnauthorized() called — clearing session, dispatching logout event');
     localStorage.removeItem('workouse_admin_token');
     localStorage.removeItem('workouse_admin_email');
     window.dispatchEvent(new CustomEvent('admin-logout'));
@@ -287,19 +567,25 @@
   async function loadAdminData() {
     const token = getStoredToken();
     if (!token) {
+      adminLog('warn', 'INIT', 'No token in localStorage — redirecting to login');
       handleUnauthorized();
       return;
     }
+    adminLog('info', 'INIT', 'Token present — establishing DO WebSocket telemetry & firing REST fetches');
+    connectAdminWebSocket();
     await Promise.all([fetchAnalytics(token), fetchLeads(token), fetchAuditLogs(token)]);
+    adminLog('success', 'INIT', 'All admin data fetches complete');
   }
 
   async function fetchAnalytics(token: string) {
+    adminLog('info', 'ANALYTICS', 'GET /api/admin/analytics → pending');
     try {
       const res = await fetch('/api/admin/analytics', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.status === 401 || res.status === 403) {
+        adminLog('warn', 'ANALYTICS', `${res.status} ${res.statusText} — session expired`);
         handleUnauthorized();
         return;
       }
@@ -307,6 +593,7 @@
       const data: any = await res.json();
       if (res.ok && data.success) {
         const { analytics } = data;
+        adminLog('success', 'ANALYTICS', `200 OK — totalAudits: ${analytics.totalAudits}, leads: ${analytics.totalLeads}, avgScore: ${analytics.avgScore}`);
         (document.getElementById('statTotalAudits') as HTMLElement).innerText = analytics.totalAudits.toString();
         (document.getElementById('statCompletedAudits') as HTMLElement).innerText = `${analytics.completedAudits} completed`;
         (document.getElementById('statFailedAudits') as HTMLElement).innerText = `${analytics.failedAudits} failed`;
@@ -314,9 +601,11 @@
         (document.getElementById('statTotalLeads') as HTMLElement).innerText = analytics.totalLeads.toString();
         (document.getElementById('statPipelineUsd') as HTMLElement).innerText = `$${analytics.totalPipelineValueUsd.toLocaleString()}`;
         (document.getElementById('statAvgScore') as HTMLElement).innerText = `${analytics.avgScore} / 100`;
+      } else {
+        adminLog('error', 'ANALYTICS', `${res.status} ${res.statusText} — ${data?.error || 'unexpected response shape'}`);
       }
-    } catch (err) {
-      console.warn('Failed to load analytics:', err);
+    } catch (err: any) {
+      adminLog('error', 'ANALYTICS', `Network error — ${err.message}`);
     }
   }
 
@@ -324,14 +613,17 @@
     const tbody = document.getElementById('leadsTableBody');
     if (!tbody) return;
 
+    const filterVal = leadFilterService ? leadFilterService.value : '';
+    const url = filterVal ? `/api/admin/leads?serviceType=${filterVal}` : '/api/admin/leads';
+    adminLog('info', 'LEADS', `GET ${url} → pending`);
+
     try {
-      const filterVal = leadFilterService ? leadFilterService.value : '';
-      const url = filterVal ? `/api/admin/leads?serviceType=${filterVal}` : '/api/admin/leads';
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.status === 401 || res.status === 403) {
+        adminLog('warn', 'LEADS', `${res.status} ${res.statusText} — session expired`);
         handleUnauthorized();
         return;
       }
@@ -339,6 +631,7 @@
       const data: any = await res.json();
 
       if (res.ok && data.success && data.leads) {
+        adminLog('success', 'LEADS', `200 OK — ${data.leads.length} lead(s) loaded`);
         if (data.leads.length === 0) {
           tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-zinc-500">No leads recorded yet.</td></tr>`;
           return;
@@ -390,9 +683,11 @@
             `;
           })
           .join('');
+      } else {
+        adminLog('error', 'LEADS', `${res.status} ${res.statusText} — ${data?.error || 'unexpected response'}`);
       }
-    } catch (err) {
-      console.warn('Failed to load leads:', err);
+    } catch (err: any) {
+      adminLog('error', 'LEADS', `Network error — ${err.message}`);
     }
   }
 
@@ -400,13 +695,16 @@
     const container = document.getElementById('auditLogsContainer');
     if (!container) return;
 
+    const url = searchQuery ? `/api/admin/audit-logs?search=${encodeURIComponent(searchQuery)}` : '/api/admin/audit-logs';
+    adminLog('info', 'AUDIT-LOGS', `GET ${url} → pending`);
+
     try {
-      const url = searchQuery ? `/api/admin/audit-logs?search=${encodeURIComponent(searchQuery)}` : '/api/admin/audit-logs';
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.status === 401 || res.status === 403) {
+        adminLog('warn', 'AUDIT-LOGS', `${res.status} ${res.statusText} — session expired`);
         handleUnauthorized();
         return;
       }
@@ -414,6 +712,7 @@
       const data: any = await res.json();
 
       if (res.ok && data.success && data.logs) {
+        adminLog('success', 'AUDIT-LOGS', `200 OK — ${data.logs.length} audit record(s) returned`);
         if (data.logs.length === 0) {
           container.innerHTML = `<div class="py-8 text-center text-zinc-500 font-mono text-xs">No audit logs matching search standard.</div>`;
           return;
@@ -519,6 +818,77 @@
                   </div>
                 </div>
 
+                <!-- Actionable Issues & Flagged Items Breakdown -->
+                ${
+                  aiOutput?.issues && aiOutput.issues.length > 0
+                    ? `
+                  <div class="bg-zinc-900/90 border border-zinc-800 p-3.5 rounded-xl space-y-2.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[#FEC500] font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                        <span>⚡ Actionable Issues & Flagged Items (${aiOutput.issues.length})</span>
+                      </span>
+                      <span class="text-[10px] text-zinc-400 font-mono">Immediate Developer & Admin Targets</span>
+                    </div>
+                    <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      ${aiOutput.issues
+                        .map(
+                          (iss: any) => `
+                        <div class="p-2.5 rounded-lg bg-zinc-950 border border-zinc-850 space-y-1.5 font-mono text-[11px]">
+                          <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                              <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                iss.severity === 'critical'
+                                  ? 'bg-rose-950 text-rose-400 border border-rose-800'
+                                  : iss.severity === 'warning'
+                                  ? 'bg-amber-950 text-amber-400 border border-amber-800'
+                                  : 'bg-blue-950 text-blue-400 border border-blue-800'
+                              }">${iss.severity}</span>
+                              <strong class="text-zinc-100 font-bold">${iss.title}</strong>
+                            </div>
+                            <span class="text-zinc-400 text-[10px]">${iss.estimatedMinutes}m · $${iss.price} USD</span>
+                          </div>
+                          ${
+                            iss.proof
+                              ? `<div class="text-[10px] text-zinc-400">🔍 <span class="text-zinc-300">${iss.proof}</span></div>`
+                              : ''
+                          }
+                          ${
+                            iss.items && iss.items.length > 0
+                              ? `
+                            <div class="mt-1.5 space-y-1 border-t border-zinc-900 pt-1.5">
+                              ${iss.items
+                                .map(
+                                  (it: any) => `
+                                <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] text-zinc-400 bg-zinc-900/70 p-1.5 rounded border border-zinc-850">
+                                  <div class="truncate max-w-md">
+                                    ${it.url ? `<a href="${it.url.startsWith('http') ? it.url : '#'}" target="_blank" class="text-blue-400 hover:underline font-mono font-semibold">${it.url}</a>` : ''}
+                                    ${it.selector ? `<code class="text-purple-300 font-mono bg-zinc-950 px-1 py-0.5 rounded">${it.selector}</code>` : ''}
+                                    ${it.label ? `<span class="text-zinc-200 font-bold ml-1">${it.label}</span>` : ''}
+                                    ${it.snippet ? `<span class="text-zinc-400 font-mono ml-1">(${it.snippet})</span>` : ''}
+                                  </div>
+                                  <div class="flex items-center gap-1.5 shrink-0 font-mono">
+                                    ${it.size ? `<span class="text-zinc-200 font-bold bg-zinc-800 px-1.5 py-0.5 rounded text-[9px]">${it.size}</span>` : ''}
+                                    ${it.wasted ? `<span class="text-amber-400 font-bold bg-amber-950/40 px-1.5 py-0.5 rounded text-[9px]">${it.wasted}</span>` : ''}
+                                    ${it.details ? `<span class="text-zinc-400 text-[9px]">${it.details}</span>` : ''}
+                                  </div>
+                                </div>
+                              `
+                                )
+                                .join('')}
+                            </div>
+                          `
+                              : ''
+                          }
+                        </div>
+                      `
+                        )
+                        .join('')}
+                    </div>
+                  </div>
+                `
+                    : ''
+                }
+
                 <!-- Raw JSON Accordion -->
                 <details class="bg-zinc-900/60 border border-zinc-800 rounded-lg p-2">
                   <summary class="cursor-pointer font-bold text-zinc-400 hover:text-white transition text-[11px]">
@@ -530,9 +900,11 @@
             `;
           })
           .join('');
+      } else {
+        adminLog('error', 'AUDIT-LOGS', `${res.status} ${res.statusText} — ${data?.error || 'unexpected response'}`);
       }
-    } catch (err) {
-      console.warn('Failed to load audit logs:', err);
+    } catch (err: any) {
+      adminLog('error', 'AUDIT-LOGS', `Network error — ${err.message}`);
     }
   }
 
@@ -550,6 +922,19 @@
       const targetVal = reAuditInput.value.trim();
       if (!targetVal) return;
 
+      const isUrlInput = targetVal.startsWith('http://') || targetVal.startsWith('https://') || targetVal.includes('.');
+      if (isUrlInput) {
+        const urlValidation = await validateAuditUrl(targetVal, { checkDns: false });
+        if (!urlValidation.isValid) {
+          reAuditFeedback.className = 'text-xs px-3 py-2 rounded-lg font-mono bg-rose-950 text-rose-400 border border-rose-800 block';
+          reAuditFeedback.innerText = `⚠️ ${urlValidation.error || 'Please provide a valid website URL.'}`;
+          return;
+        }
+      }
+
+      const reAuditPayload = isUrlInput ? { url: targetVal } : { auditId: targetVal };
+      adminLog('info', 'RE-AUDIT', `POST /api/admin/re-audit → ${JSON.stringify(reAuditPayload)}`);
+
       reAuditFeedback.className = 'text-xs px-3 py-2 rounded-lg font-mono bg-zinc-800 text-zinc-300 block';
       reAuditFeedback.innerText = 'Initiating re-audit job...';
 
@@ -560,25 +945,29 @@
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(targetVal.startsWith('http') ? { url: targetVal } : { auditId: targetVal }),
+          body: JSON.stringify(reAuditPayload),
         });
 
         if (res.status === 401 || res.status === 403) {
+          adminLog('warn', 'RE-AUDIT', `${res.status} ${res.statusText} — session expired`);
           handleUnauthorized();
           return;
         }
 
         const data: any = await res.json();
         if (res.ok && data.success) {
+          adminLog('success', 'RE-AUDIT', `Enqueued — auditId: ${data.auditId}`);
           reAuditFeedback.className = 'text-xs px-3 py-2 rounded-lg font-mono bg-emerald-950 text-emerald-400 border border-emerald-800 block';
           reAuditFeedback.innerHTML = `Success! Enqueued Re-audit (ID: <a href="/audit/${data.auditId}" target="_blank" class="underline font-bold">${data.auditId}</a>)`;
           reAuditInput.value = '';
           loadAdminData();
         } else {
+          adminLog('error', 'RE-AUDIT', `${res.status} ${res.statusText} — ${data?.error || 'unexpected response'}`);
           reAuditFeedback.className = 'text-xs px-3 py-2 rounded-lg font-mono bg-rose-950 text-rose-400 border border-rose-800 block';
           reAuditFeedback.innerText = data.error || 'Failed to initiate re-audit.';
         }
       } catch (err: any) {
+        adminLog('error', 'RE-AUDIT', `Network error — ${err.message}`);
         reAuditFeedback.className = 'text-xs px-3 py-2 rounded-lg font-mono bg-rose-950 text-rose-400 border border-rose-800 block';
         reAuditFeedback.innerText = err.message || 'Network error.';
       }

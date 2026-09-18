@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build && esbuild src/workers/entry.ts --bundle --format=esm --platform=neutral --main-fields=module,main --conditions=workerd,worker,browser --target=es2022 --outfile=dist/worker.js && node -e \"fs.writeFileSync('dist/.assetsignore', '_worker.js\\nworker.js')\"",
+    "build": "astro build && esbuild src/workers/entry.ts --bundle --format=esm --platform=neutral --main-fields=module,main --conditions=workerd,worker,browser --external:node:* --external:tty --external:util --target=es2022 --outfile=dist/worker.js && node -e \"fs.writeFileSync('dist/.assetsignore', '_worker.js\\nworker.js')\"",
+    "test": "node --experimental-strip-types test/url-validator.test.ts",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -14,6 +15,7 @@
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.1.6",
     "@astrojs/tailwind": "^5.1.0",
+    "@cloudflare/puppeteer": "^1.3.0",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.0",
     "astro": "^4.10.0",

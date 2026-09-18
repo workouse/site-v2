@@ -3,6 +3,8 @@ main = "dist/worker.js"
 compatibility_date = "2026-08-07"
 compatibility_flags = ["nodejs_compat"]
 
+browser = { binding = "MY_BROWSER" }
+
 [assets]
 directory = "./dist"
 binding = "ASSETS"
@@ -43,7 +45,7 @@ name = "AUDIT_STATUS_DO"
 class_name = "AuditStatusDO"
 
 [vars]
-# CF_AI_GATEWAY_TOKEN is set as a secret via: wrangler secret put CF_AI_GATEWAY_TOKEN
+# Production secrets (CF_AI_GATEWAY_TOKEN, CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET) are managed via: wrangler secret put <KEY>
 CF_AI_GATEWAY_URL = "https://ai.workouse.com/compat/chat/completions"
 
 [[migrations]]

@@ -141,6 +141,20 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"blog": {
+"en/bilo-bunker-self-hosted-nostr-remote-signer.md": {
+	id: "en/bilo-bunker-self-hosted-nostr-remote-signer.md";
+  slug: "en/bilo-bunker-self-hosted-nostr-remote-signer";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
+"en/bridge-nostr-webhook-relay-engine.md": {
+	id: "en/bridge-nostr-webhook-relay-engine.md";
+  slug: "en/bridge-nostr-webhook-relay-engine";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
 "en/cloudflare-os-architecture-and-enterprise-viability.md": {
 	id: "en/cloudflare-os-architecture-and-enterprise-viability.md";
   slug: "en/cloudflare-os-architecture-and-enterprise-viability";
@@ -148,23 +162,58 @@ declare module 'astro:content' {
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".md"] };
-"en/kurumsal-yapay-zeka-api-maliyetleri.md": {
-	id: "en/kurumsal-yapay-zeka-api-maliyetleri.md";
-  slug: "en/kurumsal-yapay-zeka-api-maliyetleri";
+"en/enterprise-ai-api-costs.md": {
+	id: "en/enterprise-ai-api-costs.md";
+  slug: "en/enterprise-ai-api-costs";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".md"] };
-"en/sirket-ici-yapay-zeka-kvkk-ve-veri-guvenligi.md": {
-	id: "en/sirket-ici-yapay-zeka-kvkk-ve-veri-guvenligi.md";
-  slug: "en/sirket-ici-yapay-zeka-kvkk-ve-veri-guvenligi";
+"en/how-to-know-what-is-wrong-with-your-website-audit-guide.md": {
+	id: "en/how-to-know-what-is-wrong-with-your-website-audit-guide.md";
+  slug: "en/how-to-know-what-is-wrong-with-your-website-audit-guide";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".md"] };
-"en/yapay-zeka-ag-gecidi-ai-gateway.md": {
-	id: "en/yapay-zeka-ag-gecidi-ai-gateway.md";
-  slug: "en/yapay-zeka-ag-gecidi-ai-gateway";
+"en/internal-ai-data-privacy-and-compliance.md": {
+	id: "en/internal-ai-data-privacy-and-compliance.md";
+  slug: "en/internal-ai-data-privacy-and-compliance";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
+"en/introducing-100m-real-world-social-room.md": {
+	id: "en/introducing-100m-real-world-social-room.md";
+  slug: "en/introducing-100m-real-world-social-room";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
+"en/introducing-nostr-event-dom.md": {
+	id: "en/introducing-nostr-event-dom.md";
+  slug: "en/introducing-nostr-event-dom";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
+"en/why-enterprises-need-an-ai-gateway.md": {
+	id: "en/why-enterprises-need-an-ai-gateway.md";
+  slug: "en/why-enterprises-need-an-ai-gateway";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
+"tr/bilo-bunker-self-hosted-nostr-remote-signer.md": {
+	id: "tr/bilo-bunker-self-hosted-nostr-remote-signer.md";
+  slug: "tr/bilo-bunker-self-hosted-nostr-remote-signer";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
+"tr/bridge-nostr-webhook-relay-engine.md": {
+	id: "tr/bridge-nostr-webhook-relay-engine.md";
+  slug: "tr/bridge-nostr-webhook-relay-engine";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
@@ -176,23 +225,44 @@ declare module 'astro:content' {
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".md"] };
-"tr/kurumsal-yapay-zeka-api-maliyetleri.md": {
-	id: "tr/kurumsal-yapay-zeka-api-maliyetleri.md";
-  slug: "tr/kurumsal-yapay-zeka-api-maliyetleri";
+"tr/enterprise-ai-api-costs.md": {
+	id: "tr/enterprise-ai-api-costs.md";
+  slug: "tr/enterprise-ai-api-costs";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".md"] };
-"tr/sirket-ici-yapay-zeka-kvkk-ve-veri-guvenligi.md": {
-	id: "tr/sirket-ici-yapay-zeka-kvkk-ve-veri-guvenligi.md";
-  slug: "tr/sirket-ici-yapay-zeka-kvkk-ve-veri-guvenligi";
+"tr/how-to-know-what-is-wrong-with-your-website-audit-guide.md": {
+	id: "tr/how-to-know-what-is-wrong-with-your-website-audit-guide.md";
+  slug: "tr/how-to-know-what-is-wrong-with-your-website-audit-guide";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".md"] };
-"tr/yapay-zeka-ag-gecidi-ai-gateway.md": {
-	id: "tr/yapay-zeka-ag-gecidi-ai-gateway.md";
-  slug: "tr/yapay-zeka-ag-gecidi-ai-gateway";
+"tr/internal-ai-data-privacy-and-compliance.md": {
+	id: "tr/internal-ai-data-privacy-and-compliance.md";
+  slug: "tr/internal-ai-data-privacy-and-compliance";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
+"tr/introducing-100m-real-world-social-room.md": {
+	id: "tr/introducing-100m-real-world-social-room.md";
+  slug: "tr/introducing-100m-real-world-social-room";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
+"tr/introducing-nostr-event-dom.md": {
+	id: "tr/introducing-nostr-event-dom.md";
+  slug: "tr/introducing-nostr-event-dom";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".md"] };
+"tr/why-enterprises-need-an-ai-gateway.md": {
+	id: "tr/why-enterprises-need-an-ai-gateway.md";
+  slug: "tr/why-enterprises-need-an-ai-gateway";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">

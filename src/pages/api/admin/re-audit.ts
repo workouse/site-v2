@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAdminAuth } from '../../../lib/auth';
 import { generateId } from '../../../lib/nanoid';
+import { validateAuditUrl } from '../../../lib/url-validator';
 
 export const prerender = false;
 
@@ -44,10 +45,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
+    // URL validation & verification
+    const urlValidation = await validateAuditUrl(targetUrl, { checkDns: true });
+    if (!urlValidation.isValid || !urlValidation.normalizedUrl) {
+      return new Response(
+        JSON.stringify({ error: urlValidation.error || 'Please provide a valid website URL.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    targetUrl = urlValidation.normalizedUrl;
+
     const newAuditId = generateId(10);
     const createdAt = Math.floor(Date.now() / 1000);
 
-    // Save re-audit session directly to queued status
+    // Save re-audit session directly to queued status (bypasses mail verification & rate limits)
     if (env?.DB) {
       await env.DB.prepare(
         'INSERT INTO audits (id, url, email, status, created_at) VALUES (?, ?, ?, ?, ?)'
@@ -77,14 +88,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
         url: targetUrl,
         email: targetEmail,
         isReAudit: true,
+        isAdminTriggered: true,
         previousAuditId: body.auditId || null,
+        enqueuedAt: Date.now(),
       });
     }
+
+    const { sendTelemetryEvent } = await import('../../../lib/telemetry');
+    await sendTelemetryEvent(env, {
+      category: 'audit',
+      action: 'RE_AUDIT_TRIGGERED',
+      auditId: newAuditId,
+      url: targetUrl,
+      details: { previousAuditId: body.auditId || null, email: targetEmail },
+    });
 
     return new Response(
       JSON.stringify({
         success: true,
         auditId: newAuditId,
+        redirectUrl: `/audit/${newAuditId}`,
         message: `Re-audit initiated for ${targetUrl}. Audit job enqueued successfully.`,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }

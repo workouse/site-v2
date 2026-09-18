@@ -9,6 +9,11 @@ export default defineConfig({
   adapter: cloudflare({
     imageService: 'passthrough'
   }),
+  vite: {
+    ssr: {
+      external: ['node:buffer', '@cloudflare/puppeteer'],
+    },
+  },
   integrations: [
     tailwind(),
     sitemap({

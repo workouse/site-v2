@@ -3,13 +3,14 @@
 SHELL := /bin/bash
 NVM_EXEC := source ~/.nvm/nvm.sh && nvm use
 
-.PHONY: help dev build check preview db-init-local db-init-prod db-migrate-local db-migrate-prod deploy clean
+.PHONY: help dev build check test preview db-init-local db-init-prod db-migrate-local db-migrate-prod deploy clean
 
 help:
 	@echo "Workouse Audit Tool Available Commands:"
 	@echo "  make dev               - Start local Astro development server"
 	@echo "  make build             - Build hybrid production bundle"
 	@echo "  make check             - Run Astro & TypeScript type checking"
+	@echo "  make test              - Run unit test suite"
 	@echo "  make preview           - Preview production build locally"
 	@echo "  make db-init-local     - Execute full schema.sql on local D1 SQLite"
 	@echo "  make db-init-prod      - Execute full schema.sql on remote production D1"
@@ -26,6 +27,9 @@ build:
 
 check:
 	bash -c "$(NVM_EXEC) && npx tsc --noEmit"
+
+test:
+	bash -c "$(NVM_EXEC) && node --experimental-strip-types test/url-validator.test.ts"
 
 preview:
 	bash -c "$(NVM_EXEC) && npm run preview"

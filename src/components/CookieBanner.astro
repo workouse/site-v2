@@ -1,0 +1,284 @@
+---
+---
+
+<!-- Cookie Consent Banner Container -->
+<div 
+  id="cookie-consent-banner" 
+  class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[100] max-w-lg w-full transition-all duration-500 transform translate-y-20 opacity-0 pointer-events-none"
+  role="region"
+  aria-label="Cookie Consent Banner"
+>
+  <div class="glow-card p-5 sm:p-6 rounded-2xl bg-white/95 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl backdrop-blur-xl space-y-4">
+    
+    <div class="flex items-start gap-3.5">
+      <!-- Cookie Icon -->
+      <div class="p-2.5 rounded-xl bg-brand-yellow/10 border border-brand-yellow/30 text-amber-600 dark:text-brand-yellow shrink-0">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+
+      <div class="space-y-1">
+        <h3 class="font-display font-bold text-sm sm:text-base text-zinc-950 dark:text-white">
+          Privacy & Cookie Settings
+        </h3>
+        <p class="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+          We use essential cookies to maintain site security and optional performance telemetry to audit and optimize user experiences. See our <a href="/privacy" class="text-brand-blue dark:text-brand-yellow hover:underline font-medium">Privacy Policy</a>.
+        </p>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap items-center gap-2 pt-1">
+      <button 
+        id="cookie-accept-all" 
+        class="flex-1 min-w-[120px] px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-brand-yellow text-zinc-950 border border-brand-yellow hover:bg-yellow-400 transition duration-200"
+      >
+        Accept All
+      </button>
+
+      <button 
+        id="cookie-reject-nonessential" 
+        class="flex-1 min-w-[120px] px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-950 dark:hover:text-white transition duration-200"
+      >
+        Essential Only
+      </button>
+
+      <button 
+        id="cookie-open-preferences" 
+        class="px-3 py-2 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-200 underline decoration-zinc-300 dark:decoration-zinc-700 underline-offset-4 transition duration-200"
+      >
+        Preferences
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Preferences Modal Backdrop & Dialog -->
+<div 
+  id="cookie-modal-backdrop"
+  class="fixed inset-0 z-[110] bg-zinc-950/80 backdrop-blur-md hidden transition-opacity duration-300 opacity-0 items-center justify-center p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="cookie-modal-title"
+>
+  <div 
+    id="cookie-modal-content"
+    class="max-w-md w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-6 transform scale-95 transition-all duration-300"
+  >
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-900">
+      <div>
+        <h2 id="cookie-modal-title" class="font-display font-bold text-lg text-zinc-950 dark:text-white">
+          Cookie Preferences
+        </h2>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Customize your privacy permissions</p>
+      </div>
+      
+      <button 
+        id="cookie-modal-close" 
+        class="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white rounded-lg transition"
+        aria-label="Close Modal"
+      >
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Toggles List -->
+    <div class="space-y-4">
+      
+      <!-- Essential Cookies (Always Active) -->
+      <div class="flex items-start justify-between gap-4 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800/80">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-sm text-zinc-950 dark:text-white">Essential Cookies</span>
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-yellow/10 text-amber-600 dark:text-brand-yellow border border-brand-yellow/30">Always Active</span>
+          </div>
+          <p class="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+            Required for site security, session maintenance, and storing your consent preferences.
+          </p>
+        </div>
+      </div>
+
+      <!-- Performance & Analytics Cookies -->
+      <div class="flex items-start justify-between gap-4 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800/80">
+        <div class="space-y-1">
+          <span class="font-semibold text-sm text-zinc-950 dark:text-white block">Performance & Analytics</span>
+          <p class="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+            Allows us to collect aggregated, non-identifiable telemetry to optimize page load speeds and audit metrics.
+          </p>
+        </div>
+
+        <!-- Custom Switch Toggle -->
+        <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+          <input type="checkbox" id="toggle-analytics" class="sr-only peer" checked />
+          <div class="w-11 h-6 bg-zinc-300 dark:bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:after:bg-zinc-400 after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-yellow peer-checked:after:bg-zinc-950 peer-checked:after:border-zinc-950"></div>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- Modal Actions -->
+    <div class="flex items-center gap-3 pt-2">
+      <button 
+        id="cookie-save-preferences" 
+        class="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-brand-yellow text-zinc-950 border border-brand-yellow hover:bg-yellow-400 transition duration-200"
+      >
+        Save Choices
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Cookie Consent Logic
+  (function () {
+    const STORAGE_KEY = 'workouse_cookie_consent';
+
+    const banner = document.getElementById('cookie-consent-banner');
+    const acceptAllBtn = document.getElementById('cookie-accept-all');
+    const rejectNonEssentialBtn = document.getElementById('cookie-reject-nonessential');
+    const openPrefBtn = document.getElementById('cookie-open-preferences');
+
+    const modalBackdrop = document.getElementById('cookie-modal-backdrop');
+    const modalContent = document.getElementById('cookie-modal-content');
+    const modalCloseBtn = document.getElementById('cookie-modal-close');
+    const savePrefBtn = document.getElementById('cookie-save-preferences');
+    const toggleAnalytics = document.getElementById('toggle-analytics') as HTMLInputElement | null;
+
+    interface CookieConsent {
+      essential: boolean;
+      analytics: boolean;
+      timestamp: string;
+    }
+
+    function getSavedConsent(): CookieConsent | null {
+      try {
+        const item = localStorage.getItem(STORAGE_KEY);
+        return item ? JSON.parse(item) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function saveConsent(analyticsAllowed: boolean, actionName: string = 'save_preferences') {
+      const consent: CookieConsent = {
+        essential: true,
+        analytics: analyticsAllowed,
+        timestamp: new Date().toISOString()
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
+      } catch (e) {
+        console.error('Could not save cookie consent:', e);
+      }
+
+      // Update Google Analytics Consent Mode v2
+      if (typeof window.gtag === 'function') {
+        window.gtag('consent', 'update', {
+          'analytics_storage': analyticsAllowed ? 'granted' : 'denied'
+        });
+      }
+
+      // Track consent update event
+      if (typeof window.trackWorkouseEvent === 'function') {
+        window.trackWorkouseEvent('cookie_consent_updated', {
+          analytics_allowed: analyticsAllowed,
+          consent_action: actionName
+        });
+      }
+
+      hideBanner();
+      hideModal();
+    }
+
+    function showBanner() {
+      if (!banner) return;
+      banner.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+    }
+
+    function hideBanner() {
+      if (!banner) return;
+      banner.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+    }
+
+    function showModal() {
+      if (!modalBackdrop || !modalContent) return;
+      const consent = getSavedConsent();
+      if (toggleAnalytics) {
+        toggleAnalytics.checked = consent ? consent.analytics : true;
+      }
+      modalBackdrop.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        modalBackdrop.classList.remove('opacity-0');
+        modalContent.classList.remove('scale-95');
+        modalContent.classList.add('scale-100');
+      });
+    }
+
+    function hideModal() {
+      if (!modalBackdrop || !modalContent) return;
+      modalBackdrop.classList.add('opacity-0');
+      modalContent.classList.remove('scale-100');
+      modalContent.classList.add('scale-95');
+      setTimeout(() => {
+        modalBackdrop.classList.add('hidden');
+      }, 300);
+    }
+
+    // Expose global window method to open cookie preferences
+    (window as any).openCookiePreferences = function () {
+      showModal();
+    };
+
+    // Initialize check
+    const saved = getSavedConsent();
+    if (!saved) {
+      setTimeout(showBanner, 1000);
+    }
+
+    // Event listeners
+    if (acceptAllBtn) {
+      acceptAllBtn.addEventListener('click', () => saveConsent(true, 'accept_all'));
+    }
+
+    if (rejectNonEssentialBtn) {
+      rejectNonEssentialBtn.addEventListener('click', () => saveConsent(false, 'reject_nonessential'));
+    }
+
+    if (openPrefBtn) {
+      openPrefBtn.addEventListener('click', () => {
+        hideBanner();
+        showModal();
+      });
+    }
+
+    if (modalCloseBtn) {
+      modalCloseBtn.addEventListener('click', hideModal);
+    }
+
+    if (modalBackdrop) {
+      modalBackdrop.addEventListener('click', (e) => {
+        if (e.target === modalBackdrop) hideModal();
+      });
+    }
+
+    if (savePrefBtn) {
+      savePrefBtn.addEventListener('click', () => {
+        const analytics = toggleAnalytics ? toggleAnalytics.checked : false;
+        saveConsent(analytics, 'save_preferences');
+      });
+    }
+
+    // Keydown ESC handler
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalBackdrop && !modalBackdrop.classList.contains('hidden')) {
+        hideModal();
+      }
+    });
+  })();
+</script>

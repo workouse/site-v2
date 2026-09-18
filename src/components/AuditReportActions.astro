@@ -6,28 +6,30 @@ interface Props {
 const { auditId } = Astro.props;
 ---
 
-<div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800 font-mono text-xs">
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/90 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 shadow-sm dark:shadow-none font-mono text-xs w-full transition-colors duration-300">
   <div class="flex items-center gap-2">
     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-    <span class="text-zinc-400">Report Session Verified</span>
+    <span class="text-zinc-600 dark:text-zinc-400">Report Session Verified</span>
   </div>
 
-  <div class="flex items-center gap-3">
+  <div class="grid grid-cols-2 sm:flex sm:flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
     <!-- Download / Print PDF Button -->
     <a
+      id="export-pdf-btn"
       href={`/api/audit/${auditId}/export?format=html`}
       target="_blank"
       rel="noopener noreferrer"
-      class="px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 hover:text-white hover:border-zinc-700 transition flex items-center gap-2"
+      class="px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-950 dark:hover:text-white transition flex items-center justify-center gap-1.5 sm:gap-2 text-center whitespace-nowrap"
     >
       <span>📄</span> Print / Export PDF
     </a>
 
     <!-- Export JSON Button -->
     <a
+      id="export-json-btn"
       href={`/api/audit/${auditId}/export?format=json`}
       download={`workouse-audit-${auditId}.json`}
-      class="px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 hover:text-white hover:border-zinc-700 transition flex items-center gap-2"
+      class="px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-950 dark:hover:text-white transition flex items-center justify-center gap-1.5 sm:gap-2 text-center whitespace-nowrap"
     >
       <span>⚡</span> Export JSON
     </a>
@@ -36,7 +38,7 @@ const { auditId } = Astro.props;
     <button
       id="copy-share-link-btn"
       type="button"
-      class="px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 hover:text-white hover:border-zinc-700 transition flex items-center gap-2"
+      class="px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-950 dark:hover:text-white transition flex items-center justify-center gap-1.5 sm:gap-2 text-center whitespace-nowrap"
     >
       <span>🔗</span> Share Link
     </button>
@@ -45,7 +47,7 @@ const { auditId } = Astro.props;
     <button
       id="open-quote-modal-btn"
       type="button"
-      class="px-4 py-2 rounded-xl bg-brand-yellow text-zinc-950 font-bold hover:bg-yellow-400 transition flex items-center gap-2"
+      class="px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-brand-blue dark:bg-brand-yellow text-white dark:text-zinc-950 font-bold hover:bg-blue-600 dark:hover:bg-yellow-400 transition flex items-center justify-center gap-1.5 sm:gap-2 text-center whitespace-nowrap shadow-sm"
     >
       <span>💼</span> Request Quote
     </button>
@@ -53,11 +55,24 @@ const { auditId } = Astro.props;
 </div>
 
 <script>
+  import { trackEvent } from '../lib/analytics';
+
   const shareBtn = document.getElementById('copy-share-link-btn');
   const quoteModalBtn = document.getElementById('open-quote-modal-btn');
+  const exportPdfBtn = document.getElementById('export-pdf-btn');
+  const exportJsonBtn = document.getElementById('export-json-btn');
   const leadModal = document.getElementById('lead-modal') as HTMLDialogElement | null;
 
+  exportPdfBtn?.addEventListener('click', () => {
+    trackEvent('audit_export_clicked', { format: 'pdf' });
+  });
+
+  exportJsonBtn?.addEventListener('click', () => {
+    trackEvent('audit_export_clicked', { format: 'json' });
+  });
+
   shareBtn?.addEventListener('click', async () => {
+    trackEvent('audit_share_copied', { url: window.location.href });
     try {
       await navigator.clipboard.writeText(window.location.href);
       const origText = shareBtn.innerHTML;
@@ -71,6 +86,7 @@ const { auditId } = Astro.props;
   });
 
   quoteModalBtn?.addEventListener('click', () => {
+    trackEvent('request-quote-form-opened', { source: 'report_toolbar' });
     leadModal?.showModal();
   });
 </script>

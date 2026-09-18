@@ -143,7 +143,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
         // Fetch AI output
         const aiRow = await env.DB.prepare(
-          'SELECT score, issues_json, recommendation, recommendation_reason, summary, processed_at FROM ai_output WHERE audit_id = ?'
+          'SELECT score, issues_json, recommendation, recommendation_reason, summary, processed_at FROM audit_results WHERE audit_id = ?'
         )
           .bind(audit.id)
           .first<{

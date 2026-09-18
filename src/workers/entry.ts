@@ -1,5 +1,7 @@
 import astroWorker from '../../dist/_worker.js/index.js';
 import auditConsumer from './audit-consumer';
+import { purgeExpiredAudits } from '../lib/cleanup-engine';
+
 export { AuditStatusDO } from '../objects/AuditStatusDO';
 
 export default {
@@ -36,5 +38,10 @@ export default {
 
   async queue(batch: any, env: any): Promise<void> {
     return auditConsumer.queue(batch, env);
+  },
+
+  // Cron schedule handler to purge reports > 30 days old automatically
+  async scheduled(_event: any, env: any, ctx: any): Promise<void> {
+    ctx.waitUntil(purgeExpiredAudits(env, 30));
   },
 };

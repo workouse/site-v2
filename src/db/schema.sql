@@ -22,14 +22,19 @@ CREATE TABLE IF NOT EXISTS raw_results (
   fetched_at INTEGER NOT NULL
 );
 
--- 3. AI Output Table
-CREATE TABLE IF NOT EXISTS ai_output (
+-- 3. Audit Results Table
+CREATE TABLE IF NOT EXISTS audit_results (
   audit_id TEXT PRIMARY KEY REFERENCES audits(id) ON DELETE CASCADE,
   score INTEGER NOT NULL,
+  performance_score INTEGER NOT NULL DEFAULT 0,
+  security_score INTEGER NOT NULL DEFAULT 0,
+  seo_score INTEGER NOT NULL DEFAULT 0,
+  standards_score INTEGER NOT NULL DEFAULT 0,
   issues_json TEXT NOT NULL,
   recommendation TEXT NOT NULL CHECK (recommendation IN ('fix', 'rebuild')),
   recommendation_reason TEXT,
   summary TEXT NOT NULL,
+  story TEXT,
   processed_at INTEGER NOT NULL
 );
 

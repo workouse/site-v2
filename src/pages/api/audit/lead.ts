@@ -94,6 +94,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
+    if (env) {
+      const { sendTelemetryEvent } = await import('../../../lib/telemetry');
+      await sendTelemetryEvent(env, {
+        category: 'lead',
+        action: 'LEAD_SUBMITTED',
+        auditId,
+        url: auditedSiteUrl,
+        details: { name, email, serviceType, budget },
+      });
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

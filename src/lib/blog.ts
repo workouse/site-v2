@@ -54,3 +54,31 @@ export function calculateReadTime(content: string, wpm = 200): number {
   const wordCount = cleanText.trim().split(/\s+/).length;
   return Math.max(1, Math.ceil(wordCount / wpm));
 }
+
+/**
+ * Get latest non-draft blog posts for a given language, limited by count.
+ */
+export async function getLatestPosts(lang: SupportedLang = 'en', limit = 3): Promise<BlogPost[]> {
+  const posts = await getPostsByLang(lang);
+  return posts.slice(0, limit);
+}
+
+/**
+ * Get featured or latest blog posts for a given language.
+ * Prioritizes posts with `featured: true`, then sorts by publish date desc.
+ */
+export async function getFeaturedOrLatestPosts(lang: SupportedLang = 'en', limit = 3): Promise<BlogPost[]> {
+  const posts = await getPostsByLang(lang);
+
+  const sorted = [...posts].sort((a, b) => {
+    const aFeatured = a.data.featured ? 1 : 0;
+    const bFeatured = b.data.featured ? 1 : 0;
+    if (aFeatured !== bFeatured) {
+      return bFeatured - aFeatured;
+    }
+    return b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
+  });
+
+  return sorted.slice(0, limit);
+}
+

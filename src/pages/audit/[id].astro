@@ -40,7 +40,7 @@ if (id && env?.DB) {
 
       if (audit.status === 'complete') {
         const resultRow = await env.DB.prepare(
-          'SELECT score, performance_score, security_score, seo_score, standards_score, issues_json, recommendation, recommendation_reason, summary, processed_at FROM audit_results WHERE audit_id = ?'
+          'SELECT score, performance_score, security_score, seo_score, standards_score, issues_json, recommendation, recommendation_reason, summary, story, processed_at FROM audit_results WHERE audit_id = ?'
         )
           .bind(id)
           .first<{
@@ -53,6 +53,7 @@ if (id && env?.DB) {
             recommendation: 'fix' | 'rebuild';
             recommendation_reason: string;
             summary: string;
+            story: string | null;
             processed_at: number;
           }>();
 
@@ -61,6 +62,59 @@ if (id && env?.DB) {
           try {
             issues = JSON.parse(resultRow.issues_json);
           } catch {}
+
+          let modernizationReport = null;
+          if (env.AUDIT_RESULTS) {
+            try {
+              const r2Obj = await env.AUDIT_RESULTS.get(`raw_${id}.json`);
+              if (r2Obj) {
+                const rawResults = await r2Obj.json() as any;
+                if (rawResults?.techstack) {
+                  const { generateModernizationChecklist } = await import('../../lib/techstack-engine');
+                  modernizationReport = generateModernizationChecklist(rawResults.techstack, rawResults);
+                }
+              }
+            } catch {}
+          }
+
+          if (!modernizationReport) {
+            const { detectTechStack, generateModernizationChecklist } = await import('../../lib/techstack-engine');
+            const { inspectDataRegulation, fetchDistributedWebFeatures } = await import('../../lib/audit-engine');
+            const fallbackTech = detectTechStack('', {}, audit.url);
+            const fallbackDistributed = await fetchDistributedWebFeatures(audit.url, '');
+            modernizationReport = generateModernizationChecklist(fallbackTech, {
+              pagespeed: { score: resultRow.performance_score, lcp: 3200, cls: 0.18, tbt: 350, ttfb: 650, speedIndex: 3100, hasUnoptimizedImages: true, hasRenderBlockingJs: true },
+              security: { isHttps: audit.url.startsWith('https://'), hasHsts: false, hasCsp: false, hasXFrameOptions: false, hasReferrerPolicy: false, hasNosniff: false, hasPermissionsPolicy: false, rawHeaders: {} },
+              seo: { hasTitle: true, titleText: null, titleLength: 30, hasMetaDescription: false, metaDescriptionText: null, metaDescriptionLength: 0, hasH1: true, h1Count: 1, hasCanonical: false, canonicalUrl: null, hasOgTags: false, hasOgImage: false, hasTwitterCards: false, hasSchemaOrg: false, schemaTypes: [], hasRobotsTxt: false, hasSitemapXml: false, imagesWithoutAltCount: 0, totalImagesCount: 0, hasPoorAltText: false, poorAltTextCount: 0, hasCharsetMeta: true, hasLangAttribute: true, hasSkippedHeadings: false, headingSkippedLevels: [], emptyHeadingsCount: 0, hasSemanticLandmarks: true, semanticLandmarks: { hasHeader: true, hasNav: true, hasMain: true, hasFooter: true, hasSectionOrArticle: true }, urlQuality: { isTooLong: false, hasUnderscores: false, hasUppercase: false, length: audit.url.length, path: '' }, hasHreflang: false, hreflangLocales: [], isNoindex: false },
+              standards: { hasDoctype: true, hasLangAttribute: true, langValue: 'en', hasViewportMeta: true, hasFavicon: true, hasLlmsTxt: false, hasSecurityTxt: false, hasSitemapXml: false },
+              techstack: fallbackTech,
+              observatory: { score: 70, grade: 'B', state: 'FALLBACK', testsPassed: 6, testsFailed: 2, testsQuantity: 8 },
+              pa11y: { score: 75, totalErrors: 0, totalWarnings: 0, issues: [] },
+              mobile: { hasViewportMeta: true, hasZoomDisabled: false, hasHorizontalOverflow: false, overflowWidth: 0, undersizedTouchTargetsCount: 0, smallTextElementsCount: 0, hasResponsiveImages: false },
+              regulation: inspectDataRegulation(''),
+              distributed: fallbackDistributed,
+              fetchedAt: Math.floor(Date.now() / 1000),
+            });
+          }
+
+          const { parseStoryToBriefing, briefingToPlainText } = await import('../../lib/story-engine');
+          const fallbackParams = {
+            url: audit.url,
+            scores: {
+              overall: resultRow.score,
+              performance: resultRow.performance_score,
+              security: resultRow.security_score,
+              seo: resultRow.seo_score,
+              standards: resultRow.standards_score,
+            },
+            issues,
+            recommendation: resultRow.recommendation,
+            platform: modernizationReport.techStack.platform,
+            platformVersion: modernizationReport.techStack.platformVersion,
+            detectedExtensionsCount: modernizationReport.techStack.detectedExtensions?.length,
+          };
+          const executiveBriefing = parseStoryToBriefing(resultRow.story, fallbackParams);
+          const story = resultRow.story || briefingToPlainText(executiveBriefing);
 
           aiOutput = {
             score: resultRow.score,
@@ -72,7 +126,10 @@ if (id && env?.DB) {
             recommendation: resultRow.recommendation,
             recommendationReason: resultRow.recommendation_reason,
             summary: resultRow.summary,
+            story,
+            executiveBriefing,
             processedAt: resultRow.processed_at,
+            modernizationReport,
           };
         }
       }
@@ -100,7 +157,7 @@ if (!audit && id) {
 >
   <Header />
 
-  <main class="min-h-screen bg-zinc-950 pt-28 pb-20 px-4 sm:px-6 lg:px-8">
+  <main class="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
     {audit && audit.status === 'complete' && aiOutput ? (
       <AuditReport audit={audit} aiOutput={aiOutput} />
     ) : audit ? (

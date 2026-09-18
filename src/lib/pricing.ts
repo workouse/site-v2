@@ -20,213 +20,325 @@ function createPricingEntry(
   severity: IssueSeverity,
   estimatedMinutes: number
 ): PricingEntry {
-  const price = Math.round((estimatedMinutes / 60) * HOURLY_RATE * 100) / 100;
+  const price = Math.ceil((estimatedMinutes / 60) * HOURLY_RATE);
   return { id, label, category, severity, estimatedMinutes, price };
 }
 
 export const PRICING_TABLE: Record<string, PricingEntry> = {
   'missing-title': createPricingEntry(
     'missing-title',
-    'Missing or Empty Page Title',
+    'Missing Page Name in Search Engines',
     'SEO',
     'critical',
     20
   ),
   'missing-meta-description': createPricingEntry(
     'missing-meta-description',
-    'Missing Meta Description',
+    'Missing Search Result Summary Preview',
     'SEO',
     'warning',
     20
   ),
   'missing-h1': createPricingEntry(
     'missing-h1',
-    'Missing or Invalid H1 Heading Structure',
+    'Missing Main Page Headline',
     'SEO',
     'warning',
     30
   ),
   'missing-canonical': createPricingEntry(
     'missing-canonical',
-    'Missing Canonical Tag',
+    'Risk of Duplicate Content Search Penalty',
     'SEO',
     'info',
     15
   ),
   'missing-og-tags': createPricingEntry(
     'missing-og-tags',
-    'Missing Open Graph Meta Tags',
+    'Unformatted Links When Shared on Social Media',
     'SEO',
     'info',
     30
   ),
   'no-ssl': createPricingEntry(
     'no-ssl',
-    'HTTP Without Automatic HTTPS Redirect',
+    'Insecure Website Connection (No Automatic HTTPS)',
     'Security',
     'critical',
     45
   ),
   'missing-hsts': createPricingEntry(
     'missing-hsts',
-    'Missing HTTP Strict Transport Security (HSTS)',
+    'Weak Secure Connection Protection',
     'Security',
     'critical',
     30
   ),
   'missing-csp': createPricingEntry(
     'missing-csp',
-    'Missing Content-Security-Policy (CSP)',
+    'Vulnerable to Malicious Script Injections',
     'Security',
     'warning',
     90
   ),
   'missing-x-frame-options': createPricingEntry(
     'missing-x-frame-options',
-    'Clickjacking Vulnerability (Missing X-Frame-Options)',
+    'Vulnerable to Website Impersonation & Framing',
     'Security',
     'warning',
     20
   ),
   'missing-referrer-policy': createPricingEntry(
     'missing-referrer-policy',
-    'Missing Referrer-Policy Header',
+    'Private Visitor Data Exposed to External Sites',
     'Security',
     'info',
     15
   ),
   'poor-lcp': createPricingEntry(
     'poor-lcp',
-    'Poor Largest Contentful Paint (LCP > 4.0s)',
+    'Slow Overall Page Loading Speed',
     'Performance',
     'critical',
     120
   ),
   'poor-fid': createPricingEntry(
     'poor-fid',
-    'High Total Blocking Time / Input Delay',
+    'Screen Freezes & Slow Touch Response',
     'Performance',
     'critical',
     90
   ),
   'poor-cls': createPricingEntry(
     'poor-cls',
-    'Poor Cumulative Layout Shift (CLS > 0.25)',
+    'Jumpy Page Layout & Accidental Button Clicks',
     'Performance',
     'warning',
     60
   ),
   'large-images': createPricingEntry(
     'large-images',
-    'Unoptimized or Oversized Images',
+    'Oversized & Heavy Image Files',
     'Performance',
     'warning',
     60
   ),
   'render-blocking-js': createPricingEntry(
     'render-blocking-js',
-    'Render-Blocking JavaScript Resources',
+    'Scripts Delaying What Visitors See First',
     'Performance',
     'warning',
     90
   ),
   'no-gzip': createPricingEntry(
     'no-gzip',
-    'Disabled Gzip/Brotli Compression',
+    'Uncompressed Page Files Slowing Down Loading',
     'Performance',
     'warning',
     30
   ),
   'no-robots-txt': createPricingEntry(
     'no-robots-txt',
-    'Missing robots.txt File',
+    'Missing Search Engine Indexing Guidelines',
     'SEO',
     'info',
     15
   ),
   'missing-schema-org': createPricingEntry(
     'missing-schema-org',
-    'Missing Structured Data (Schema.org / JSON-LD)',
+    'Missing Star Ratings & Rich Search Snippets',
     'SEO',
     'info',
     45
   ),
   'invalid-title-length': createPricingEntry(
     'invalid-title-length',
-    'Suboptimal Page Title Length (10-60 chars expected)',
+    'Page Title Length Out of Search Display Bounds',
     'SEO',
     'warning',
     15
   ),
   'invalid-meta-description-length': createPricingEntry(
     'invalid-meta-description-length',
-    'Suboptimal Meta Description Length (50-160 chars expected)',
+    'Search Result Preview Text Is Cut Off',
     'SEO',
     'warning',
     15
   ),
   'multiple-h1': createPricingEntry(
     'multiple-h1',
-    'Multiple H1 Headings Detected (Only 1 recommended)',
+    'Confusing Multiple Main Page Headlines',
     'SEO',
     'warning',
     20
   ),
   'missing-og-image': createPricingEntry(
     'missing-og-image',
-    'Missing Open Graph Image Tag (og:image)',
+    'Missing Preview Picture for Social Shares',
     'SEO',
     'warning',
     20
   ),
   'missing-twitter-cards': createPricingEntry(
     'missing-twitter-cards',
-    'Missing Twitter Card Meta Tags',
+    'Plain Text Social Links on X (Twitter)',
     'SEO',
     'info',
     15
   ),
   'missing-sitemap-xml': createPricingEntry(
     'missing-sitemap-xml',
-    'Missing XML Sitemap (sitemap.xml)',
+    'Missing Search Engine Sitemap for Indexing',
     'SEO',
     'info',
     20
   ),
   'missing-image-alt': createPricingEntry(
     'missing-image-alt',
-    'Images Missing Alt Attributes',
+    'Images Missing Text Descriptions for Google & Vision',
     'SEO',
     'warning',
     30
   ),
   'missing-charset': createPricingEntry(
     'missing-charset',
-    'Missing Meta Charset Tag',
+    'Garbled Character Encoding Risk',
     'SEO',
     'warning',
     15
   ),
   'missing-lang': createPricingEntry(
     'missing-lang',
-    'Missing HTML Lang Attribute',
+    'Missing Website Language Identifier',
     'SEO',
     'info',
     15
   ),
   'missing-viewport': createPricingEntry(
     'missing-viewport',
-    'Missing Viewport Meta Tag',
+    'Not Formatted or Scaled for Mobile Phones',
     'Performance',
     'critical',
     15
   ),
   'slow-ttfb': createPricingEntry(
     'slow-ttfb',
-    'Slow Initial Server Response Time (TTFB > 600ms)',
+    'Slow Initial Server Response Time',
     'Performance',
     'critical',
     120
+  ),
+  'legacy-stack-migration': createPricingEntry(
+    'legacy-stack-migration',
+    'Replace End-of-Life Core Framework Stack',
+    'Performance',
+    'critical',
+    240
+  ),
+  'edge-serverless-migration': createPricingEntry(
+    'edge-serverless-migration',
+    'Migrate Monolithic Origin Server to Cloudflare Edge',
+    'Performance',
+    'warning',
+    360
+  ),
+  'css-modernization': createPricingEntry(
+    'css-modernization',
+    'Upgrade Legacy Bootstrap CSS to Utility Tailwind',
+    'Performance',
+    'info',
+    180
+  ),
+  'ai-agent-readiness': createPricingEntry(
+    'ai-agent-readiness',
+    'Implement AI Agent Readiness (`llms.txt` & JSON-LD)',
+    'SEO',
+    'info',
+    90
+  ),
+  'observatory-low-grade': createPricingEntry(
+    'observatory-low-grade',
+    'Poor Mozilla Security Observatory Grade',
+    'Security',
+    'critical',
+    45
+  ),
+  'pa11y-wcag-violations': createPricingEntry(
+    'pa11y-wcag-violations',
+    'WCAG 2.1 AA Accessibility Standards Violations',
+    'Standards',
+    'warning',
+    45
+  ),
+  'mobile-layout-overflow': createPricingEntry(
+    'mobile-layout-overflow',
+    'Mobile Layout Overflow (Horizontal Scrolling)',
+    'Standards',
+    'warning',
+    30
+  ),
+  'tiny-touch-targets': createPricingEntry(
+    'tiny-touch-targets',
+    'Undersized Mobile Touch Targets (< 44px)',
+    'Standards',
+    'warning',
+    30
+  ),
+  'illegible-mobile-text': createPricingEntry(
+    'illegible-mobile-text',
+    'Illegible Mobile Font Sizes (< 12px)',
+    'Standards',
+    'warning',
+    20
+  ),
+  'disabled-viewport-zoom': createPricingEntry(
+    'disabled-viewport-zoom',
+    'Mobile Pinch-to-Zoom Disabled by Viewport',
+    'Standards',
+    'warning',
+    15
+  ),
+  'broken-heading-hierarchy': createPricingEntry(
+    'broken-heading-hierarchy',
+    'Broken Heading Outline & Skipped Levels (H1-H6)',
+    'SEO',
+    'warning',
+    25
+  ),
+  'missing-semantic-landmarks': createPricingEntry(
+    'missing-semantic-landmarks',
+    'Missing HTML5 Semantic Page Structure (<nav>, <header>, <footer>)',
+    'SEO',
+    'warning',
+    30
+  ),
+  'poor-url-structure': createPricingEntry(
+    'poor-url-structure',
+    'Non-Optimized URL Slug (Length, Casing, or Underscores)',
+    'SEO',
+    'info',
+    15
+  ),
+  'poor-image-alt-text': createPricingEntry(
+    'poor-image-alt-text',
+    'Low-Quality or Redundant Image Alt Text Descriptions',
+    'SEO',
+    'info',
+    20
+  ),
+  'missing-breadcrumbs-schema': createPricingEntry(
+    'missing-breadcrumbs-schema',
+    'Missing Breadcrumb Schema for Search Navigation Snippets',
+    'SEO',
+    'info',
+    30
+  ),
+  'accidental-noindex': createPricingEntry(
+    'accidental-noindex',
+    'Accidental Search Engine Noindex or Crawl Blocker',
+    'SEO',
+    'critical',
+    20
   ),
 };
 

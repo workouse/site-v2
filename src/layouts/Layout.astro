@@ -1,4 +1,6 @@
 ---
+import CookieBanner from '../components/CookieBanner.astro';
+
 interface Props {
   title?: string;
   description?: string;
@@ -138,10 +140,54 @@ const webSiteSchema = {
     <script type="application/ld+json" is:inline set:html={JSON.stringify(professionalServiceSchema)} />
     <script type="application/ld+json" is:inline set:html={JSON.stringify(webSiteSchema)} />
 
+    <!-- Inline Theme Initialization Script (FOUC Prevention) -->
+    <script is:inline>
+      (function() {
+        const storedTheme = localStorage.getItem('theme');
+        if (storedTheme === 'dark' || (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else if (storedTheme === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+
+    <!-- Google Analytics (GA4) with Consent Mode v2 -->
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-NEW2M4VEX1"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      window.gtag = gtag;
+
+      // Read saved cookie consent from localStorage
+      var savedConsent = null;
+      try {
+        var rawConsent = localStorage.getItem('workouse_cookie_consent');
+        if (rawConsent) savedConsent = JSON.parse(rawConsent);
+      } catch (e) {}
+
+      var analyticsGranted = savedConsent ? Boolean(savedConsent.analytics) : false;
+
+      // Set default consent state
+      gtag('consent', 'default', {
+        'analytics_storage': analyticsGranted ? 'granted' : 'denied',
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied'
+      });
+
+      gtag('js', new Date());
+      gtag('config', 'G-NEW2M4VEX1', {
+        send_page_view: true
+      });
+    </script>
+
     <!-- Custom Head Slot for Page-Specific Meta / Hreflang Tags -->
     <slot name="head" />
   </head>
-  <body class="bg-zinc-950 text-zinc-50 font-sans selection:bg-brand-blue selection:text-brand-yellow min-h-screen antialiased overflow-x-hidden relative">
+  <body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 font-sans selection:bg-brand-blue selection:text-brand-yellow min-h-screen antialiased overflow-x-hidden w-full max-w-full relative transition-colors duration-300">
     <!-- Skip to main content (Accessibility) -->
     <a
       href="#main-content"
@@ -155,18 +201,21 @@ const webSiteSchema = {
       id="cursor-glow"
       aria-hidden="true"
       class="pointer-events-none fixed z-0 transition-opacity duration-500"
-      style="top:0;left:0;width:600px;height:600px;transform:translate(-50%,-50%);background:radial-gradient(circle at center, rgba(254,197,0,0.06) 0%, rgba(0,48,135,0.04) 40%, transparent 70%);border-radius:50%;opacity:0;"
+      style="top:0;left:0;width:600px;height:600px;transform:translate(-50%,-50%);background:radial-gradient(circle at center, rgba(254,197,0,0.08) 0%, rgba(0,48,135,0.05) 40%, transparent 70%);border-radius:50%;opacity:0;"
     ></div>
 
     <!-- Grid Overlay Background -->
-    <div aria-hidden="true" class="fixed inset-0 bg-[linear-gradient(to_right,#09090b_1px,transparent_1px),linear-gradient(to_bottom,#09090b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none z-0 opacity-80"></div>
+    <div aria-hidden="true" class="fixed inset-0 bg-[linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#09090b_1px,transparent_1px),linear-gradient(to_bottom,#09090b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none z-0 opacity-70 dark:opacity-80"></div>
 
     <!-- Deep Ambient Glow Accent -->
-    <div aria-hidden="true" class="fixed top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[50vh] bg-brand-blue/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
+    <div aria-hidden="true" class="fixed top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[50vh] bg-brand-blue/5 dark:bg-brand-blue/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
 
-    <div class="relative z-10 flex flex-col min-h-screen justify-between">
+    <div class="relative z-10 flex flex-col min-h-screen justify-between overflow-x-hidden w-full max-w-full">
       <slot />
     </div>
+
+    <!-- Cookie Consent Banner & Preferences Modal -->
+    <CookieBanner />
 
     <style is:global>
       /* Prevent layout shift from scrollbar appearance */
@@ -180,13 +229,22 @@ const webSiteSchema = {
         height: 8px;
       }
       ::-webkit-scrollbar-track {
+        background: #f4f4f5;
+      }
+      .dark ::-webkit-scrollbar-track {
         background: #09090b;
       }
       ::-webkit-scrollbar-thumb {
-        background: #27272a;
+        background: #d4d4d8;
         border-radius: 4px;
       }
+      .dark ::-webkit-scrollbar-thumb {
+        background: #27272a;
+      }
       ::-webkit-scrollbar-thumb:hover {
+        background: #a1a1aa;
+      }
+      .dark ::-webkit-scrollbar-thumb:hover {
         background: #3f3f46;
       }
 
@@ -212,16 +270,28 @@ const webSiteSchema = {
       /* Glow card transitions */
       .glow-card {
         position: relative;
-        background: rgba(18, 18, 24, 0.65);
-        border: 1px solid rgba(39, 39, 42, 0.6);
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(228, 228, 231, 0.8);
         backdrop-filter: blur(12px);
         transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+      }
+
+      .dark .glow-card {
+        background: rgba(18, 18, 24, 0.65);
+        border: 1px solid rgba(39, 39, 42, 0.6);
+        box-shadow: none;
       }
 
       .glow-card:hover {
+        border-color: rgba(254, 197, 0, 0.5);
+        box-shadow: 0 0 25px rgba(254, 197, 0, 0.08);
+        transform: translateY(-2px);
+      }
+
+      .dark .glow-card:hover {
         border-color: rgba(254, 197, 0, 0.4);
         box-shadow: 0 0 25px rgba(254, 197, 0, 0.05), inset 0 0 12px rgba(254, 197, 0, 0.02);
-        transform: translateY(-2px);
       }
     </style>
 
@@ -270,6 +340,29 @@ const webSiteSchema = {
 
         animate();
       })();
+    </script>
+    <!-- Global Outbound Click Tracking -->
+    <script>
+      import { trackEvent } from '../lib/analytics';
+
+      document.addEventListener('click', (e) => {
+        const target = (e.target as HTMLElement)?.closest('a');
+        if (!target) return;
+        const href = target.getAttribute('href');
+        if (!href) return;
+
+        if (href.startsWith('http://') || href.startsWith('https://')) {
+          try {
+            const url = new URL(href, window.location.origin);
+            if (url.origin !== window.location.origin) {
+              trackEvent('outbound_click', {
+                destination: href,
+                link_text: target.innerText?.trim() || target.getAttribute('aria-label') || 'outbound_link',
+              });
+            }
+          } catch {}
+        }
+      });
     </script>
   </body>
 </html>

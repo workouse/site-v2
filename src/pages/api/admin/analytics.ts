@@ -45,7 +45,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const completedAuditsRow = await env.DB.prepare("SELECT COUNT(*) as count FROM audits WHERE status = 'complete'").first();
     const failedAuditsRow = await env.DB.prepare("SELECT COUNT(*) as count FROM audits WHERE status = 'failed'").first();
     const totalLeadsRow = await env.DB.prepare('SELECT COUNT(*) as count FROM audit_leads').first();
-    const avgScoreRow = await env.DB.prepare('SELECT AVG(score) as avg FROM ai_output').first();
+    const avgScoreRow = await env.DB.prepare('SELECT AVG(score) as avg FROM audit_results').first();
 
     const leadsByService = await env.DB.prepare(
       'SELECT service_type, COUNT(*) as count FROM audit_leads GROUP BY service_type'
@@ -54,7 +54,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const recentAuditsResult = await env.DB.prepare(
       `SELECT a.id, a.url, a.email, a.status, a.created_at, o.score, o.recommendation 
        FROM audits a 
-       LEFT JOIN ai_output o ON a.id = o.audit_id 
+       LEFT JOIN audit_results o ON a.id = o.audit_id 
        ORDER BY a.created_at DESC LIMIT 10`
     ).all();
 

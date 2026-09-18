@@ -1,6 +1,14 @@
 import type { APIRoute } from 'astro';
 import { generateId, generateToken } from '../../../lib/nanoid';
 import { sendVerificationEmail, upsertResendContact, RESEND_AUDIT_SEGMENT_ID } from '../../../lib/resend';
+import { verifyRBAC } from '../../../lib/auth';
+import { validateAuditUrl } from '../../../lib/url-validator';
+import {
+  normalizeDomainHost,
+  findRecentDomainAudit,
+  checkRateLimit,
+  recordRateLimit,
+} from '../../../lib/rate-limiter';
 
 export const prerender = false;
 
@@ -9,7 +17,7 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const env = locals.runtime?.env;
-    let body: { url?: string; email?: string } = {};
+    let body: { url?: string; email?: string; force?: boolean; skipCache?: boolean } = {};
 
     try {
       body = await request.json();
@@ -38,64 +46,119 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // URL validation & normalization
-    let parsedUrl: URL;
-    try {
-      const normalized = rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
-        ? rawUrl
-        : `https://${rawUrl}`;
-      parsedUrl = new URL(normalized);
-    } catch {
+    // URL validation & verification (format, TLD, SSRF check & DNS resolution)
+    const urlValidation = await validateAuditUrl(rawUrl, { checkDns: true });
+    if (!urlValidation.isValid || !urlValidation.normalizedUrl || !urlValidation.domainHost) {
       return new Response(
-        JSON.stringify({ error: 'Please provide a valid website URL.' }),
+        JSON.stringify({ error: urlValidation.error || 'Please provide a valid website URL.' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      return new Response(
-        JSON.stringify({ error: 'Only HTTP and HTTPS URLs are supported.' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+    const targetUrl = urlValidation.normalizedUrl;
+    const domainHost = urlValidation.domainHost;
+
+    // Check if requester is authenticated Admin
+    const authResult = await verifyRBAC(request, env, 'admin');
+    const isAdmin = authResult.authorized;
+
+    const skipCache = Boolean(body.force || body.skipCache);
+
+    // 1. Domain 30-Day Cache Lookup (if not Admin skipping cache)
+    if (!isAdmin || !skipCache) {
+      const recentAudit = await findRecentDomainAudit(env, domainHost, 30);
+      if (recentAudit) {
+        // Return existing audit report without consuming rate limits
+        return new Response(
+          JSON.stringify({
+            success: true,
+            cached: true,
+            auditId: recentAudit.id,
+            message: `An audit for ${domainHost} was completed within the last 30 days. Displaying existing analysis.`,
+            redirectUrl: `/audit/${recentAudit.id}`,
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
     }
 
-    const targetUrl = parsedUrl.toString();
-
-    // Rate Limiting (using Cloudflare KV if bound)
+    // Client IP identification
     const clientIp = request.headers.get('cf-connecting-ip') || '127.0.0.1';
-    if (env?.RATE_LIMITS) {
-      const ipKey = `rate:ip:${clientIp}`;
-      const emailKey = `rate:email:${rawEmail}`;
 
-      const ipCountStr = await env.RATE_LIMITS.get(ipKey);
-      const emailCountStr = await env.RATE_LIMITS.get(emailKey);
+    // 2. Admin flow: Unlimited audits & Skip Email Verification
+    if (isAdmin) {
+      const adminAuditId = generateId(12);
+      const createdAt = Math.floor(Date.now() / 1000);
 
-      const ipCount = ipCountStr ? parseInt(ipCountStr, 10) : 0;
-      const emailCount = emailCountStr ? parseInt(emailCountStr, 10) : 0;
+      // Save directly with 'queued' status
+      if (env?.DB) {
+        await env.DB.prepare(
+          'INSERT INTO audits (id, url, email, status, created_at) VALUES (?, ?, ?, ?, ?)'
+        )
+          .bind(adminAuditId, targetUrl, rawEmail, 'queued', createdAt)
+          .run();
 
-      if (ipCount >= 5) {
-        return new Response(
-          JSON.stringify({ error: 'Too many audit requests from this IP. Please wait 10 minutes.' }),
-          { status: 429, headers: { 'Content-Type': 'application/json' } }
-        );
+        // Audit log entry
+        const logId = generateId(12);
+        await env.DB.prepare(
+          'INSERT INTO audit_logs (id, audit_id, action, details_json, timestamp) VALUES (?, ?, ?, ?, ?)'
+        )
+          .bind(
+            logId,
+            adminAuditId,
+            'admin_audit_created',
+            JSON.stringify({ triggeredBy: 'admin', domainHost }),
+            createdAt
+          )
+          .run();
       }
 
-      if (emailCount >= 3) {
-        return new Response(
-          JSON.stringify({ error: 'Too many audit requests for this email. Please wait an hour.' }),
-          { status: 429, headers: { 'Content-Type': 'application/json' } }
-        );
+      // Enqueue audit job directly to Cloudflare Queue if bound
+      if (env?.AUDIT_QUEUE) {
+        await env.AUDIT_QUEUE.send({
+          auditId: adminAuditId,
+          url: targetUrl,
+          email: rawEmail,
+          isAdminTriggered: true,
+          enqueuedAt: Date.now(),
+        });
       }
 
-      await env.RATE_LIMITS.put(ipKey, (ipCount + 1).toString(), { expirationTtl: 600 });
-      await env.RATE_LIMITS.put(emailKey, (emailCount + 1).toString(), { expirationTtl: 3600 });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          isAdmin: true,
+          auditId: adminAuditId,
+          message: 'Admin audit created directly without verification. Analysis enqueued.',
+          redirectUrl: `/audit/${adminAuditId}`,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
+    // 3. Public User Rate Limiting (1 request / 24h per IP, 1 request / 7d per Email)
+    const rateLimitResult = await checkRateLimit(env, clientIp, rawEmail);
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: rateLimitResult.reason }),
+        { status: 429, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Rate limit passed — Record consumption in KV
+    await recordRateLimit(env, clientIp, rawEmail);
+
+    // 4. Create new audit in 'pending_verification' status
     const auditId = generateId(12);
     const token = generateToken(32);
     const createdAt = Math.floor(Date.now() / 1000);
 
-    // Save to D1 database if bound
     if (env?.DB) {
       await env.DB.prepare(
         'INSERT INTO audits (id, url, email, status, created_at) VALUES (?, ?, ?, ?, ?)'

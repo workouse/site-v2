@@ -12,9 +12,21 @@
 - Twitter: https://x.com/workousecom
 - Personal Hub: https://emre.xyz
 
+## Core Products & Tools
+
+- Site Audit Engine: Automated website performance, security vulnerability, and SEO health scanner with itemized repair cost estimation based on a flat $35/hr rate (https://workouse.com/#audit).
+- 100m Social Room: Location-verified social networking for physical venues via GPS/QR check-ins with privacy protection (https://100m.workouse.com).
+- Bilo Bunker: Stateful, multi-tenant Nostr remote signing service (NIP-46) securing Nostr private keys on server infrastructure (https://github.com/workouse/bilo-bunker).
+- Zero-DB QR Menu: Sub-100ms restaurant menu compiler serving static menus straight from edge nodes, bypassing database latency (https://qr-menu.workouse.com).
+- Dede Korkut AI: AI-powered demo video generator creating interactive walkthrough videos with narration and camera zoom from UI features (https://dedekorkut.workouse.com).
+- NostrBridge: Webhook Relay Engine bridging HTTP webhooks (GitHub, Stripe, RSS) to Nostr relays with NIP-98 auth, NIP-57 Zaps, and Liquid templates (https://bridge.workouse.com).
+- AI Curated News: Autonomous AI news aggregator on Cloudflare Workers AI & Vectorize, scoring tech news (HN, Lobsters, Reddit) against Nostr upvotes (https://news.emre.xyz).
+- x2nostr: Universal client-side data migration platform from centralized services (Goodreads, Blogs, IMDb, Letterboxd, Twitter, Spotify) to Nostr (https://x2nostr.emre.xyz).
+
 ## Services
 
 - Fullstack Architecture: End-to-end applications using modern frameworks, robust APIs, and resilient distributed systems.
+- Automated Site Audits: Instant technical health scanning covering Core Web Vitals, security vulnerabilities, SEO, and remediation estimates.
 - DevOps & Automation: CI/CD pipelines, Infrastructure as Code (IaC), container orchestration, and developer velocity.
 - Performance Engineering: Algorithm optimisation, latency reduction, and sub-millisecond critical path engineering.
 
@@ -31,6 +43,7 @@
 
 - Sitemap Validation Tools: https://github.com/workouse
 - Custom E-commerce Extensions (Sylius/PHP): https://github.com/workouse
+- Bilo Bunker Remote Signer: https://github.com/workouse/bilo-bunker
 
 ## Niche Interests
 
