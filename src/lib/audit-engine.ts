@@ -176,31 +176,30 @@ export interface MobileResponsivenessDiagnostics {
   smallTextElements?: SmallTextElementItem[];
 }
 
-export interface EuRegulationDiagnostics {
-  hasCmp: boolean;
-  cmpProvider: string | null;
-  hasPrivacyPolicy: boolean;
-  privacyPolicyUrl: string | null;
-  hasCookiePolicy: boolean;
-  hasImpressumOrLegal: boolean;
-  hasUnconsentedTrackers: boolean;
-  detectedTrackers: string[];
-  hasExternalFontTransfer: boolean;
-}
+import {
+  evaluateSiteDataRegulation,
+  type DataRegulationDiagnostics,
+  type DetectedJurisdiction,
+  type EuRegulationDiagnostics,
+  type UsRegulationDiagnostics,
+  type TrRegulationDiagnostics,
+  type AuRegulationDiagnostics,
+  type GbRegulationDiagnostics,
+  type CaRegulationDiagnostics,
+  type GlobalRegulationDiagnostics,
+} from './jurisdiction-engine';
 
-export interface UsRegulationDiagnostics {
-  hasDoNotSellOrShare: boolean;
-  hasUsStatePrivacyNotice: boolean;
-  hasGpcReadiness: boolean;
-  hasTermsOfService: boolean;
-  hasCoppaStatement: boolean;
-}
-
-export interface DataRegulationDiagnostics {
-  eu: EuRegulationDiagnostics;
-  us: UsRegulationDiagnostics;
-  overallComplianceScore: number;
-}
+export type {
+  DataRegulationDiagnostics,
+  DetectedJurisdiction,
+  EuRegulationDiagnostics,
+  UsRegulationDiagnostics,
+  TrRegulationDiagnostics,
+  AuRegulationDiagnostics,
+  GbRegulationDiagnostics,
+  CaRegulationDiagnostics,
+  GlobalRegulationDiagnostics,
+};
 
 import { detectTechStack } from './techstack-engine';
 import type { DetectedTechStackResult, DistributedWebDiagnostics } from './types';
@@ -483,158 +482,14 @@ export async function fetchMozillaObservatory(
 }
 
 /**
- * Inspect HTML and DOM markers for EU (GDPR/ePrivacy) and US (CCPA/CPRA/State) Data Regulation compliance.
+ * Inspect HTML and DOM markers for regional Data Regulation compliance based on detected jurisdiction.
  */
-export function inspectDataRegulation(html: string): DataRegulationDiagnostics {
-  // --- EU Regulation Checks ---
-  const cmpSignatures: Array<{ provider: string; pattern: RegExp }> = [
-    { provider: 'OneTrust', pattern: /onetrust|otSDKStub/i },
-    { provider: 'Cookiebot', pattern: /cookiebot\.com|Cookiebot/i },
-    { provider: 'CookieYes', pattern: /cookieyes\.com|cookieyes/i },
-    { provider: 'Usercentrics', pattern: /usercentrics\.eu|usercentrics/i },
-    { provider: 'Klaro', pattern: /klaro-config|klaro/i },
-    { provider: 'Axeptio', pattern: /axept\.io|axeptio/i },
-    { provider: 'Didomi', pattern: /didomi\.js|didomi/i },
-    { provider: 'CookieNotice', pattern: /cookie-notice|cookieNotice/i },
-    { provider: 'Termly', pattern: /termly\.io/i },
-    { provider: 'TrustArc', pattern: /trustarc|truste/i },
-  ];
-
-  let cmpProvider: string | null = null;
-  for (const sig of cmpSignatures) {
-    if (sig.pattern.test(html)) {
-      cmpProvider = sig.provider;
-      break;
-    }
-  }
-
-  const hasCmpBannerElement = Boolean(
-    html.match(/id=["'][^"']*(cookie|consent)[^"']*["']/i) ||
-    html.match(/class=["'][^"']*(cookie|consent)[^"']*["']/i) ||
-    html.match(/aria-label=["'][^"']*(cookie|consent)[^"']*["']/i)
-  );
-
-  const hasCmp = Boolean(cmpProvider || hasCmpBannerElement);
-
-  // Pre-Consent Trackers
-  const trackerSignatures: Array<{ name: string; pattern: RegExp }> = [
-    { name: 'Google Analytics 4', pattern: /google-analytics\.com\/analytics\.js|googletagmanager\.com\/gtag\/js|gtag\(['"]config/i },
-    { name: 'Facebook / Meta Pixel', pattern: /connect\.facebook\.net\/[a-z_]+\/fbevents\.js|fbq\(['"]init/i },
-    { name: 'Hotjar', pattern: /static\.hotjar\.com|hjsv/i },
-    { name: 'TikTok Pixel', pattern: /analytics\.tiktok\.com|ttq\.load/i },
-    { name: 'Mixpanel', pattern: /cdn\.mxpnl\.com|mixpanel\.init/i },
-    { name: 'HubSpot Tracking', pattern: /js\.hs-scripts\.com|_hsq/i },
-    { name: 'Segment', pattern: /cdn\.segment\.com\/analytics\.js/i },
-    { name: 'Microsoft Clarity', pattern: /www\.clarity\.ms\/tag/i },
-  ];
-
-  const detectedTrackers: string[] = [];
-  for (const tracker of trackerSignatures) {
-    if (tracker.pattern.test(html)) {
-      detectedTrackers.push(tracker.name);
-    }
-  }
-  const hasUnconsentedTrackers = detectedTrackers.length > 0;
-
-  // Privacy Policy
-  const privacyMatch = Boolean(
-    html.match(/href=["'][^"']*(privacy|gdpr|datenschutz|politique-de-confidentialite|gizlilik)[^"']*["']/i) ||
-    html.match(/>\s*(privacy policy|gizlilik politikası|datenschutz|politique de confidentialité|privacy)\s*</i)
-  );
-  const privacyUrlMatch = html.match(/href=["']([^"']*(privacy|gdpr|datenschutz|politique-de-confidentialite|gizlilik)[^"']*)["']/i);
-  const privacyPolicyUrl = privacyUrlMatch ? privacyUrlMatch[1] : null;
-
-  // Cookie Policy
-  const hasCookiePolicy = Boolean(
-    html.match(/href=["'][^"']*(cookie|cookies|cookie-policy|cerez)[^"']*["']/i) ||
-    html.match(/>\s*(cookie policy|cookies policy|çerez politikası|cookie-richtlinie|cookies)\s*</i)
-  );
-
-  // Impressum / Legal Notice
-  const hasImpressumOrLegal = Boolean(
-    html.match(/href=["'][^"']*(imprint|impressum|legal|mentions-legales|kunye)[^"']*["']/i) ||
-    html.match(/>\s*(impressum|imprint|legal notice|mentions légales|künye)\s*</i)
-  );
-
-  // External Font Transfer
-  const hasExternalFontTransfer = Boolean(
-    html.match(/fonts\.googleapis\.com/i) ||
-    html.match(/fonts\.gstatic\.com/i)
-  );
-
-  const eu: EuRegulationDiagnostics = {
-    hasCmp,
-    cmpProvider,
-    hasPrivacyPolicy: privacyMatch,
-    privacyPolicyUrl,
-    hasCookiePolicy,
-    hasImpressumOrLegal,
-    hasUnconsentedTrackers,
-    detectedTrackers,
-    hasExternalFontTransfer,
-  };
-
-  // --- US Regulation Checks ---
-  // Do Not Sell / Your Privacy Choices
-  const hasDoNotSellOrShare = Boolean(
-    html.match(/do not sell/i) ||
-    html.match(/your privacy choices/i) ||
-    html.match(/opt-out|opt out/i) ||
-    html.match(/href=["'][^"']*(do-not-sell|privacy-choices|ccpa|opt-out)[^"']*["']/i)
-  );
-
-  // US Privacy Notice
-  const hasUsStatePrivacyNotice = Boolean(
-    html.match(/href=["'][^"']*(us-privacy|california-privacy|state-privacy)[^"']*["']/i) ||
-    html.match(/california privacy rights|us state privacy notice|notice at collection/i) ||
-    privacyMatch
-  );
-
-  // GPC Readiness
-  const hasGpcReadiness = Boolean(
-    html.match(/global-privacy-control/i) ||
-    html.match(/globalPrivacyControl/i)
-  );
-
-  // Terms of Service
-  const hasTermsOfService = Boolean(
-    html.match(/href=["'][^"']*(terms|terms-of-service|terms-and-conditions|tos|agb|kullanim-sartlari)[^"']*["']/i) ||
-    html.match(/>\s*(terms of service|terms & conditions|terms and conditions|agb|kullanım şartları)\s*</i)
-  );
-
-  // COPPA Statement
-  const hasCoppaStatement = Boolean(
-    html.match(/coppa/i) ||
-    html.match(/children'?s privacy/i) ||
-    html.match(/under (13|16) years of age/i)
-  );
-
-  const us: UsRegulationDiagnostics = {
-    hasDoNotSellOrShare,
-    hasUsStatePrivacyNotice,
-    hasGpcReadiness,
-    hasTermsOfService,
-    hasCoppaStatement,
-  };
-
-  // Overall compliance score calculation (0–100)
-  let scorePenalty = 0;
-  if (!eu.hasPrivacyPolicy) scorePenalty += 25;
-  if (eu.hasUnconsentedTrackers && !eu.hasCmp) scorePenalty += 25;
-  if (!eu.hasImpressumOrLegal) scorePenalty += 15;
-  if (!eu.hasCookiePolicy) scorePenalty += 10;
-  if (eu.hasExternalFontTransfer) scorePenalty += 5;
-
-  if (!us.hasDoNotSellOrShare && eu.hasUnconsentedTrackers) scorePenalty += 15;
-  if (!us.hasTermsOfService) scorePenalty += 10;
-
-  const overallComplianceScore = Math.max(0, Math.min(100, Math.round(100 - scorePenalty)));
-
-  return {
-    eu,
-    us,
-    overallComplianceScore,
-  };
+export function inspectDataRegulation(
+  html: string,
+  targetUrl?: string,
+  metaLang?: string | null
+): DataRegulationDiagnostics {
+  return evaluateSiteDataRegulation(html, targetUrl, metaLang);
 }
 
 /**
@@ -1266,9 +1121,11 @@ export async function fetchRenderedDOM(
         console.warn('Mobile responsiveness pass / screenshot skipped:', mobileErr);
       }
 
-      await browser.close();
+      try {
+        await browser.close();
+      } catch {}
 
-      const regulation = inspectDataRegulation(domData.html);
+      const regulation = inspectDataRegulation(domData.html, targetUrl, domData.langValue);
       const xRobots = (responseHeaders['x-robots-tag'] || '').toLowerCase();
       const finalIsNoindex = domData.isNoindex || xRobots.includes('noindex') || xRobots.includes('none');
 
@@ -1464,7 +1321,7 @@ export async function fetchRenderedDOM(
     }
 
     const pa11yScore = Math.max(0, 100 - pa11yIssues.length * 15);
-    const regulation = inspectDataRegulation(html);
+    const regulation = inspectDataRegulation(html, targetUrl, langValue);
 
     return {
       html,
@@ -1567,7 +1424,7 @@ export async function fetchRenderedDOM(
         smallTextElementsCount: 0,
         hasResponsiveImages: false,
       },
-      regulation: inspectDataRegulation(''),
+      regulation: inspectDataRegulation('', targetUrl),
     };
   }
 }

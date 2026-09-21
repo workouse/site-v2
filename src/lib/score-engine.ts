@@ -231,96 +231,364 @@ export function computeStandardsScore(
 }
 
 /**
- * Generate actionable AuditIssues from Data Regulation diagnostics.
+ * Generate actionable AuditIssues from Data Regulation diagnostics tailored strictly to detected jurisdiction.
  */
 export function generateRegulationIssues(regulation?: DataRegulationDiagnostics): AuditIssue[] {
   if (!regulation) return [];
 
   const issues: AuditIssue[] = [];
+  const region = regulation.jurisdiction?.region || 'GLOBAL';
 
-  // EU Checks
-  if (!regulation.eu.hasPrivacyPolicy) {
-    issues.push({
-      id: 'eu-missing-privacy-policy',
-      title: 'EU GDPR Violation: Missing Privacy Policy Disclosure',
-      category: 'Standards',
-      severity: 'critical',
-      businessImpact: 'GDPR Article 13 mandates clear privacy disclosures for data processing. Missing a privacy notice creates severe regulatory compliance risk under EU law.',
-      estimatedMinutes: 30,
-      price: 150,
-      proof: 'No valid privacy policy link found in footer/header navigation.',
-    });
+  // 1. Australia (AU)
+  if (region === 'AU' && regulation.au) {
+    if (!regulation.au.hasPrivacyPolicy) {
+      issues.push({
+        id: 'au-missing-privacy-policy',
+        title: 'Australian Privacy Act Violation: Missing Privacy Policy Disclosure',
+        category: 'Standards',
+        severity: 'critical',
+        businessImpact: 'The Privacy Act 1988 and Australian Privacy Principles (APPs) mandate a comprehensive, accessible privacy policy outlining how personal information is collected, stored, and managed.',
+        estimatedMinutes: 30,
+        price: 150,
+        proof: 'No Australian Privacy Policy or APP disclosure detected in navigation or footer.',
+      });
+    }
+
+    if (!regulation.au.hasTermsOfService) {
+      issues.push({
+        id: 'au-missing-terms-acl',
+        title: 'Australian Consumer Law (ACL) Non-Compliance: Missing Commercial Terms',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: 'Under the Competition and Consumer Act 2010 (ACL), commercial websites operating in Australia must provide clear terms of service, consumer guarantee disclosures, and refund guidelines.',
+        estimatedMinutes: 30,
+        price: 150,
+        proof: 'No binding Terms of Service, Conditions of Sale, or ACL consumer guarantee terms found.',
+      });
+    }
+
+    if (!regulation.au.hasAbnOrAcn) {
+      issues.push({
+        id: 'au-missing-abn-disclosure',
+        title: 'Corporations Act Non-Compliance: Missing Australian Business Number (ABN/ACN)',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: 'The Corporations Act 2001 and Business Names Registration Act 2011 require Australian commercial entities to publish their 11-digit ABN or 9-digit ACN on digital storefronts and commercial communications.',
+        estimatedMinutes: 15,
+        price: 75,
+        proof: 'No valid 11-digit ABN or 9-digit ACN identifier identified in page footer or contact sections.',
+      });
+    }
+
+    if (regulation.au.hasUnconsentedTrackers) {
+      const items = regulation.au.detectedTrackers.map((name) => ({
+        label: name,
+        details: 'Third-party tracking script executed without privacy consent disclosure',
+      }));
+      issues.push({
+        id: 'au-unconsented-trackers',
+        title: 'Australian Privacy Principles: Third-Party Trackers Loaded Without Consent Transparency',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: `Active analytics and marketing scripts (${regulation.au.detectedTrackers.join(', ')}) collect Australian user data without a consent management banner or cookie policy transparency.`,
+        estimatedMinutes: 45,
+        price: 225,
+        proof: `Detected scripts: ${regulation.au.detectedTrackers.join(', ')}`,
+        items: items.length > 0 ? items : undefined,
+      });
+    }
+
+    return issues;
   }
 
-  if (regulation.eu.hasUnconsentedTrackers && !regulation.eu.hasCmp) {
-    const items = regulation.eu.detectedTrackers.map((name) => ({
-      label: name,
-      details: 'Third-party tracking script executed without prior user consent',
-    }));
-    issues.push({
-      id: 'eu-unconsented-trackers',
-      title: 'EU ePrivacy Non-Compliance: Third-Party Trackers Loaded Before Consent',
-      category: 'Standards',
-      severity: 'critical',
-      businessImpact: `Active analytics/marketing scripts (${regulation.eu.detectedTrackers.join(', ')}) execute prior to explicit user consent without a Consent Management Platform (CMP).`,
-      estimatedMinutes: 45,
-      price: 225,
-      proof: `Detected scripts: ${regulation.eu.detectedTrackers.join(', ')}`,
-      items: items.length > 0 ? items : undefined,
-    });
+  // 2. Turkey (TR)
+  if (region === 'TR' && regulation.tr) {
+    if (!regulation.tr.hasKvkkNotice) {
+      issues.push({
+        id: 'tr-missing-kvkk-notice',
+        title: 'KVKK Madde 10 İhlali: Zorunlu Aydınlatma Metni Eksik',
+        category: 'Standards',
+        severity: 'critical',
+        businessImpact: '6698 Sayılı Kanun Madde 10 gereği veri sorumluları, kişisel verilerin elde edilmesi sırasında ilgili kişileri aydınlatmakla yükümlüdür.',
+        estimatedMinutes: 30,
+        price: 150,
+        proof: 'KVKK Aydınlatma Metni veya Gizlilik Politikası bağlantısı footer/navigasyonda bulunamadı.',
+      });
+    }
+
+    if (!regulation.tr.hasMersisOrKunye) {
+      issues.push({
+        id: 'tr-missing-mersis-kunye',
+        title: 'TTK Madde 39 / MERSİS İhlali: Zorunlu Ticari Bilgiler (Künye) Eksik',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: 'Türk Ticaret Kanunu m.39 ve Elektronik Ticarette Hizmet Sağlayıcılar Yönetmeliği uyarınca MERSİS numarası, VKN ve şirket künyesi web sitesinde açıkça yayımlanmalıdır.',
+        estimatedMinutes: 15,
+        price: 75,
+        proof: '16 haneli MERSİS numarası, VKN veya Şirket Künyesi sayfası tespit edilemedi.',
+      });
+    }
+
+    if (!regulation.tr.hasEcommerceTerms && !regulation.tr.hasDistanceSalesContract) {
+      issues.push({
+        id: 'tr-missing-ecommerce-terms',
+        title: 'TKHK No. 6502 / E-Ticaret Kanunu: Mesafeli Satış Sözleşmesi / Koşullar Eksik',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: '6502 Sayılı Tüketicinin Korunması Kanunu ve 6563 Sayılı E-Ticaret Kanunu uyarınca online satış ve hizmet sunan sitelerde Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi zorunludur.',
+        estimatedMinutes: 20,
+        price: 100,
+        proof: 'Mesafeli Satış Sözleşmesi veya Ön Bilgilendirme Formu bulunamadı.',
+      });
+    }
+
+    if (!regulation.tr.hasCookiePolicy) {
+      issues.push({
+        id: 'tr-missing-cookie-policy',
+        title: 'KVKK Çerez Rehberi Uyumsuzluğu: Çerez Politikası Eksik',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: 'KVKK Kurumu Çerez Uygulamaları Rehberi uyarınca sitede kullanılan birinci ve üçüncü taraf çerezler hakkında açık bir Çerez Politikası sunulmalıdır.',
+        estimatedMinutes: 20,
+        price: 100,
+        proof: 'Çerez Politikası veya çerez aydınlatma bağlantısı tespit edilemedi.',
+      });
+    }
+
+    if (regulation.tr.hasUnconsentedTrackers) {
+      const items = regulation.tr.detectedTrackers.map((name) => ({
+        label: name,
+        details: 'Açık rıza ve aydınlatma öncesinde çalışan üçüncü taraf takip kodu',
+      }));
+      issues.push({
+        id: 'tr-unconsented-trackers',
+        title: 'KVKK Yurt Dışına Veri Aktarımı Riski: Rıza Alınmadan Çalışan İzleyiciler',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: `Kullanıcı onayı (CMP) olmadan çalışan pazarlama ve analiz izleyicileri (${regulation.tr.detectedTrackers.join(', ')}), kişisel verilerin yurt dışı sunucularına izinsiz aktarımı sebebiyle KVKK idari para cezası riski doğurur.`,
+        estimatedMinutes: 45,
+        price: 225,
+        proof: `Tespit edilen izleyiciler: ${regulation.tr.detectedTrackers.join(', ')}`,
+        items: items.length > 0 ? items : undefined,
+      });
+    }
+
+    return issues;
   }
 
-  if (!regulation.eu.hasImpressumOrLegal) {
-    issues.push({
-      id: 'eu-missing-impressum',
-      title: 'EU E-Commerce Non-Compliance: Missing Impressum / Legal Notice',
-      category: 'Standards',
-      severity: 'warning',
-      businessImpact: 'EU Telemedia directives (§5 TMG / E-Commerce Act) require explicit legal identification and contact details for business websites.',
-      estimatedMinutes: 20,
-      price: 100,
-      proof: 'No Impressum or Legal Notice link found in document structure.',
-    });
+  // 3. European Union / DACH (EU / DE)
+  if (region === 'EU' && regulation.eu) {
+    if (!regulation.eu.hasPrivacyPolicy) {
+      issues.push({
+        id: 'eu-missing-privacy-policy',
+        title: 'EU GDPR Violation: Missing Privacy Policy Disclosure',
+        category: 'Standards',
+        severity: 'critical',
+        businessImpact: 'GDPR Article 13 mandates clear privacy disclosures for data processing. Missing a privacy notice creates severe regulatory compliance risk under EU law.',
+        estimatedMinutes: 30,
+        price: 150,
+        proof: 'No valid privacy policy link found in footer/header navigation.',
+      });
+    }
+
+    if (regulation.eu.hasUnconsentedTrackers && !regulation.eu.hasCmp) {
+      const items = regulation.eu.detectedTrackers.map((name) => ({
+        label: name,
+        details: 'Third-party tracking script executed without prior user consent',
+      }));
+      issues.push({
+        id: 'eu-unconsented-trackers',
+        title: 'EU ePrivacy Non-Compliance: Third-Party Trackers Loaded Before Consent',
+        category: 'Standards',
+        severity: 'critical',
+        businessImpact: `Active analytics/marketing scripts (${regulation.eu.detectedTrackers.join(', ')}) execute prior to explicit user consent without a Consent Management Platform (CMP).`,
+        estimatedMinutes: 45,
+        price: 225,
+        proof: `Detected scripts: ${regulation.eu.detectedTrackers.join(', ')}`,
+        items: items.length > 0 ? items : undefined,
+      });
+    }
+
+    if (!regulation.eu.hasImpressumOrLegal) {
+      issues.push({
+        id: 'eu-missing-impressum',
+        title: 'EU / German E-Commerce Non-Compliance: Missing Impressum / Legal Notice',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: 'German § 5 TMG / DDG and EU Telemedia directives require an explicit Impressum / Legal Notice with registered entity details and direct contact channels.',
+        estimatedMinutes: 20,
+        price: 100,
+        proof: 'No Impressum or Legal Notice link found in document structure.',
+      });
+    }
+
+    if (regulation.eu.hasExternalFontTransfer) {
+      issues.push({
+        id: 'eu-external-font-transfer',
+        title: 'EU Data Privacy Risk: Remote Google Fonts IP Address Transfer',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: 'Directly calling remote Google Fonts transfers user IP addresses to third-party US servers without consent (in violation of EU court rulings). Recommend self-hosting fonts.',
+        estimatedMinutes: 20,
+        price: 100,
+        proof: 'External Google Fonts request detected (fonts.googleapis.com / fonts.gstatic.com).',
+      });
+    }
+
+    return issues;
   }
 
-  if (regulation.eu.hasExternalFontTransfer) {
-    issues.push({
-      id: 'eu-external-font-transfer',
-      title: 'EU Data Privacy Risk: Remote Google Fonts IP Address Transfer',
-      category: 'Standards',
-      severity: 'warning',
-      businessImpact: 'Directly calling remote Google Fonts transfers user IP addresses to third-party US servers without consent (in violation of EU court rulings). Recommend self-hosting fonts.',
-      estimatedMinutes: 20,
-      price: 100,
-      proof: 'External Google Fonts request detected (fonts.googleapis.com / fonts.gstatic.com).',
-    });
+  // 4. United Kingdom (GB)
+  if (region === 'GB' && regulation.gb) {
+    if (!regulation.gb.hasPrivacyNotice) {
+      issues.push({
+        id: 'gb-missing-privacy-notice',
+        title: 'UK GDPR / DPA 2018 Violation: Missing Privacy Notice Disclosure',
+        category: 'Standards',
+        severity: 'critical',
+        businessImpact: 'The UK Data Protection Act 2018 and UK GDPR require transparent disclosure of data processing purposes and lawful bases.',
+        estimatedMinutes: 30,
+        price: 150,
+        proof: 'No UK Privacy Notice link found in document navigation.',
+      });
+    }
+
+    if (!regulation.gb.hasCompanyRegistrationNumber) {
+      issues.push({
+        id: 'gb-missing-company-number',
+        title: 'UK Companies Act 2006 Non-Compliance: Missing Registration Number',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: 'Under the Companies Act 2006, UK registered companies must display their registered company number, place of registration, and registered office address.',
+        estimatedMinutes: 15,
+        price: 75,
+        proof: 'No 8-digit UK Companies House registration number identified.',
+      });
+    }
+
+    if (regulation.gb.hasUnconsentedTrackers) {
+      issues.push({
+        id: 'eu-unconsented-trackers',
+        title: 'UK PECR Non-Compliance: Third-Party Trackers Loaded Before Consent',
+        category: 'Standards',
+        severity: 'critical',
+        businessImpact: `Marketing and analytics trackers (${regulation.gb.detectedTrackers.join(', ')}) executed prior to user consent under Privacy and Electronic Communications Regulations (PECR).`,
+        estimatedMinutes: 45,
+        price: 225,
+        proof: `Detected scripts: ${regulation.gb.detectedTrackers.join(', ')}`,
+      });
+    }
+
+    return issues;
   }
 
-  // US Checks
-  if (!regulation.us.hasDoNotSellOrShare && regulation.eu.hasUnconsentedTrackers) {
-    issues.push({
-      id: 'us-ccpa-missing-optout',
-      title: 'US CCPA/CPRA Risk: Missing "Do Not Sell or Share My Personal Info" Opt-Out',
-      category: 'Standards',
-      severity: 'warning',
-      businessImpact: 'California Consumer Privacy Act (CCPA/CPRA) requires an explicit "Do Not Sell or Share My Personal Info" or "Your Privacy Choices" link for sites utilizing third-party trackers.',
-      estimatedMinutes: 30,
-      price: 150,
-      proof: 'No Do Not Sell or Privacy Choices link/modal detected.',
-    });
+  // 5. United States (US)
+  if (region === 'US' && regulation.us) {
+    if (!regulation.us.hasDoNotSellOrShare && (regulation.eu?.hasUnconsentedTrackers || regulation.us?.hasTermsOfService)) {
+      issues.push({
+        id: 'us-ccpa-missing-optout',
+        title: 'US CCPA/CPRA Risk: Missing "Do Not Sell or Share My Personal Info" Opt-Out',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: 'California Consumer Privacy Act (CCPA/CPRA) requires an explicit "Do Not Sell or Share My Personal Info" or "Your Privacy Choices" link for sites utilizing third-party trackers.',
+        estimatedMinutes: 30,
+        price: 150,
+        proof: 'No Do Not Sell or Privacy Choices link/modal detected.',
+      });
+    }
+
+    if (!regulation.us.hasTermsOfService) {
+      issues.push({
+        id: 'us-missing-terms',
+        title: 'US Commercial Standard: Missing Terms of Service',
+        category: 'Standards',
+        severity: 'info',
+        businessImpact: 'Absence of binding Terms of Service leaves user agreements, limitation of liability, and dispute arbitration unmanaged.',
+        estimatedMinutes: 15,
+        price: 75,
+        proof: 'No Terms of Service link found.',
+      });
+    }
+
+    return issues;
   }
 
-  if (!regulation.us.hasTermsOfService) {
-    issues.push({
-      id: 'us-missing-terms',
-      title: 'US Commercial Standard: Missing Terms of Service',
-      category: 'Standards',
-      severity: 'info',
-      businessImpact: 'Absence of binding Terms of Service leaves user agreements and legal liabilities unmanaged.',
-      estimatedMinutes: 15,
-      price: 75,
-      proof: 'No Terms of Service link found.',
-    });
+  // 6. Canada (CA)
+  if (region === 'CA' && regulation.ca) {
+    if (!regulation.ca.hasPrivacyPolicy) {
+      issues.push({
+        id: 'ca-missing-privacy-policy',
+        title: 'Canadian PIPEDA Non-Compliance: Missing Privacy Policy Disclosure',
+        category: 'Standards',
+        severity: 'critical',
+        businessImpact: 'The Personal Information Protection and Electronic Documents Act (PIPEDA) mandates clear accountability and consent policies for personal data collection in Canada.',
+        estimatedMinutes: 30,
+        price: 150,
+        proof: 'No PIPEDA privacy policy disclosure found in page navigation.',
+      });
+    }
+
+    if (!regulation.ca.hasTermsOfService) {
+      issues.push({
+        id: 'ca-missing-terms',
+        title: 'Canadian Consumer Standard: Missing Terms of Service',
+        category: 'Standards',
+        severity: 'info',
+        businessImpact: 'Commercial terms of service govern transactional agreements under Canadian provincial consumer protection acts.',
+        estimatedMinutes: 15,
+        price: 75,
+        proof: 'No Terms of Service link found.',
+      });
+    }
+
+    return issues;
+  }
+
+  // 7. Global / Fallback (GLOBAL)
+  if (regulation.global || regulation.eu) {
+    const hasPrivacy = regulation.global?.hasPrivacyPolicy ?? regulation.eu?.hasPrivacyPolicy;
+    const hasTerms = regulation.global?.hasTermsOfService ?? regulation.us?.hasTermsOfService;
+    const hasUnconsented = regulation.global?.hasUnconsentedTrackers ?? regulation.eu?.hasUnconsentedTrackers;
+    const trackers = regulation.global?.detectedTrackers ?? regulation.eu?.detectedTrackers ?? [];
+
+    if (!hasPrivacy) {
+      issues.push({
+        id: 'global-missing-privacy-policy',
+        title: 'Website Standard: Missing Privacy Policy Disclosure',
+        category: 'Standards',
+        severity: 'critical',
+        businessImpact: 'A transparent Privacy Policy is a fundamental standard across all jurisdictions to inform visitors how their data is handled.',
+        estimatedMinutes: 30,
+        price: 150,
+        proof: 'No privacy policy link found in footer/header navigation.',
+      });
+    }
+
+    if (!hasTerms) {
+      issues.push({
+        id: 'global-missing-terms',
+        title: 'Website Standard: Missing Terms of Service Agreement',
+        category: 'Standards',
+        severity: 'info',
+        businessImpact: 'Terms of Service establish legal ground rules, intellectual property protection, and liability limitations for website visitors.',
+        estimatedMinutes: 15,
+        price: 75,
+        proof: 'No Terms of Service link found.',
+      });
+    }
+
+    if (hasUnconsented && trackers.length > 0) {
+      issues.push({
+        id: 'eu-unconsented-trackers',
+        title: 'Data Privacy Transparency: Trackers Loaded Without User Notice',
+        category: 'Standards',
+        severity: 'warning',
+        businessImpact: `Analytics/marketing scripts (${trackers.join(', ')}) execute without an explicit privacy notice or consent banner.`,
+        estimatedMinutes: 45,
+        price: 225,
+        proof: `Detected scripts: ${trackers.join(', ')}`,
+      });
+    }
   }
 
   return issues;

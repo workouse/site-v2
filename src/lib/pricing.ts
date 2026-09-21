@@ -340,6 +340,153 @@ export const PRICING_TABLE: Record<string, PricingEntry> = {
     'critical',
     20
   ),
+  'au-missing-privacy-policy': createPricingEntry(
+    'au-missing-privacy-policy',
+    'Australian Privacy Act (APPs) Missing Privacy Disclosure',
+    'Standards',
+    'critical',
+    30
+  ),
+  'au-missing-terms-acl': createPricingEntry(
+    'au-missing-terms-acl',
+    'Australian Consumer Law (ACL) Commercial Terms Missing',
+    'Standards',
+    'warning',
+    30
+  ),
+  'au-missing-abn-disclosure': createPricingEntry(
+    'au-missing-abn-disclosure',
+    'Missing Australian Business Number (ABN/ACN) Disclosure',
+    'Standards',
+    'warning',
+    15
+  ),
+  'au-unconsented-trackers': createPricingEntry(
+    'au-unconsented-trackers',
+    'Australian Privacy Principles: Pre-Consent Analytics & Data Collection Risk',
+    'Standards',
+    'warning',
+    45
+  ),
+  'tr-missing-kvkk-notice': createPricingEntry(
+    'tr-missing-kvkk-notice',
+    'KVKK (No. 6698) Mandatory Aydınlatma Metni Missing',
+    'Standards',
+    'critical',
+    30
+  ),
+  'tr-missing-mersis-kunye': createPricingEntry(
+    'tr-missing-mersis-kunye',
+    'TTK Art. 39 / ETBİS Missing MERSİS & VKN Künye Disclosure',
+    'Standards',
+    'warning',
+    20
+  ),
+  'tr-missing-ecommerce-terms': createPricingEntry(
+    'tr-missing-ecommerce-terms',
+    'E-Commerce Law (No. 6563) & Distance Sales Terms Missing',
+    'Standards',
+    'warning',
+    30
+  ),
+  'tr-missing-cookie-policy': createPricingEntry(
+    'tr-missing-cookie-policy',
+    'KVKK Çerez Politikası (Cookie Policy) Notice Missing',
+    'Standards',
+    'warning',
+    20
+  ),
+  'tr-unconsented-trackers': createPricingEntry(
+    'tr-unconsented-trackers',
+    'KVKK Data Transfer Risk: Third-Party Trackers Loaded Before Consent',
+    'Standards',
+    'warning',
+    45
+  ),
+  'eu-missing-privacy-policy': createPricingEntry(
+    'eu-missing-privacy-policy',
+    'EU GDPR Missing Privacy Policy Disclosure',
+    'Standards',
+    'critical',
+    30
+  ),
+  'eu-unconsented-trackers': createPricingEntry(
+    'eu-unconsented-trackers',
+    'EU ePrivacy Trackers Executed Prior to Consent',
+    'Standards',
+    'critical',
+    45
+  ),
+  'eu-missing-impressum': createPricingEntry(
+    'eu-missing-impressum',
+    'EU E-Commerce Missing Impressum / Legal Notice',
+    'Standards',
+    'warning',
+    20
+  ),
+  'eu-external-font-transfer': createPricingEntry(
+    'eu-external-font-transfer',
+    'EU GDPR Remote Font IP Address Transfer Risk',
+    'Standards',
+    'warning',
+    20
+  ),
+  'us-ccpa-missing-optout': createPricingEntry(
+    'us-ccpa-missing-optout',
+    'US CCPA/CPRA Missing Opt-Out & Privacy Choices Link',
+    'Standards',
+    'warning',
+    30
+  ),
+  'us-missing-terms': createPricingEntry(
+    'us-missing-terms',
+    'US Commercial Standards Missing Terms of Service',
+    'Standards',
+    'info',
+    15
+  ),
+  'gb-missing-privacy-notice': createPricingEntry(
+    'gb-missing-privacy-notice',
+    'UK GDPR Missing Privacy Notice Disclosure',
+    'Standards',
+    'critical',
+    30
+  ),
+  'gb-missing-company-number': createPricingEntry(
+    'gb-missing-company-number',
+    'UK Companies Act Missing Company Registration Number',
+    'Standards',
+    'warning',
+    15
+  ),
+  'ca-missing-privacy-policy': createPricingEntry(
+    'ca-missing-privacy-policy',
+    'Canadian PIPEDA Missing Privacy Policy Disclosure',
+    'Standards',
+    'critical',
+    30
+  ),
+  'ca-missing-terms': createPricingEntry(
+    'ca-missing-terms',
+    'Canadian Consumer Protection & CASL Missing Terms of Service',
+    'Standards',
+    'info',
+    15
+  ),
+  'global-missing-privacy-policy': createPricingEntry(
+    'global-missing-privacy-policy',
+    'Missing Foundational Privacy Policy Disclosure',
+    'Standards',
+    'critical',
+    30
+  ),
+  'global-missing-terms': createPricingEntry(
+    'global-missing-terms',
+    'Missing Foundational Terms of Service Agreement',
+    'Standards',
+    'info',
+    15
+  ),
 };
 
 /**

@@ -1,6 +1,7 @@
 ---
-import type { AuditIssue, ModernizationReport, ExecutiveBriefing } from '../lib/types';
+import type { AuditIssue, ModernizationReport, ExecutiveBriefing, DataRegulationDiagnostics } from '../lib/types';
 import { parseStoryToBriefing } from '../lib/story-engine';
+import { detectSiteJurisdiction, type DetectedJurisdiction } from '../lib/jurisdiction-engine';
 import AuditReportActions from './AuditReportActions.astro';
 import AuditLeadModal from './AuditLeadModal.astro';
 import ModernizationChecklist from './ModernizationChecklist.astro';
@@ -30,6 +31,7 @@ interface Props {
     executiveBriefing?: ExecutiveBriefing;
     processedAt: number;
     modernizationReport?: ModernizationReport;
+    regulation?: DataRegulationDiagnostics;
   };
 }
 
@@ -58,6 +60,7 @@ const briefing: ExecutiveBriefing = aiOutput.executiveBriefing || parseStoryToBr
   platform: aiOutput.modernizationReport?.techStack?.platform,
   platformVersion: aiOutput.modernizationReport?.techStack?.platformVersion,
   detectedExtensionsCount: aiOutput.modernizationReport?.techStack?.detectedExtensions?.length,
+  isWafBlocked: aiOutput.modernizationReport?.isWafBlocked,
 });
 
 // Top 3 highest impact priorities to fix first
@@ -83,30 +86,27 @@ function subScoreColor(score: number): string {
 function getIssueProof(issue: AuditIssue): string {
   if (issue.proof) return issue.proof;
   const fallbacks: Record<string, string> = {
-    'poor-lcp': 'PageSpeed result: Largest Contentful Paint (LCP) > 2.5s',
-    'poor-fid': 'PageSpeed result: Total Blocking Time (TBT) > 200ms',
-    'poor-cls': 'PageSpeed result: Cumulative Layout Shift (CLS) > 0.10',
-    'large-images': 'PageSpeed result: Unoptimized image payloads detected',
-    'render-blocking-js': 'PageSpeed result: Render-blocking resources in head',
-    'slow-ttfb': 'Origin server metric: Time to First Byte (TTFB) > 600ms',
-    'no-ssl': 'Network diagnostic: Unencrypted HTTP protocol',
-    'missing-hsts': 'HTTP Header Audit: Strict-Transport-Security header missing',
-    'missing-csp': 'HTTP Header Audit: Content-Security-Policy header missing',
-    'missing-x-frame-options': 'HTTP Header Audit: X-Frame-Options header missing',
-    'missing-referrer-policy': 'HTTP Header Audit: Referrer-Policy header missing',
-    'missing-title': 'DOM Audit: Page <title> tag missing in head',
-    'invalid-title-length': 'DOM Audit: Title length outside 10-60 character range',
-    'missing-meta-description': 'DOM Audit: <meta name="description"> tag missing',
-    'invalid-meta-description-length': 'DOM Audit: Meta description length outside 50-160 characters',
-    'missing-h1': 'DOM Audit: <h1> main headline count is 0',
-    'multiple-h1': 'DOM Audit: Multiple <h1> tag instances found',
-    'missing-canonical': 'DOM Audit: Canonical URL tag missing in head',
-    'missing-og-tags': 'Social Meta Audit: OpenGraph title/description missing',
-    'missing-og-image': 'Social Meta Audit: og:image meta tag missing',
-    'missing-twitter-cards': 'Social Meta Audit: twitter:card tags missing',
-    'missing-schema-org': 'SEO Audit: Schema.org structured data script missing',
-    'no-robots-txt': 'HTTP Audit: robots.txt file missing (404 status)',
-    'missing-sitemap-xml': 'HTTP Audit: sitemap.xml file missing (404 status)',
+    'slow-lcp': 'PageSpeed Insights Core Web Vital: LCP measured in field or lab data',
+    'poor-fid': 'PageSpeed Insights Core Web Vital: Total Blocking Time (TBT) / INP',
+    'poor-cls': 'PageSpeed Insights Core Web Vital: Cumulative Layout Shift (CLS)',
+    'large-images': 'Asset Audit: Unoptimized image payloads exceeding 100KB',
+    'render-blocking-js': 'Asset Audit: Synchronous <script> tags delaying first paint',
+    'no-gzip': 'Network Audit: Static assets delivered without gzip or brotli compression',
+    'no-robots-txt': 'Crawlability Audit: robots.txt file returned 404 or was empty',
+    'missing-schema-org': 'Structured Data Audit: No schema.org JSON-LD found in DOM',
+    'invalid-title-length': 'SEO Audit: <title> tag is missing or exceeds 60 characters',
+    'invalid-meta-description-length': 'SEO Audit: <meta name="description"> tag is missing or exceeds 160 characters',
+    'multiple-h1': 'DOM Audit: Page contains multiple or zero <h1> headings',
+    'missing-og-image': 'Social Audit: <meta property="og:image"> tag missing',
+    'missing-csp': 'Security Audit: Content-Security-Policy header not provided by origin',
+    'missing-hsts': 'Security Audit: Strict-Transport-Security header missing on HTTPS host',
+    'missing-x-frame-options': 'Security Audit: X-Frame-Options header missing (clickjacking risk)',
+    'missing-referrer-policy': 'Security Audit: Referrer-Policy header not set to safe default',
+    'missing-nosniff': 'Security Audit: X-Content-Type-Options: nosniff header missing',
+    'missing-permissions-policy': 'Security Audit: Permissions-Policy header missing',
+    'legacy-stack-migration': 'Tech Stack Audit: End-of-life monolithic CMS or backend detected',
+    'edge-serverless-migration': 'Infrastructure Audit: Monolithic server infrastructure without edge SSR caching',
+    'css-modernization': 'Styling Audit: Legacy CSS framework detected (e.g. Bootstrap 3/4, jQuery UI)',
     'missing-image-alt': 'Accessibility Audit: Image elements missing alt text',
     'missing-charset': 'DOM Audit: <meta charset> tag missing in head',
     'missing-lang': 'DOM Audit: <html lang="..."> attribute missing',
@@ -123,12 +123,27 @@ function getIssueProof(issue: AuditIssue): string {
     'poor-image-alt-text': 'Alt Text Quality Audit: Image descriptions contain generic filenames or redundant "image of" phrases',
     'missing-breadcrumbs-schema': 'Structured Data Audit: Missing BreadcrumbList JSON-LD for rich search engine result snippets',
     'accidental-noindex': 'Robots & Crawlability Audit: <meta name="robots" content="noindex"> tag or header is blocking search indexing',
+    'au-missing-privacy-policy': 'Australian Privacy Act Audit: No Privacy Policy or APP disclosure found in footer/header',
+    'au-missing-terms-acl': 'Australian Consumer Law (ACL) Audit: Missing commercial terms & consumer guarantee terms',
+    'au-missing-abn-disclosure': 'Corporations Act Audit: Missing Australian Business Number (ABN/ACN) in footer',
+    'au-unconsented-trackers': 'APPs Privacy Audit: Analytics & marketing trackers loaded without consent transparency',
+    'tr-missing-kvkk-notice': 'KVKK Denetimi: Sitede KVKK Aydınlatma Metni veya Gizlilik Politikası tespit edilemedi',
+    'tr-missing-mersis-kunye': 'TTK & ETBİS Denetimi: MERSİS numarası veya Şirket Künyesi bilgisi bulunamadı',
+    'tr-missing-ecommerce-terms': 'E-Ticaret Denetimi: Kullanım Koşulları veya Mesafeli Satış Sözleşmesi eksik',
+    'tr-missing-cookie-policy': 'KVKK Çerez Denetimi: Açık Çerez Politikası veya bilgilendirme metni bulunamadı',
+    'tr-unconsented-trackers': 'KVKK Veri Güvenliği: Açık rıza alınmadan çalışan üçüncü taraf izleyiciler',
     'eu-missing-privacy-policy': 'GDPR Audit: No Privacy Policy link found in footer/header',
     'eu-unconsented-trackers': 'ePrivacy Audit: Third-party scripts executed without consent banner',
     'eu-missing-impressum': 'E-Commerce Audit: Missing Impressum / Legal Notice link',
     'eu-external-font-transfer': 'Privacy Audit: Remote Google Fonts asset request detected',
+    'gb-missing-privacy-notice': 'UK GDPR Audit: Missing UK Privacy Notice in page navigation',
+    'gb-missing-company-number': 'Companies Act 2006 Audit: Missing UK Company Registration Number',
     'us-ccpa-missing-optout': 'CCPA/CPRA Audit: Missing Do Not Sell / Your Privacy Choices link',
     'us-missing-terms': 'Commercial Audit: Missing Terms of Service link',
+    'ca-missing-privacy-policy': 'PIPEDA Audit: Missing Canadian Privacy Policy disclosure',
+    'ca-missing-terms': 'Canadian Consumer Audit: Missing Terms of Service',
+    'global-missing-privacy-policy': 'Privacy Standard: Missing standard Privacy Policy link',
+    'global-missing-terms': 'Commercial Standard: Missing standard Terms of Service',
   };
   return fallbacks[issue.id] || `Automated audit rule trigger (${issue.category} check by PageSpeed/DOM analyzer)`;
 }
@@ -147,8 +162,20 @@ const subScores = [
   { label: categoryDisplayNames['Standards'],   value: aiOutput.standardsScore },
 ];
 
-const euRegulationIssues = aiOutput.issues.filter((i) => i.id.startsWith('eu-'));
-const usRegulationIssues = aiOutput.issues.filter((i) => i.id.startsWith('us-'));
+const jurisdiction: DetectedJurisdiction =
+  aiOutput.regulation?.jurisdiction ||
+  aiOutput.modernizationReport?.regulation?.jurisdiction ||
+  detectSiteJurisdiction('', audit.url);
+
+const regionalIssues = aiOutput.issues.filter((i) =>
+  i.id.startsWith('au-') ||
+  i.id.startsWith('tr-') ||
+  i.id.startsWith('eu-') ||
+  i.id.startsWith('us-') ||
+  i.id.startsWith('gb-') ||
+  i.id.startsWith('ca-') ||
+  i.id.startsWith('global-')
+);
 ---
 
 <div
@@ -757,133 +784,318 @@ const usRegulationIssues = aiOutput.issues.filter((i) => i.id.startsWith('us-'))
         )}
       </div>
 
-      <!-- Data Regulation & Privacy Checks (US & Europe) -->
+      <!-- Data Regulation & Privacy Checks (Jurisdiction-Aware) -->
       <div class="glow-card p-6 sm:p-8 rounded-3xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 space-y-6 shadow-sm dark:shadow-none">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
                 LEGAL & REGULATORY ENGINE
               </span>
-              <span class="text-xs font-mono text-zinc-600 dark:text-zinc-500">EU GDPR + US CCPA Vector</span>
+              <span class="text-xs font-mono text-zinc-600 dark:text-zinc-500 flex items-center gap-1.5">
+                <span>{jurisdiction.flagEmoji}</span>
+                <span class="font-bold text-zinc-900 dark:text-zinc-200">{jurisdiction.countryName} ({jurisdiction.region})</span>
+                <span>•</span>
+                <span>{jurisdiction.applicableLaws.slice(0, 2).join(' • ')}</span>
+              </span>
             </div>
-            <h3 class="font-display text-xl font-bold text-zinc-950 dark:text-white mt-1">Data Regulation & Privacy Checks</h3>
+            <h3 class="font-display text-xl font-bold text-zinc-950 dark:text-white mt-1">Data Regulation & Legal Compliance</h3>
           </div>
           <div class="flex items-center gap-2">
-            {euRegulationIssues.length === 0 ? (
+            {regionalIssues.length === 0 ? (
               <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold flex items-center gap-1">
-                <span>🇪🇺 EU GDPR: Passed</span>
+                <span>{jurisdiction.flagEmoji} {jurisdiction.countryName}: Passed</span>
               </span>
             ) : (
               <span class="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 dark:text-red-400 font-mono text-xs font-bold flex items-center gap-1">
-                <span>🇪🇺 EU GDPR: {euRegulationIssues.length} Risk{euRegulationIssues.length > 1 ? 's' : ''}</span>
-              </span>
-            )}
-
-            {usRegulationIssues.length === 0 ? (
-              <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold flex items-center gap-1">
-                <span>🇺🇸 US Privacy: Passed</span>
-              </span>
-            ) : (
-              <span class="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-mono text-xs font-bold flex items-center gap-1">
-                <span>🇺🇸 US Privacy: {usRegulationIssues.length} Action{usRegulationIssues.length > 1 ? 's' : ''}</span>
+                <span>{jurisdiction.flagEmoji} {jurisdiction.countryName}: {regionalIssues.length} Risk{regionalIssues.length > 1 ? 's' : ''}</span>
               </span>
             )}
           </div>
         </div>
 
+        <!-- Detection Signals Proof Ribbon -->
+        {jurisdiction.detectionSignals && jurisdiction.detectionSignals.length > 0 && (
+          <div class="flex items-center gap-2 flex-wrap p-3 rounded-xl bg-zinc-100/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 text-[11px] font-mono text-zinc-600 dark:text-zinc-400">
+            <span class="font-bold text-zinc-900 dark:text-zinc-300">Jurisdiction Proof Signals:</span>
+            {jurisdiction.detectionSignals.map((signal) => (
+              <span class="px-2 py-0.5 rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200">
+                {signal}
+              </span>
+            ))}
+          </div>
+        )}
+
         <!-- Regional Breakdown Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- EU Region Box -->
+          <!-- Primary Regional Box -->
           <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
             <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 pb-3">
               <div class="flex items-center gap-2">
-                <span class="text-lg">🇪🇺</span>
-                <span class="font-mono font-bold text-sm text-zinc-950 dark:text-white">Europe (GDPR & ePrivacy)</span>
+                <span class="text-lg">{jurisdiction.flagEmoji}</span>
+                <span class="font-mono font-bold text-sm text-zinc-950 dark:text-white">
+                  {jurisdiction.region === 'AU' && 'Australia (Privacy Act & ACL)'}
+                  {jurisdiction.region === 'TR' && 'Türkiye (KVKK & TTK Künye)'}
+                  {(jurisdiction.region === 'EU' || jurisdiction.region === 'DE') && 'Europe (GDPR & ePrivacy)'}
+                  {jurisdiction.region === 'GB' && 'United Kingdom (UK GDPR & Companies Act)'}
+                  {jurisdiction.region === 'US' && 'United States (CCPA/CPRA & State Laws)'}
+                  {jurisdiction.region === 'CA' && 'Canada (PIPEDA & CASL)'}
+                  {jurisdiction.region === 'GLOBAL' && 'International Standard Baseline'}
+                </span>
               </div>
-              <span class="text-[11px] font-mono text-zinc-600 dark:text-zinc-400">EU/EEA Standard</span>
+              <span class="text-[11px] font-mono text-zinc-600 dark:text-zinc-400">Applicable Jurisdiction</span>
             </div>
 
             <div class="space-y-2.5 font-mono text-xs">
-              <div class="flex items-center justify-between">
-                <span class="text-zinc-600 dark:text-zinc-400">Privacy Policy Link</span>
-                {aiOutput.issues.some((i) => i.id === 'eu-missing-privacy-policy') ? (
-                  <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Missing</span>
-                ) : (
-                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Detected</span>
-                )}
-              </div>
+              {jurisdiction.region === 'AU' && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Privacy Act 1988 (APPs) Notice</span>
+                    {aiOutput.issues.some((i) => i.id === 'au-missing-privacy-policy') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Missing Policy</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Compliant</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Australian Consumer Law (ACL) Terms</span>
+                    {aiOutput.issues.some((i) => i.id === 'au-missing-terms-acl') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Missing Terms</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Terms Active</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">ABN / ACN Company Disclosure</span>
+                    {aiOutput.issues.some((i) => i.id === 'au-missing-abn-disclosure') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ ABN Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ ABN Identified</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Pre-Consent Trackers & Cookies</span>
+                    {aiOutput.issues.some((i) => i.id === 'au-unconsented-trackers') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Firing Without Consent</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Transparent</span>
+                    )}
+                  </div>
+                </>
+              )}
 
-              <div class="flex items-center justify-between">
-                <span class="text-zinc-600 dark:text-zinc-400">Cookie Consent Banner (CMP)</span>
-                {aiOutput.issues.some((i) => i.id === 'eu-unconsented-trackers') ? (
-                  <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Missing / Pre-Consent Active</span>
-                ) : (
-                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Consent System Active</span>
-                )}
-              </div>
+              {jurisdiction.region === 'TR' && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">KVKK Aydınlatma Metni (Madde 10)</span>
+                    {aiOutput.issues.some((i) => i.id === 'tr-missing-kvkk-notice') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Aydınlatma Eksik</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Mevcut</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">MERSİS No / Şirket Künyesi (TTK 39)</span>
+                    {aiOutput.issues.some((i) => i.id === 'tr-missing-mersis-kunye') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Künye Eksik</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Künye Mevcut</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">E-Ticaret & Mesafeli Satış Şartları</span>
+                    {aiOutput.issues.some((i) => i.id === 'tr-missing-ecommerce-terms') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Sözleşme Eksik</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Şartlar Mevcut</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">KVKK Çerez Politikası & İzleyiciler</span>
+                    {aiOutput.issues.some((i) => i.id === 'tr-missing-cookie-policy' || i.id === 'tr-unconsented-trackers') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Çerez Politikası Eksik</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Uyumlu</span>
+                    )}
+                  </div>
+                </>
+              )}
 
-              <div class="flex items-center justify-between">
-                <span class="text-zinc-600 dark:text-zinc-400">Impressum / Legal Notice</span>
-                {aiOutput.issues.some((i) => i.id === 'eu-missing-impressum') ? (
-                  <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Missing</span>
-                ) : (
-                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Compliant</span>
-                )}
-              </div>
+              {(jurisdiction.region === 'EU' || jurisdiction.region === 'DE') && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">GDPR Privacy Policy (Article 13)</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-missing-privacy-policy') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Detected</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Cookie Consent Banner (CMP)</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-unconsented-trackers') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Pre-Consent Active</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Consent Active</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Impressum / Legal Notice (§ 5 DDG)</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-missing-impressum') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Compliant</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Remote Font Transfer (IP leak)</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-external-font-transfer') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Remote Google Fonts</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Self-Hosted / Clean</span>
+                    )}
+                  </div>
+                </>
+              )}
 
-              <div class="flex items-center justify-between">
-                <span class="text-zinc-600 dark:text-zinc-400">Remote Font Transfer (IP leak)</span>
-                {aiOutput.issues.some((i) => i.id === 'eu-external-font-transfer') ? (
-                  <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Remote Google Fonts</span>
-                ) : (
-                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Self-Hosted / Clean</span>
-                )}
-              </div>
+              {jurisdiction.region === 'US' && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">"Do Not Sell or Share" Opt-Out</span>
+                    {aiOutput.issues.some((i) => i.id === 'us-ccpa-missing-optout') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Opt-Out Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Opt-Out Ready</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">State Notice at Collection</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-missing-privacy-policy' || i.id === 'global-missing-privacy-policy') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Notice Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Notice Available</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Terms of Service</span>
+                    {aiOutput.issues.some((i) => i.id === 'us-missing-terms') ? (
+                      <span class="text-zinc-500 flex items-center gap-1">ℹ️ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Terms Available</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Global Privacy Control (GPC)</span>
+                    <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Standard Signal</span>
+                  </div>
+                </>
+              )}
+
+              {jurisdiction.region === 'GB' && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">UK GDPR Privacy Notice</span>
+                    {aiOutput.issues.some((i) => i.id === 'gb-missing-privacy-notice') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Notice Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Compliant</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Companies Act Reg Number</span>
+                    {aiOutput.issues.some((i) => i.id === 'gb-missing-company-number') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Registered</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">PECR Cookie Consent</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-unconsented-trackers') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Unconsented Trackers</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Compliant</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Terms of Service</span>
+                    {aiOutput.issues.some((i) => i.id === 'gb-missing-terms' || i.id === 'global-missing-terms') ? (
+                      <span class="text-zinc-500 flex items-center gap-1">ℹ️ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Available</span>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {(jurisdiction.region === 'CA' || jurisdiction.region === 'GLOBAL') && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Foundational Privacy Policy</span>
+                    {aiOutput.issues.some((i) => i.id === 'global-missing-privacy-policy' || i.id === 'ca-missing-privacy-policy' || i.id === 'eu-missing-privacy-policy') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Missing Policy</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Detected</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Terms of Service Agreement</span>
+                    {aiOutput.issues.some((i) => i.id === 'global-missing-terms' || i.id === 'ca-missing-terms' || i.id === 'us-missing-terms') ? (
+                      <span class="text-zinc-500 flex items-center gap-1">ℹ️ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Available</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Tracking Transparency</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-unconsented-trackers') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Untracked Consent</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Transparent</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Encrypted Transport (HTTPS)</span>
+                    <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Valid TLS</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
-          <!-- US Region Box -->
+          <!-- Cross-Border & Commercial Standards Box -->
           <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
             <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 pb-3">
               <div class="flex items-center gap-2">
-                <span class="text-lg">🇺🇸</span>
-                <span class="font-mono font-bold text-sm text-zinc-950 dark:text-white">United States (CCPA/CPRA)</span>
+                <span class="text-lg">🌐</span>
+                <span class="font-mono font-bold text-sm text-zinc-950 dark:text-white">Cross-Border & Commercial Standards</span>
               </div>
-              <span class="text-[11px] font-mono text-zinc-600 dark:text-zinc-400">US State Laws</span>
+              <span class="text-[11px] font-mono text-zinc-600 dark:text-zinc-400">Global Trade Baseline</span>
             </div>
 
             <div class="space-y-2.5 font-mono text-xs">
               <div class="flex items-center justify-between">
-                <span class="text-zinc-600 dark:text-zinc-400">"Do Not Sell or Share" Opt-Out</span>
-                {aiOutput.issues.some((i) => i.id === 'us-ccpa-missing-optout') ? (
-                  <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Opt-Out Link Missing</span>
+                <span class="text-zinc-600 dark:text-zinc-400">Encrypted Data in Transit (HTTPS / TLS)</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ TLS 1.3 Active</span>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-zinc-600 dark:text-zinc-400">HSTS & Clickjacking Defenses</span>
+                {aiOutput.issues.some((i) => i.id === 'missing-hsts' || i.id === 'missing-x-frame-options') ? (
+                  <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Headers Missing</span>
                 ) : (
-                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Opt-Out Ready</span>
+                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Hardened</span>
                 )}
               </div>
 
               <div class="flex items-center justify-between">
-                <span class="text-zinc-600 dark:text-zinc-400">State Notice at Collection</span>
-                {aiOutput.issues.some((i) => i.id === 'eu-missing-privacy-policy') ? (
-                  <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Notice Missing</span>
-                ) : (
-                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Notice Available</span>
-                )}
+                <span class="text-zinc-600 dark:text-zinc-400">Export & Cross-Border Readiness</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Evaluated</span>
               </div>
 
               <div class="flex items-center justify-between">
-                <span class="text-zinc-600 dark:text-zinc-400">Terms of Service</span>
-                {aiOutput.issues.some((i) => i.id === 'us-missing-terms') ? (
-                  <span class="text-zinc-500 flex items-center gap-1">ℹ️ Missing</span>
-                ) : (
-                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Terms Available</span>
-                )}
-              </div>
-
-              <div class="flex items-center justify-between">
-                <span class="text-zinc-600 dark:text-zinc-400">Global Privacy Control (GPC)</span>
-                <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Standard Signal Evaluated</span>
+                <span class="text-zinc-600 dark:text-zinc-400">Bot & Scraping Protections</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Cloudflare Ready</span>
               </div>
             </div>
           </div>

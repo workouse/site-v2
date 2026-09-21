@@ -29,7 +29,7 @@ check:
 	bash -c "$(NVM_EXEC) && npx tsc --noEmit"
 
 test:
-	bash -c "$(NVM_EXEC) && node --experimental-strip-types test/url-validator.test.ts"
+	bash -c "$(NVM_EXEC) && node --experimental-strip-types test/url-validator.test.ts && node --experimental-strip-types test/jurisdiction-engine.test.ts"
 
 preview:
 	bash -c "$(NVM_EXEC) && npm run preview"

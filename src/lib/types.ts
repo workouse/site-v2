@@ -1,4 +1,5 @@
 // Workouse Audit Tool — Shared TypeScript Types
+import type { DataRegulationDiagnostics } from './jurisdiction-engine';
 
 export type AuditStatus =
   | 'pending_verification'
@@ -222,7 +223,21 @@ export interface ModernizationReport {
   platformContext: PlatformType;
   platformSummary?: string;
   distributedWeb?: DistributedWebDiagnostics;
+  regulation?: DataRegulationDiagnostics;
 }
+
+export type {
+  JurisdictionRegion,
+  DetectedJurisdiction,
+  TrRegulationDiagnostics,
+  AuRegulationDiagnostics,
+  EuRegulationDiagnostics,
+  UsRegulationDiagnostics,
+  GbRegulationDiagnostics,
+  CaRegulationDiagnostics,
+  GlobalRegulationDiagnostics,
+  DataRegulationDiagnostics,
+} from './jurisdiction-engine';
 
 // Env interface — typed Cloudflare bindings
 export interface Env {

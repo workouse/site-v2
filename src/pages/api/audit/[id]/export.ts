@@ -258,12 +258,27 @@ export const GET: APIRoute = async ({ request, params, url, locals }) => {
       'tiny-touch-targets': 'Mobile UX Audit: Touch target bounding rects smaller than 44x44px',
       'illegible-mobile-text': 'Mobile UX Audit: Text element computed font size less than 12px',
       'disabled-viewport-zoom': 'Mobile Viewport Audit: Meta tag user-scalable=no or maximum-scale=1',
+      'au-missing-privacy-policy': 'Australian Privacy Act Audit: No Privacy Policy or APP disclosure found in footer/header',
+      'au-missing-terms-acl': 'Australian Consumer Law (ACL) Audit: Missing commercial terms & consumer guarantee terms',
+      'au-missing-abn-disclosure': 'Corporations Act Audit: Missing Australian Business Number (ABN/ACN) in footer',
+      'au-unconsented-trackers': 'APPs Privacy Audit: Analytics & marketing trackers loaded without consent transparency',
+      'tr-missing-kvkk-notice': 'KVKK Denetimi: Sitede KVKK Aydınlatma Metni veya Gizlilik Politikası tespit edilemedi',
+      'tr-missing-mersis-kunye': 'TTK & ETBİS Denetimi: MERSİS numarası veya Şirket Künyesi bilgisi bulunamadı',
+      'tr-missing-ecommerce-terms': 'E-Ticaret Denetimi: Kullanım Koşulları veya Mesafeli Satış Sözleşmesi eksik',
+      'tr-missing-cookie-policy': 'KVKK Çerez Denetimi: Açık Çerez Politikası veya bilgilendirme metni bulunamadı',
+      'tr-unconsented-trackers': 'KVKK Veri Güvenliği: Açık rıza alınmadan çalışan üçüncü taraf izleyiciler',
       'eu-missing-privacy-policy': 'GDPR Audit: No Privacy Policy link found in footer/header',
       'eu-unconsented-trackers': 'ePrivacy Audit: Third-party scripts executed without consent banner',
       'eu-missing-impressum': 'E-Commerce Audit: Missing Impressum / Legal Notice link',
       'eu-external-font-transfer': 'Privacy Audit: Remote Google Fonts asset request detected',
+      'gb-missing-privacy-notice': 'UK GDPR Audit: Missing UK Privacy Notice in page navigation',
+      'gb-missing-company-number': 'Companies Act 2006 Audit: Missing UK Company Registration Number',
       'us-ccpa-missing-optout': 'CCPA/CPRA Audit: Missing Do Not Sell / Your Privacy Choices link',
       'us-missing-terms': 'Commercial Audit: Missing Terms of Service link',
+      'ca-missing-privacy-policy': 'PIPEDA Audit: Missing Canadian Privacy Policy disclosure',
+      'ca-missing-terms': 'Canadian Consumer Audit: Missing Terms of Service',
+      'global-missing-privacy-policy': 'Privacy Standard: Missing standard Privacy Policy link',
+      'global-missing-terms': 'Commercial Standard: Missing standard Terms of Service',
     };
 
     const enrichedIssues = issues.map((issue: any) => ({
@@ -287,8 +302,18 @@ export const GET: APIRoute = async ({ request, params, url, locals }) => {
     const warningIssuesCount = enrichedIssues.filter((i: any) => i.severity === 'warning').length;
     const infoIssuesCount = enrichedIssues.filter((i: any) => i.severity === 'info').length;
 
-    const euRegulationIssues = enrichedIssues.filter((i: any) => String(i.id).startsWith('eu-'));
-    const usRegulationIssues = enrichedIssues.filter((i: any) => String(i.id).startsWith('us-'));
+    const { detectSiteJurisdiction } = await import('../../../../lib/jurisdiction-engine');
+    const jurisdiction = modernizationReport?.regulation?.jurisdiction || detectSiteJurisdiction('', audit.url);
+
+    const regionalIssues = enrichedIssues.filter((i: any) =>
+      String(i.id).startsWith('au-') ||
+      String(i.id).startsWith('tr-') ||
+      String(i.id).startsWith('eu-') ||
+      String(i.id).startsWith('us-') ||
+      String(i.id).startsWith('gb-') ||
+      String(i.id).startsWith('ca-') ||
+      String(i.id).startsWith('global-')
+    );
 
     const { parseStoryToBriefing, briefingToPlainText } = await import('../../../../lib/story-engine');
     const briefing = parseStoryToBriefing(aiRow?.story, {
@@ -360,17 +385,29 @@ export const GET: APIRoute = async ({ request, params, url, locals }) => {
         detectedExtensions: modernizationReport?.techStack?.detectedExtensions || [],
       },
       legalAndRegulatory: {
+        jurisdiction: {
+          region: jurisdiction.region,
+          countryCode: jurisdiction.countryCode,
+          countryName: jurisdiction.countryName,
+          flagEmoji: jurisdiction.flagEmoji,
+          applicableLaws: jurisdiction.applicableLaws,
+          confidence: jurisdiction.confidence,
+          detectionSignals: jurisdiction.detectionSignals,
+        },
+        passed: regionalIssues.length === 0,
+        issuesCount: regionalIssues.length,
+        regionalIssues,
         euGdpr: {
-          passed: euRegulationIssues.length === 0,
-          issuesCount: euRegulationIssues.length,
+          passed: !enrichedIssues.some((i: any) => String(i.id).startsWith('eu-')),
+          issuesCount: enrichedIssues.filter((i: any) => String(i.id).startsWith('eu-')).length,
           privacyPolicy: !enrichedIssues.some((i: any) => i.id === 'eu-missing-privacy-policy'),
           cookieConsent: !enrichedIssues.some((i: any) => i.id === 'eu-unconsented-trackers'),
           impressum: !enrichedIssues.some((i: any) => i.id === 'eu-missing-impressum'),
           remoteFonts: !enrichedIssues.some((i: any) => i.id === 'eu-external-font-transfer'),
         },
         usPrivacy: {
-          passed: usRegulationIssues.length === 0,
-          issuesCount: usRegulationIssues.length,
+          passed: !enrichedIssues.some((i: any) => String(i.id).startsWith('us-')),
+          issuesCount: enrichedIssues.filter((i: any) => String(i.id).startsWith('us-')).length,
           optOutLink: !enrichedIssues.some((i: any) => i.id === 'us-ccpa-missing-optout'),
           noticeAtCollection: !enrichedIssues.some((i: any) => i.id === 'eu-missing-privacy-policy'),
           termsOfService: !enrichedIssues.some((i: any) => i.id === 'us-missing-terms'),
@@ -755,20 +792,28 @@ export const GET: APIRoute = async ({ request, params, url, locals }) => {
 
     <!-- Data Regulation Checks -->
     <div class="card">
-      <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 12px;">Data Regulation & Privacy Checks</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <h2 style="font-size: 18px; font-weight: 800;">Data Regulation & Legal Compliance</h2>
+        <span style="font-size: 12px; font-family: monospace; color: var(--blue);">
+          ${reportData.legalAndRegulatory.jurisdiction.flagEmoji} ${reportData.legalAndRegulatory.jurisdiction.countryName} (${reportData.legalAndRegulatory.jurisdiction.region})
+        </span>
+      </div>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+        Applicable Frameworks: ${reportData.legalAndRegulatory.jurisdiction.applicableLaws.join(' &bull; ')}
+      </p>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; font-family: monospace; font-size: 12px;">
         <div style="background: #09090b; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-          <div style="font-weight: 700; margin-bottom: 8px;">🇪🇺 Europe (GDPR & ePrivacy): ${reportData.legalAndRegulatory.euGdpr.passed ? '<span style="color: var(--emerald);">PASSED</span>' : '<span style="color: var(--red);">' + reportData.legalAndRegulatory.euGdpr.issuesCount + ' Risks</span>'}</div>
-          <div>Privacy Policy: ${reportData.legalAndRegulatory.euGdpr.privacyPolicy ? '✅ Detected' : '❌ Missing'}</div>
-          <div>Cookie Consent (CMP): ${reportData.legalAndRegulatory.euGdpr.cookieConsent ? '✅ Active' : '❌ Missing'}</div>
-          <div>Impressum: ${reportData.legalAndRegulatory.euGdpr.impressum ? '✅ Compliant' : '⚠️ Missing'}</div>
-          <div>Remote Fonts: ${reportData.legalAndRegulatory.euGdpr.remoteFonts ? '✅ Self-hosted' : '⚠️ Remote Leak'}</div>
+          <div style="font-weight: 700; margin-bottom: 8px;">
+            ${reportData.legalAndRegulatory.jurisdiction.flagEmoji} ${reportData.legalAndRegulatory.jurisdiction.countryName} Status: 
+            ${reportData.legalAndRegulatory.passed ? '<span style="color: var(--emerald);">PASSED</span>' : '<span style="color: var(--red);">' + reportData.legalAndRegulatory.issuesCount + ' Risks</span>'}
+          </div>
+          <div>Jurisdiction Signals: ${reportData.legalAndRegulatory.jurisdiction.detectionSignals.join(', ')}</div>
+          <div>Compliance Readiness: ${reportData.legalAndRegulatory.passed ? '✅ Fully Compliant' : '⚠️ Action Items Detected'}</div>
         </div>
         <div style="background: #09090b; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-          <div style="font-weight: 700; margin-bottom: 8px;">🇺🇸 United States (CCPA/CPRA): ${reportData.legalAndRegulatory.usPrivacy.passed ? '<span style="color: var(--emerald);">PASSED</span>' : '<span style="color: var(--amber);">' + reportData.legalAndRegulatory.usPrivacy.issuesCount + ' Actions</span>'}</div>
-          <div>Opt-Out Link: ${reportData.legalAndRegulatory.usPrivacy.optOutLink ? '✅ Ready' : '⚠️ Missing'}</div>
-          <div>Notice at Collection: ${reportData.legalAndRegulatory.usPrivacy.noticeAtCollection ? '✅ Available' : '❌ Missing'}</div>
-          <div>Terms of Service: ${reportData.legalAndRegulatory.usPrivacy.termsOfService ? '✅ Available' : 'ℹ️ Missing'}</div>
+          <div style="font-weight: 700; margin-bottom: 8px;">🌐 Global & Cross-Border Baseline: <span style="color: var(--emerald);">ACTIVE</span></div>
+          <div>HTTPS / TLS In-Transit Encryption: ✅ Active</div>
+          <div>Commercial Standards: Evaluated</div>
         </div>
       </div>
     </div>

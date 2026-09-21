@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build && esbuild src/workers/entry.ts --bundle --format=esm --platform=neutral --main-fields=module,main --conditions=workerd,worker,browser --external:node:* --external:tty --external:util --target=es2022 --outfile=dist/worker.js && node -e \"fs.writeFileSync('dist/.assetsignore', '_worker.js\\nworker.js')\"",
-    "test": "node --experimental-strip-types test/url-validator.test.ts",
+    "test": "node --experimental-strip-types test/url-validator.test.ts && node --experimental-strip-types test/jurisdiction-engine.test.ts",
     "preview": "astro preview",
     "astro": "astro"
   },

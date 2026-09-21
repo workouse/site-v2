@@ -19,6 +19,11 @@ export interface GenerateStoryParams {
   platformVersion?: string;
   detectedExtensionsCount?: number;
   techstackSummary?: string;
+  jurisdiction?: {
+    region?: string;
+    countryName?: string;
+    applicableLaws?: string[];
+  };
   rawResults?: {
     pagespeed?: {
       lcp?: number;
@@ -39,6 +44,13 @@ export interface GenerateStoryParams {
     mobile?: {
       hasHorizontalOverflow?: boolean;
       undersizedTouchTargetsCount?: number;
+    };
+    regulation?: {
+      jurisdiction?: {
+        region?: string;
+        countryName?: string;
+        applicableLaws?: string[];
+      };
     };
   };
 }
@@ -312,6 +324,7 @@ export async function generateAuditStory(
       .filter((i) => i.severity === 'warning')
       .map((i) => i.title),
     techstackSummary: params.techstackSummary || 'Modern Web Stack',
+    jurisdiction: params.jurisdiction || params.rawResults?.regulation?.jurisdiction || undefined,
   };
 
   const startTime = Date.now();
