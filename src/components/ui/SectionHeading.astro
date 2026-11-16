@@ -1,0 +1,186 @@
+---
+export type SectionHeadingLevel = 'h1' | 'h2' | 'h3';
+export type SectionHeadingSize = 'section' | 'compact' | 'display';
+export type SectionHeadingAlign = 'start' | 'center';
+export type SectionHeadingTone = 'ink' | 'ivory';
+export type SectionHeadingEyebrowSize = 11 | 12;
+
+export interface Props {
+  eyebrow?: string;
+  eyebrowSize?: SectionHeadingEyebrowSize;
+  heading: string | readonly string[];
+  as?: SectionHeadingLevel;
+  size?: SectionHeadingSize;
+  align?: SectionHeadingAlign;
+  tone?: SectionHeadingTone;
+  headingId?: string;
+  class?: string;
+  id?: string;
+  style?: string;
+  [key: `data-${string}`]: unknown;
+  [key: `aria-${string}`]: unknown;
+}
+
+const {
+  eyebrow,
+  eyebrowSize = 12,
+  heading,
+  as: HeadingTag = 'h2',
+  size = 'section',
+  align = 'start',
+  tone = 'ink',
+  headingId,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const hasEyebrow = typeof eyebrow === 'string' && eyebrow.length > 0;
+const lines = Array.isArray(heading) ? heading.filter((line) => line.length > 0) : null;
+
+const classes = [
+  'wo-section-heading',
+  `wo-section-heading--${size}`,
+  `wo-section-heading--align-${align}`,
+  `wo-section-heading--${tone}`,
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<div class={classes} {...rest}>
+  {
+    hasEyebrow && (
+      <p class={`wo-section-heading__eyebrow wo-section-heading__eyebrow--${eyebrowSize}`}>
+        {eyebrow}
+      </p>
+    )
+  }
+  <HeadingTag id={headingId} class="wo-section-heading__title">
+    {
+      lines
+        ? lines.map((line, index) => (
+            <>
+              {index < lines.length - 1 ? `${line} ` : line}
+              {index < lines.length - 1 && <br class="wo-section-heading__br" />}
+            </>
+          ))
+        : heading
+    }
+  </HeadingTag>
+</div>
+
+<style>
+  .wo-section-heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12, 12px);
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  .wo-section-heading--align-start {
+    align-items: flex-start;
+    text-align: start;
+  }
+
+  .wo-section-heading--align-center {
+    align-items: center;
+    text-align: center;
+  }
+
+  .wo-section-heading__eyebrow {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.55;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .wo-section-heading__eyebrow--12 {
+    font-size: 12px;
+  }
+
+  .wo-section-heading__eyebrow--11 {
+    font-size: 11px;
+  }
+
+  .wo-section-heading--ink .wo-section-heading__eyebrow {
+    color: var(--text-link, #53658e);
+  }
+
+  .wo-section-heading--ivory .wo-section-heading__eyebrow {
+    color: var(--surface-page, #faf8f4);
+  }
+
+  .wo-section-heading__title {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: 0;
+  }
+
+  .wo-section-heading--ink .wo-section-heading__title {
+    color: var(--text-primary, #24354f);
+  }
+
+  .wo-section-heading--ivory .wo-section-heading__title {
+    color: var(--surface-page, #faf8f4);
+  }
+
+  /* section: 48px @ 390 -> 64px @ 768 -> 64px @ 1440 */
+  .wo-section-heading--section .wo-section-heading__title {
+    font-size: clamp(
+      48px,
+      calc(48px + (var(--wo-viewport-w, 100vw) - 390px) * 16 / 378),
+      64px
+    );
+    line-height: 1.05;
+  }
+
+  /* compact: 36px @ 390 -> 40px @ 768 -> 40px @ 1440 */
+  .wo-section-heading--compact .wo-section-heading__title {
+    font-size: clamp(
+      36px,
+      calc(36px + (var(--wo-viewport-w, 100vw) - 390px) * 4 / 378),
+      40px
+    );
+    line-height: 1.05;
+  }
+
+  /* display (CTA): 58px @ 390 -> 80px @ 768 -> 104px @ 1440 */
+  .wo-section-heading--display .wo-section-heading__title {
+    font-size: clamp(
+      58px,
+      min(
+        calc(58px + (var(--wo-viewport-w, 100vw) - 390px) * 22 / 378),
+        calc(80px + (var(--wo-viewport-w, 100vw) - 768px) * 24 / 672)
+      ),
+      104px
+    );
+    line-height: 1.04;
+  }
+
+  /* Intentional line breaks from string[] apply on >=768px; mobile wraps naturally */
+  .wo-section-heading__br {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .wo-section-heading:not([data-preview-viewport='390']) .wo-section-heading__br {
+      display: inline;
+    }
+  }
+
+  .wo-section-heading[data-preview-viewport='768'] .wo-section-heading__br,
+  .wo-section-heading[data-preview-viewport='1440'] .wo-section-heading__br {
+    display: inline;
+  }
+</style>

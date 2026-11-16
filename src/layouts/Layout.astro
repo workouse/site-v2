@@ -1,5 +1,6 @@
 ---
 import CookieBanner from '../components/CookieBanner.astro';
+import '../styles/global.css';
 
 interface Props {
   title?: string;
@@ -84,8 +85,8 @@ const webSiteSchema = {
     <meta name="generator" content={Astro.generator} />
 
     <!-- Favicons -->
-    <link rel="icon" type="image/png" href={defaultLogo} />
-    <link rel="apple-touch-icon" href={defaultLogo} />
+    <link rel="icon" type="image/png" href="/brand/workouse-symbol.png" />
+    <link rel="apple-touch-icon" href="/brand/workouse-symbol.png" />
 
     <!-- RSS Feed Link -->
     <link rel="alternate" type="application/rss+xml" title="Workouse Blog RSS Feed" href="https://workouse.com/rss.xml" />
@@ -131,10 +132,6 @@ const webSiteSchema = {
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={ogImage} />
 
-    <!-- Resource Hints: Preconnect to Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
     <!-- Structured Data -->
     <script type="application/ld+json" is:inline set:html={JSON.stringify(professionalServiceSchema)} />

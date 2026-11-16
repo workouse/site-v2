@@ -1,0 +1,69 @@
+/* Workouse design tokens — light "Editorial Engineering Studio" system */
+:root {
+  /* Color */
+  --text-primary: #24354f;   /* Ink Blue */
+  --text-secondary: #5b6574;
+  --text-link: #53658e;      /* Muted Indigo */
+  --surface-page: #faf8f4;   /* Warm Ivory */
+  --surface-raised: #ffffff;
+  --surface-subtle: #f0eef2;
+  --border-subtle: #d7d9df;
+  --action-primary: #24354f;
+  --action-primary-hover: #53658e;
+  --accent-sparing: #e8bc57; /* Warm Amber — decorative only */
+  --decor-lilac: #c2a4c7;    /* atmosphere only */
+
+  /* Font families */
+  --font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-sans: "DM Sans Variable", "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-sans-opsz: "opsz" 14;
+
+  /* Type scale (size / line-height) */
+  --type-display-desktop: 400 112px/0.98 var(--font-serif);
+  --type-display-tablet: 400 80px/0.98 var(--font-serif);
+  --type-display-mobile: 400 60px/0.98 var(--font-serif);
+  --type-heading-section: 400 64px/66px var(--font-serif);
+  --type-heading-compact: 400 40px/44px var(--font-serif);
+  --type-body-large: 400 20px/32px var(--font-sans);
+  --type-body: 400 16px/26px var(--font-sans);
+  --type-ui: 500 14px/20px var(--font-sans);
+  --type-label: 500 12px/18px var(--font-sans);
+  --tracking-display-desktop: -2.24px;
+  --tracking-display-tablet: -1.6px;
+  --tracking-display-mobile: -1.2px;
+
+  /* Space (4-pt) */
+  --space-0: 0px; --space-4: 4px; --space-8: 8px; --space-12: 12px; --space-16: 16px;
+  --space-24: 24px; --space-32: 32px; --space-40: 40px; --space-48: 48px;
+  --space-64: 64px; --space-80: 80px; --space-96: 96px; --space-120: 120px;
+
+  /* Radius */
+  --radius-0: 0px; --radius-2: 2px; --radius-4: 4px; --radius-8: 8px;
+
+  /* Layout */
+  --content-max: 1248px;
+  --page-margin: 24px; /* <768 */
+
+  /* Focus */
+  --focus-color: var(--text-link);
+  --focus-width: 2px;
+  --focus-offset: 3px;
+
+  /* Motion */
+  --dur-fast: 140ms;
+  --dur-disclosure: 160ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+@media (min-width: 768px)  { :root { --page-margin: 40px; } }
+@media (min-width: 1440px) { :root { --page-margin: 96px; } }
+
+html { background: var(--surface-page); color: var(--text-primary); color-scheme: light; }
+body { font-family: var(--font-sans); font-variation-settings: var(--font-sans-opsz); -webkit-font-smoothing: antialiased; }
+
+:focus-visible { outline: var(--focus-width) solid var(--focus-color); outline-offset: var(--focus-offset); }
+
+.container-wo { width: 100%; max-width: calc(var(--content-max) + 2 * var(--page-margin)); margin-inline: auto; padding-inline: var(--page-margin); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

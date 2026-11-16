@@ -1,0 +1,975 @@
+---
+/*
+ * Throwaway design-foundation reference page (WOR-1). Not linked from the
+ * site; safe to delete once the component library replaces it.
+ */
+import '../styles/global.css';
+import Button from '../components/ui/Button.astro';
+import DirectionalLink from '../components/ui/DirectionalLink.astro';
+import MediaFrame from '../components/ui/MediaFrame.astro';
+import MushroomNebula from '../components/ui/MushroomNebula.astro';
+import SectionHeading from '../components/ui/SectionHeading.astro';
+import TextLink from '../components/ui/TextLink.astro';
+import WorkouseLockup from '../components/ui/WorkouseLockup.astro';
+import emrePhoto from '../assets/team/emre.jpg';
+import { cta, engagements, hero, links, products, services, team } from '../data/site';
+
+const colorTokens = [
+  { name: 'text/primary', hex: '#24354F', className: 'bg-ink' },
+  { name: 'text/secondary', hex: '#5B6574', className: 'bg-secondary' },
+  { name: 'text/link', hex: '#53658E', className: 'bg-indigo' },
+  { name: 'surface/page', hex: '#FAF8F4', className: 'bg-ivory' },
+  { name: 'surface/raised', hex: '#FFFFFF', className: 'bg-raised' },
+  { name: 'surface/subtle', hex: '#F0EEF2', className: 'bg-subtle' },
+  { name: 'border/subtle', hex: '#D7D9DF', className: 'bg-line' },
+  { name: 'action/primary', hex: '#24354F', className: 'bg-ink' },
+  { name: 'accent/sparing', hex: '#E8BC57', className: 'bg-amber' },
+  { name: 'decor/lilac', hex: '#C2A4C7', className: 'bg-lilac' },
+];
+
+const typeStyles = [
+  { name: 'Display/Desktop', spec: 'Instrument Serif 112 / 0.98 / -2.24px', className: 'font-serif text-display-desktop', sample: 'Studio' },
+  { name: 'Display/Tablet', spec: 'Instrument Serif 80 / 0.98 / -1.6px', className: 'font-serif text-display-tablet', sample: 'Studio' },
+  { name: 'Display/Mobile', spec: 'Instrument Serif 60 / 0.98 / -1.2px', className: 'font-serif text-display-mobile', sample: 'Studio' },
+  { name: 'Heading/Section', spec: 'Instrument Serif 64 / 66px', className: 'font-serif text-heading-section', sample: 'Engagements' },
+  { name: 'Heading/Compact', spec: 'Instrument Serif 40 / 44px', className: 'font-serif text-heading-compact', sample: 'Selected work' },
+  { name: 'Body/Large', spec: 'DM Sans 20 / 32px / 400', className: 'font-sans text-body-large', sample: 'Large body copy for lead paragraphs.' },
+  { name: 'Body/Regular', spec: 'DM Sans 16 / 26px / 400', className: 'font-sans text-body', sample: 'Regular body copy for supporting text.' },
+  { name: 'UI/Medium', spec: 'DM Sans 14 / 20px / 500', className: 'font-sans text-ui', sample: 'Button and navigation label' },
+  { name: 'Label/Small', spec: 'DM Sans 12 / 18px / 500', className: 'font-sans text-label', sample: 'Small label' },
+];
+
+const spacingTokens = [0, 4, 8, 12, 16, 24, 32, 40, 48, 64, 80, 96, 120];
+const radiusTokens = [
+  { name: 'radius-0', className: 'rounded-none', px: 0 },
+  { name: 'radius-2', className: 'rounded-sm', px: 2 },
+  { name: 'radius-4', className: 'rounded-md', px: 4 },
+  { name: 'radius-8', className: 'rounded-lg', px: 8 },
+];
+
+const buttonKinds = [
+  { kind: 'primary' as const, label: 'Primary', darkBg: false, spec: '14px 24px · gap 12 · 500 · 211×56' },
+  { kind: 'secondary' as const, label: 'Secondary', darkBg: false, spec: '14px 24px · gap 12 · 500 · 1px #D7D9DF · 213×58' },
+  { kind: 'inverse' as const, label: 'Inverse (on ink)', darkBg: true, spec: '16px 24px · gap 16 · 400 · 212×60' },
+];
+
+const buttonStates = [
+  { key: 'default', label: 'Default' },
+  { key: 'hover', label: 'Hover' },
+  { key: 'focus', label: 'Focus-visible' },
+  { key: 'active', label: 'Active' },
+  { key: 'disabled', label: 'Disabled' },
+];
+
+const directionalLinkVariants = [
+  {
+    title: 'Internal (→ · tone="ink")',
+    spec: 'padding 12px 4px · gap 12px · label 14px + arrow 18px · ~143×52',
+    href: links.work.href,
+    label: hero.secondaryCta.label,
+    arrow: '→' as const,
+    external: false,
+    tone: 'ink' as const,
+    darkBg: false,
+    ariaLabel: undefined,
+  },
+  {
+    title: 'External (↗ · tone="ink")',
+    spec: 'target="_blank" rel="noopener noreferrer" · announces new tab',
+    href: links.sevenCups.href,
+    label: 'Visit 7cups',
+    arrow: '↗' as const,
+    external: true,
+    tone: 'ink' as const,
+    darkBg: false,
+    ariaLabel: 'Visit 7cups website',
+  },
+  {
+    title: 'On ink surface (→ · tone="ivory")',
+    spec: '#FAF8F4 text and focus-visible outline on #24354F surface',
+    href: links.work.href,
+    label: hero.secondaryCta.label,
+    arrow: '→' as const,
+    external: false,
+    tone: 'ivory' as const,
+    darkBg: true,
+    ariaLabel: undefined,
+  },
+];
+
+const textLinkTones = [
+  {
+    tone: 'ink' as const,
+    title: 'Tone: ink (#24354F)',
+    spec: 'padding 12px 0 · min-height 44px · gap 8px · DM Sans 400',
+    darkBg: false,
+    href: engagements.home.items[1].href,
+    label: engagements.home.items[1].linkLabel,
+    external: true,
+  },
+  {
+    tone: 'link' as const,
+    title: 'Tone: link (#53658E)',
+    spec: 'Muted indigo text · #53658E focus-visible outline',
+    darkBg: false,
+    href: products.featured.href,
+    label: products.featured.linkLabel,
+    external: true,
+  },
+  {
+    tone: 'ivory' as const,
+    title: 'Tone: ivory (#FAF8F4 on ink)',
+    spec: 'Ivory text & #FAF8F4 focus-visible outline on #24354F surface',
+    darkBg: true,
+    href: links.email.href,
+    label: cta.secondary.label,
+    external: false,
+  },
+];
+
+const textLinkSizes = [14, 13, 12, 11] as const;
+
+const sectionHeadingWidths = [
+  { viewport: 1440 as const, label: 'Desktop · 1440px viewport', frameWidth: '100%' },
+  { viewport: 768 as const, label: 'Tablet · 768px viewport (688px content)', frameWidth: '688px' },
+  { viewport: 390 as const, label: 'Mobile · 390px viewport (342px content)', frameWidth: '342px' },
+];
+
+const sectionHeadingSizes = [
+  {
+    size: 'section' as const,
+    title: 'Size: section',
+    spec: '64px @ 1440 · 64px @ 768 · 48px @ 390 · lh 1.05 · clamp()',
+    eyebrow: engagements.home.eyebrow,
+    eyebrowSize: 11 as const,
+    heading: engagements.home.headingLines,
+    as: 'h3' as const,
+    tone: 'ink' as const,
+    darkBg: false,
+  },
+  {
+    size: 'compact' as const,
+    title: 'Size: compact',
+    spec: '40px @ 1440 · 40px @ 768 · 36px @ 390 · lh 1.05 · clamp()',
+    eyebrow: services.php.eyebrow,
+    eyebrowSize: 12 as const,
+    heading: 'Keep your software moving forward.',
+    as: 'h3' as const,
+    tone: 'ink' as const,
+    darkBg: false,
+  },
+  {
+    size: 'display' as const,
+    title: 'Size: display (CTA)',
+    spec: '104px @ 1440 · 80px @ 768 · 58px @ 390 · lh 1.04 · clamp()',
+    eyebrow: cta.home.eyebrow,
+    eyebrowSize: 11 as const,
+    heading: cta.home.heading,
+    as: 'h3' as const,
+    tone: 'ivory' as const,
+    darkBg: true,
+  },
+];
+
+const mediaFrameVariants = [
+  {
+    key: 'generic',
+    title: 'Variant: generic (480×280)',
+    spec: 'border 1px #D7D9DF · gap 12 · 11px #53658E / 14px #5B6574 · center',
+    variant: 'generic' as const,
+    gap: 12 as const,
+    lines: ['SCREENSHOT PLACEHOLDER', 'Approved capture to be supplied'],
+    frames: [
+      { viewport: 1440 as const, label: 'Desktop · 480×280', width: '480px', ratio: '480/280' },
+      { viewport: 768 as const, label: 'Tablet · 688px container (480/280)', width: '688px', ratio: '480/280' },
+      { viewport: 390 as const, label: 'Mobile · 342px container (480/280)', width: '342px', ratio: '480/280' },
+    ],
+  },
+  {
+    key: 'card-engagement',
+    title: 'Variant: card — Homepage Engagements',
+    spec: 'border none · gap 12 · 10px #53658E / 12px #5B6574 · center · padding-inline 16px',
+    variant: 'card' as const,
+    gap: 12 as const,
+    lines: ['SCREENSHOT PLACEHOLDER', engagements.home.items[0].screenshotLabel],
+    frames: [
+      { viewport: 1440 as const, label: 'Desktop · 368×200', width: '368px', ratio: '368/200' },
+      { viewport: 768 as const, label: 'Tablet · 688×240', width: '688px', ratio: '688/240' },
+      { viewport: 390 as const, label: 'Mobile · 342×192', width: '342px', ratio: '342/192' },
+    ],
+  },
+  {
+    key: 'card-product',
+    title: 'Variant: card — Supporting Products (GroundBox & Ula)',
+    spec: 'border none · gap 8 · 10px #53658E / 12px #5B6574 · center',
+    variant: 'card' as const,
+    gap: 8 as const,
+    lines: ['SCREENSHOT PLACEHOLDER', products.supporting[0].placeholder],
+    frames: [
+      { viewport: 1440 as const, label: 'Desktop · 600×172', width: '600px', ratio: '600/172' },
+      { viewport: 768 as const, label: 'Tablet · 688×180', width: '688px', ratio: '688/180' },
+      { viewport: 390 as const, label: 'Mobile · 342×180', width: '342px', ratio: '342/180' },
+    ],
+  },
+  {
+    key: 'feature',
+    title: 'Variant: feature — Bitig',
+    spec: 'border none · gap 12 · 11px #53658E / 13px #5B6574 · center · textInset 20px',
+    variant: 'feature' as const,
+    gap: 12 as const,
+    lines: products.featured.placeholder,
+    frames: [
+      { viewport: 1440 as const, label: 'Desktop · 760×360', width: '760px', ratio: '760/360' },
+      { viewport: 768 as const, label: 'Tablet · 688×300', width: '688px', ratio: '688/300' },
+      { viewport: 390 as const, label: 'Mobile · 342×224', width: '342px', ratio: '342/224' },
+    ],
+  },
+  {
+    key: 'portrait',
+    title: 'Variant: portrait — Sarp (placeholder)',
+    spec: 'border none · gap 12 · 11px #53658E / Instrument Serif 20px lh 1.06 #24354F / 12px #5B6574 · center',
+    variant: 'portrait' as const,
+    gap: 12 as const,
+    lines: team.people[1].placeholder ?? [],
+    frames: [
+      { viewport: 1440 as const, label: 'Desktop · 544×376', width: '544px', ratio: '544/376' },
+      { viewport: 768 as const, label: 'Tablet · 328×320', width: '328px', ratio: '328/320' },
+      { viewport: 390 as const, label: 'Mobile · 342×340', width: '342px', ratio: '342/340' },
+    ],
+  },
+  {
+    key: 'portrait-image',
+    title: 'Variant: portrait — Emre (real ImageMetadata src)',
+    spec: 'Astro <Image> · object-fit: cover · aspect-ratio reserved · meaningful alt',
+    variant: 'portrait' as const,
+    gap: 12 as const,
+    lines: ['PORTRAIT PLACEHOLDER', 'Emre Yılmaz', 'Approved photography to be supplied'],
+    src: emrePhoto,
+    alt: team.people[0].alt,
+    frames: [
+      { viewport: 1440 as const, label: 'Desktop · 624×440', width: '624px', ratio: '624/440' },
+      { viewport: 768 as const, label: 'Tablet · 328×320', width: '328px', ratio: '328/320' },
+      { viewport: 390 as const, label: 'Mobile · 342×360', width: '342px', ratio: '342/360' },
+    ],
+  },
+  {
+    key: 'work',
+    title: 'Variant: work — /work page (featured, standard, compact, tablet, mobile)',
+    spec: 'border 1px #D7D9DF · padding 24px · gap 16 · 12px Medium lh 18px / 14px Medium lh 20px #24354F · left',
+    variant: 'work' as const,
+    gap: 16 as const,
+    lines: ['SCREENSHOT / AWAITING APPROVED CAPTURE', engagements.work[0].screenshotLabel],
+    frames: [
+      { viewport: 1440 as const, label: 'Desktop Featured · 720×450', width: '720px', ratio: '720/450' },
+      { viewport: 1440 as const, label: 'Desktop Standard · 744×417', width: '744px', ratio: '744/417' },
+      { viewport: 1440 as const, label: 'Desktop Compact · 744×465', width: '744px', ratio: '744/465' },
+      { viewport: 768 as const, label: 'Tablet · 688×430', width: '688px', ratio: '688/430' },
+      { viewport: 390 as const, label: 'Mobile · 342×214', width: '342px', ratio: '342/214' },
+    ],
+  },
+];
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Styleguide · Workouse design foundations</title>
+  </head>
+  <body class="font-sans">
+    <main class="container-wo py-96">
+      <SectionHeading
+        id="page-hero"
+        as="h1"
+        eyebrow="DESIGN FOUNDATIONS"
+        eyebrowSize={12}
+        heading="Styleguide"
+        size="section"
+        data-sg-specimen="level-h1"
+      />
+
+      <section class="mt-96" aria-labelledby="colors">
+        <h2 id="colors" class="font-serif text-heading-compact mb-24">Colors</h2>
+        <ul class="grid grid-cols-2 gap-16 md:grid-cols-5">
+          {colorTokens.map((color) => (
+            <li>
+              <div class={`h-80 border border-line ${color.className}`}></div>
+              <p class="mt-8 font-sans text-ui text-ink">{color.name}</p>
+              <p class="font-sans text-label text-secondary">{color.hex}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="mt-96" aria-labelledby="type">
+        <h2 id="type" class="font-serif text-heading-compact mb-24">Typography</h2>
+        <ul>
+          {typeStyles.map((style) => (
+            <li class="border-t border-line py-16">
+              <p class="font-sans text-label text-secondary">{style.name} · {style.spec}</p>
+              <p class={`mt-8 text-ink ${style.className}`}>{style.sample}</p>
+            </li>
+          ))}
+        </ul>
+        <p class="mt-24 font-sans text-body text-ink">
+          Body text uses DM Sans with optical size 14 (font-variation-settings: "opsz" 14).
+        </p>
+      </section>
+
+      <section class="mt-96" aria-labelledby="space">
+        <h2 id="space" class="font-serif text-heading-compact mb-24">Space (4-pt scale)</h2>
+        <ul class="flex flex-col gap-8">
+          {spacingTokens.map((space) => (
+            <li class="flex items-center gap-16 font-sans text-label text-secondary">
+              <span class="w-48">{space}px</span>
+              <span class="block h-16 bg-indigo" style={`width: var(--space-${space})`}></span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="mt-96" aria-labelledby="radii">
+        <h2 id="radii" class="font-serif text-heading-compact mb-24">Radii</h2>
+        <ul class="flex gap-24">
+          {radiusTokens.map((radius) => (
+            <li class="font-sans text-label text-secondary">
+              <div class={`h-80 w-80 border border-ink bg-subtle ${radius.className}`}></div>
+              <p class="mt-8">{radius.name} · {radius.px}px</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="mt-96" aria-labelledby="focus">
+        <h2 id="focus" class="font-serif text-heading-compact mb-24">Focus and links</h2>
+        <a class="font-sans text-ui text-indigo underline" href="#colors">Sample link (tab to see the focus ring)</a>
+      </section>
+
+      <section class="mt-96" aria-labelledby="buttons">
+        <h2 id="buttons" class="font-serif text-heading-compact mb-8">Buttons (WOR-4)</h2>
+        <p class="font-sans text-body text-secondary mb-32">
+          All 3 kinds × 5 states, external booking link, anchor vs button elements, icon variants, and mobile-menu block CTA.
+        </p>
+
+        <div class="flex flex-col gap-32">
+          {buttonKinds.map(({ kind, label, darkBg, spec }) => (
+            <div class={`border border-line p-24 ${darkBg ? 'bg-ink text-ivory' : 'bg-ivory text-ink'}`}>
+              <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+                <h3 class="font-sans text-ui">{label}</h3>
+                <p class={`font-sans text-label ${darkBg ? 'text-ivory opacity-80' : 'text-secondary'}`}>{spec}</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-24">
+                {buttonStates.map((state) => (
+                  <div class="flex flex-col items-start gap-8">
+                    <span class={`font-sans text-label ${darkBg ? 'text-ivory opacity-80' : 'text-secondary'}`}>
+                      {state.label}
+                    </span>
+                    <Button
+                      kind={kind}
+                      disabled={state.key === 'disabled'}
+                      data-preview-state={
+                        state.key === 'hover' || state.key === 'focus' || state.key === 'active'
+                          ? state.key
+                          : undefined
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div class="mt-48 grid gap-32 md:grid-cols-2">
+          <div class="border border-line p-24">
+            <h3 class="font-sans text-ui text-ink mb-16">Live interactive elements (&lt;a&gt; &amp; &lt;button&gt;)</h3>
+            <div class="flex flex-wrap items-center gap-16">
+              <Button kind="primary" href={links.booking.href} external />
+              <Button kind="secondary" href={links.work.href} icon="→">View selected work</Button>
+              <Button kind="primary" type="button" icon="none">Submit action</Button>
+              <Button kind="secondary" type="button" disabled>Unavailable action</Button>
+            </div>
+          </div>
+
+          <div class="border border-line p-24">
+            <h3 class="font-sans text-ui text-ink mb-16">Mobile-menu CTA variant (block)</h3>
+            <div class="border border-line bg-raised p-16" style="max-width: 320px;">
+              <Button block href={links.booking.href} external />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-96" aria-labelledby="directional-links">
+        <h2 id="directional-links" class="font-serif text-heading-compact mb-8">DirectionalLink (WOR-5)</h2>
+        <p class="font-sans text-body text-secondary mb-32">
+          Inline-flex row (padding 12px 4px, gap 12px) pairing a 14px DM Sans Regular label with an 18px decorative arrow. Label underlines in 140ms with zero layout shift; arrow never underlines.
+        </p>
+
+        <div class="flex flex-col gap-32">
+          {directionalLinkVariants.map((variant) => (
+            <div class={`border border-line p-24 ${variant.darkBg ? 'bg-ink text-ivory' : 'bg-ivory text-ink'}`}>
+              <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+                <h3 class="font-sans text-ui">{variant.title}</h3>
+                <p class={`font-sans text-label ${variant.darkBg ? 'text-ivory opacity-80' : 'text-secondary'}`}>
+                  {variant.spec}
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-24">
+                {buttonStates.map((state) => (
+                  <div class="flex flex-col items-start gap-8">
+                    <span class={`font-sans text-label ${variant.darkBg ? 'text-ivory opacity-80' : 'text-secondary'}`}>
+                      {state.label}
+                    </span>
+                    <DirectionalLink
+                      href={variant.href}
+                      label={variant.label}
+                      arrow={variant.arrow}
+                      external={variant.external}
+                      tone={variant.tone}
+                      aria-label={variant.ariaLabel}
+                      disabled={state.key === 'disabled'}
+                      data-preview-state={
+                        state.key === 'hover' || state.key === 'focus' || state.key === 'active'
+                          ? state.key
+                          : undefined
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div class="mt-32 border border-line p-24">
+          <h3 class="font-sans text-ui text-ink mb-16">Live site destinations</h3>
+          <div class="flex flex-wrap items-center gap-24">
+            <DirectionalLink href={links.work.href} label={hero.secondaryCta.label} />
+            <DirectionalLink href={links.phpSymfony.href} label={services.php.link.label} />
+            <DirectionalLink href={links.shopify.href} label={services.shopify.link.label} />
+            <DirectionalLink href={links.sevenCups.href} label="Visit 7cups" arrow="↗" external />
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-96" aria-labelledby="text-links">
+        <h2 id="text-links" class="font-serif text-heading-compact mb-8">TextLink (WOR-5)</h2>
+        <p class="font-sans text-body text-secondary mb-32">
+          Compact inline link with arrow inside label text, min-height 44px touch target across sizes 14/13/12/11, tones ink/ivory/link, external new-tab announcements, and active navigation current state.
+        </p>
+
+        <div class="flex flex-col gap-32">
+          {textLinkTones.map((item) => (
+            <div class={`border border-line p-24 ${item.darkBg ? 'bg-ink text-ivory' : 'bg-ivory text-ink'}`}>
+              <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+                <h3 class="font-sans text-ui">{item.title}</h3>
+                <p class={`font-sans text-label ${item.darkBg ? 'text-ivory opacity-80' : 'text-secondary'}`}>
+                  {item.spec}
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-24">
+                {buttonStates.map((state) => (
+                  <div class="flex flex-col items-start gap-8">
+                    <span class={`font-sans text-label ${item.darkBg ? 'text-ivory opacity-80' : 'text-secondary'}`}>
+                      {state.label}
+                    </span>
+                    <TextLink
+                      href={item.href}
+                      label={item.label}
+                      tone={item.tone}
+                      external={item.external}
+                      disabled={state.key === 'disabled'}
+                      data-preview-state={
+                        state.key === 'hover' || state.key === 'focus' || state.key === 'active'
+                          ? state.key
+                          : undefined
+                      }
+                    />
+                  </div>
+                ))}
+                {!item.darkBg && (
+                  <div class="flex flex-col items-start gap-8">
+                    <span class="font-sans text-label text-secondary">Current (nav)</span>
+                    <TextLink href={links.work.href} current>Work</TextLink>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div class="mt-32 grid gap-32 md:grid-cols-2">
+          <div class="border border-line p-24">
+            <h3 class="font-sans text-ui text-ink mb-16">Size scale (14 · 13 · 12 · 11 — all ≥44px touch height)</h3>
+            <div class="flex flex-wrap items-center gap-24">
+              {textLinkSizes.map((size) => (
+                <div class="flex flex-col items-start gap-8">
+                  <span class="font-sans text-label text-secondary">{size}px</span>
+                  <TextLink href={team.people[0].href} size={size} external>
+                    {team.people[0].linkLabel}
+                  </TextLink>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div class="border border-line p-24">
+            <h3 class="font-sans text-ui text-ink mb-16">Live site usages (nav, engagements, products, footer)</h3>
+            <div class="flex flex-wrap items-center gap-24">
+              <TextLink href={links.work.href} current>Work</TextLink>
+              <TextLink href={links.products.href}>Products</TextLink>
+              <TextLink href={engagements.home.items[1].href} external>{engagements.home.items[1].linkLabel}</TextLink>
+              <TextLink href={products.featured.href} tone="link" external>{products.featured.linkLabel}</TextLink>
+              <TextLink href={links.privacy.href} size={12}>Privacy Policy</TextLink>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-96" aria-labelledby="section-headings">
+        <SectionHeading
+          headingId="section-headings"
+          as="h2"
+          eyebrow="EDITORIAL HEADING PRIMITIVE · WOR-6"
+          eyebrowSize={11}
+          heading="SectionHeading (WOR-6)"
+          size="compact"
+          data-sg-specimen="level-h2"
+        />
+        <p class="mt-8 font-sans text-body text-secondary mb-32">
+          Vertical editorial stack (gap 12px, zero padding) pairing an authored-uppercase DM Sans Regular eyebrow (11px or 12px, lh 1.55) with an Instrument Serif Regular heading across continuous clamp() scales, ink &amp; ivory tones, intentional ≥768px line breaks, and configurable H1/H2/H3 semantics.
+        </p>
+
+        {/* 1. Master 688px spec + Live viewport-responsive specimens */}
+        <div class="flex flex-col gap-32">
+          <div class="border border-line bg-ivory p-24">
+            <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+              <p class="font-sans text-ui text-ink">Master component spec (688px wide · live viewport scaling)</p>
+              <p class="font-sans text-label text-secondary">
+                gap 12px · padding 0 · eyebrow 12px/1.55 #53658E · heading 64px/1.05 #24354F (48px @ 390)
+              </p>
+            </div>
+            <div style="max-width: 688px;">
+              <SectionHeading
+                as="h3"
+                eyebrow="01 / SPECIALIST ENGINEERING"
+                eyebrowSize={12}
+                heading="Built on what matters."
+                size="section"
+                tone="ink"
+                data-sg-live="master"
+                data-sg-specimen="level-h3"
+              />
+            </div>
+          </div>
+
+          <div class="grid gap-32 md:grid-cols-2">
+            <div class="border border-line bg-raised p-24">
+              <p class="font-sans text-label text-secondary mb-16">
+                Live responsive · size=&quot;section&quot; · string[] (&lt;br&gt; ≥768px, natural wrap &lt;768px) · eyebrowSize=11
+              </p>
+              <SectionHeading
+                as="h3"
+                eyebrow={engagements.home.eyebrow}
+                eyebrowSize={11}
+                heading={engagements.home.headingLines}
+                size="section"
+                tone="ink"
+                data-sg-live="section"
+              />
+            </div>
+
+            <div class="border border-line bg-ivory p-24">
+              <p class="font-sans text-label text-secondary mb-16">
+                Live responsive · size=&quot;compact&quot; · eyebrowSize=12 · as=&quot;h3&quot;
+              </p>
+              <SectionHeading
+                as="h3"
+                eyebrow={services.php.eyebrow}
+                eyebrowSize={12}
+                heading={services.php.headingLines}
+                size="compact"
+                tone="ink"
+                data-sg-live="compact"
+              />
+            </div>
+          </div>
+
+          <div class="border border-line bg-ink p-24 text-ivory">
+            <p class="font-sans text-label text-ivory opacity-80 mb-16">
+              Live responsive · size=&quot;display&quot; (CTA) · tone=&quot;ivory&quot; · eyebrowSize=11
+            </p>
+            <SectionHeading
+              as="h3"
+              eyebrow={cta.home.eyebrow}
+              eyebrowSize={11}
+              heading={cta.home.heading}
+              size="display"
+              tone="ivory"
+              data-sg-live="display"
+            />
+          </div>
+        </div>
+
+        {/* 2. Reference widths matrix: section / compact / display at 1440 / 768 / 390 */}
+        <div class="mt-48 flex flex-col gap-32">
+          <div>
+            <h3 class="font-sans text-ui text-ink">Responsive reference widths (1440 · 768 · 390)</h3>
+            <p class="mt-4 font-sans text-label text-secondary">
+              Each size rendered simultaneously at the three reference viewport widths (1440px desktop, 768px tablet / 688px content, 390px mobile / 342px content).
+            </p>
+          </div>
+
+          {sectionHeadingSizes.map((item) => (
+            <div class={`border border-line p-24 ${item.darkBg ? 'bg-ink text-ivory' : 'bg-ivory text-ink'}`}>
+              <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+                <p class="font-sans text-ui">{item.title}</p>
+                <p class={`font-sans text-label ${item.darkBg ? 'text-ivory opacity-80' : 'text-secondary'}`}>
+                  {item.spec}
+                </p>
+              </div>
+
+              <div class="flex flex-col gap-24">
+                {sectionHeadingWidths.map((w) => (
+                  <div class={`border-t pt-16 ${item.darkBg ? 'border-ivory/20' : 'border-line'}`}>
+                    <p class={`font-sans text-label mb-12 ${item.darkBg ? 'text-ivory opacity-80' : 'text-secondary'}`}>
+                      {w.label}
+                    </p>
+                    <div style={`width: 100%; max-width: ${w.frameWidth}; --wo-viewport-w: ${w.viewport}px;`}>
+                      <SectionHeading
+                        as={item.as}
+                        eyebrow={item.eyebrow}
+                        eyebrowSize={item.eyebrowSize}
+                        heading={item.heading}
+                        size={item.size}
+                        tone={item.tone}
+                        data-preview-viewport={String(w.viewport)}
+                        data-sg-matrix={`${item.size}-${w.viewport}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 3. Tones, alignments, eyebrow variants, and configurable heading levels */}
+        <div class="mt-48 grid gap-32 md:grid-cols-2">
+          <div class="border border-line bg-ivory p-24">
+            <p class="font-sans text-label text-secondary mb-16">
+              tone=&quot;ink&quot; · align=&quot;start&quot; · eyebrowSize=11 (section label)
+            </p>
+            <SectionHeading
+              as="h3"
+              eyebrow={products.eyebrow}
+              eyebrowSize={11}
+              heading={products.heading}
+              size="compact"
+              tone="ink"
+              align="start"
+              data-sg-tone="ink"
+            />
+          </div>
+
+          <div class="border border-line bg-ink p-24 text-ivory">
+            <p class="font-sans text-label text-ivory opacity-80 mb-16">
+              tone=&quot;ivory&quot; · align=&quot;start&quot; · eyebrowSize=12 (block label on ink)
+            </p>
+            <SectionHeading
+              as="h3"
+              eyebrow={cta.work.eyebrow}
+              eyebrowSize={12}
+              heading={cta.work.heading}
+              size="compact"
+              tone="ivory"
+              align="start"
+              data-sg-tone="ivory"
+            />
+          </div>
+
+          <div class="border border-line bg-raised p-24">
+            <p class="font-sans text-label text-secondary mb-16">
+              align=&quot;center&quot; · string[] line breaks
+            </p>
+            <SectionHeading
+              as="h3"
+              eyebrow={team.eyebrow}
+              eyebrowSize={11}
+              heading={team.headingLines}
+              size="compact"
+              tone="ink"
+              align="center"
+              data-sg-align="center"
+            />
+          </div>
+
+          <div class="border border-line bg-raised p-24">
+            <p class="font-sans text-label text-secondary mb-16">
+              Configurable heading semantics (as=&quot;h1&quot; | &quot;h2&quot; | &quot;h3&quot;) &amp; optional eyebrow
+            </p>
+            <div class="flex flex-col gap-16">
+              <p class="font-sans text-body text-secondary">
+                Page hero uses <a class="text-indigo underline" href="#page-hero"><code>as=&quot;h1&quot;</code></a> (single H1 per page); section headers use <a class="text-indigo underline" href="#section-headings"><code>as=&quot;h2&quot;</code></a>; services, clients, products, and team items use <code>as=&quot;h3&quot;</code> (including without an eyebrow):
+              </p>
+              <SectionHeading
+                as="h3"
+                heading={engagements.home.items[0].client}
+                size="compact"
+                tone="ink"
+                data-sg-no-eyebrow="true"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-96" aria-labelledby="media-frames">
+        <SectionHeading
+          headingId="media-frames"
+          as="h2"
+          eyebrow="MEDIA FRAME PRIMITIVE · WOR-7"
+          eyebrowSize={11}
+          heading="MediaFrame (WOR-7)"
+          size="compact"
+        />
+        <p class="mt-8 font-sans text-body text-secondary mb-32">
+          Renders an Astro <code>&lt;Image&gt;</code> with <code>object-fit: cover</code> when <code>src</code> is supplied, or a labeled <code>#F0EEF2</code> placeholder otherwise. Uses CSS <code>aspect-ratio</code> (zero fixed heights, 100% column width) for zero layout shift when assets arrive.
+        </p>
+
+        <div class="flex flex-col gap-32">
+          {mediaFrameVariants.map((item) => (
+            <div class="border border-line bg-ivory p-24">
+              <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+                <h3 class="font-sans text-ui text-ink">{item.title}</h3>
+                <p class="font-sans text-label text-secondary">{item.spec}</p>
+              </div>
+
+              <div class="flex flex-col gap-24">
+                {item.frames.map((frame) => (
+                  <div class="border-t border-line pt-16">
+                    <p class="font-sans text-label text-secondary mb-12">{frame.label}</p>
+                    <div style={`width: 100%; max-width: ${frame.width};`}>
+                      <MediaFrame
+                        src={item.src}
+                        alt={item.alt}
+                        ratio={frame.ratio}
+                        variant={item.variant}
+                        gap={item.gap}
+                        lines={item.lines}
+                        data-sg-mf={`${item.key}-${frame.viewport}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Responsive ratio props + zero-CLS image swap + bordered / accessibility check */}
+          <div class="border border-line bg-raised p-24">
+            <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+              <h3 class="font-sans text-ui text-ink">Responsive ratios &amp; src image-swap parity (zero CLS)</h3>
+              <p class="font-sans text-label text-secondary">
+                Identical 368×200 / 688×240 / 342×192 box geometry whether placeholder or real image
+              </p>
+            </div>
+
+            <div class="grid gap-32 md:grid-cols-2">
+              <div>
+                <p class="font-sans text-label text-secondary mb-12">
+                  Without <code>src</code> (placeholder · <code>aria-hidden=&quot;true&quot;</code>)
+                </p>
+                <div style="width: 100%; max-width: 368px;">
+                  <MediaFrame
+                    ratio="368/200"
+                    tabletRatio="688/240"
+                    mobileRatio="342/192"
+                    variant="card"
+                    lines={['SCREENSHOT PLACEHOLDER', 'Approved 7cups capture']}
+                    data-sg-mf="swap-placeholder"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p class="font-sans text-label text-secondary mb-12">
+                  With <code>src</code> (<code>ImageMetadata</code> · meaningful <code>alt</code>)
+                </p>
+                <div style="width: 100%; max-width: 368px;">
+                  <MediaFrame
+                    src={emrePhoto}
+                    alt={team.people[0].alt}
+                    ratio="368/200"
+                    tabletRatio="688/240"
+                    mobileRatio="342/192"
+                    variant="card"
+                    lines={['SCREENSHOT PLACEHOLDER', 'Never used as alt']}
+                    data-sg-mf="swap-image"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p class="font-sans text-label text-secondary mb-12">
+                  With string <code>src</code> + <code>bordered=&#123;true&#125;</code> override
+                </p>
+                <div style="width: 100%; max-width: 368px;">
+                  <MediaFrame
+                    src={team.people[0].photo}
+                    alt={team.people[0].alt}
+                    ratio="368/200"
+                    variant="card"
+                    bordered={true}
+                    data-sg-mf="string-src-bordered"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p class="font-sans text-label text-secondary mb-12">
+                  Placeholder with <code>role=&quot;img&quot;</code> + <code>aria-label</code> &amp; <code>bordered=&#123;false&#125;</code>
+                </p>
+                <div style="width: 100%; max-width: 368px;">
+                  <MediaFrame
+                    ratio="368/200"
+                    variant="work"
+                    bordered={false}
+                    lines={['SCREENSHOT / AWAITING APPROVED CAPTURE', '7cups — Website / Application Screenshot']}
+                    aria-label="7cups screenshot placeholder"
+                    data-sg-mf="a11y-role-img"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-96" aria-labelledby="workouse-lockup">
+        <SectionHeading
+          headingId="workouse-lockup"
+          as="h2"
+          eyebrow="BRAND LOCKUP PRIMITIVE · WOR-8"
+          eyebrowSize={11}
+          heading="WorkouseLockup (WOR-8)"
+          size="compact"
+        />
+        <p class="mt-8 font-sans text-body text-secondary mb-32">
+          Original untouched symbol (<code>/brand/workouse-symbol.png</code>, <code>object-fit: contain</code>, <code>alt=&quot;&quot;</code>) paired with live lowercase <code>workouse</code> DM Sans Bold 700 wordmark for header (<code>tone=&quot;ink&quot;</code>, 36×36 + 28px) and footer (<code>tone=&quot;ivory&quot;</code>, 32×32 + 26px).
+        </p>
+
+        <div class="flex flex-col gap-32">
+          <div class="border border-line bg-ivory p-24 text-ink">
+            <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+              <h3 class="font-sans text-ui">Header / Default (tone=&quot;ink&quot;)</h3>
+              <p class="font-sans text-label text-secondary">
+                symbol 36×36 · gap 12px · DM Sans 700 28px / lh 1.55 / -1.12px (-0.04em) · #24354F · ≈170×43
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-32">
+              <div class="flex flex-col items-start gap-8">
+                <span class="font-sans text-label text-secondary">Linked default (href=&quot;/&quot;)</span>
+                <WorkouseLockup data-sg-lockup="ink-default" />
+              </div>
+              <div class="flex flex-col items-start gap-8">
+                <span class="font-sans text-label text-secondary">Focus-visible</span>
+                <WorkouseLockup tone="ink" data-preview-state="focus" data-sg-lockup="ink-focus" />
+              </div>
+              <div class="flex flex-col items-start gap-8">
+                <span class="font-sans text-label text-secondary">Unlinked (href=&#123;null&#125;)</span>
+                <WorkouseLockup tone="ink" href={null} data-sg-lockup="ink-unlinked" />
+              </div>
+            </div>
+          </div>
+
+          <div class="border border-line bg-ink p-24 text-ivory">
+            <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+              <h3 class="font-sans text-ui">Footer / Inverse (tone=&quot;ivory&quot; on #24354F)</h3>
+              <p class="font-sans text-label text-ivory opacity-80">
+                symbol 32×32 · gap 12px · DM Sans 700 26px / lh 1.55 / -0.04em · #FAF8F4
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-32">
+              <div class="flex flex-col items-start gap-8">
+                <span class="font-sans text-label text-ivory opacity-80">Linked default (href=&quot;/&quot;)</span>
+                <WorkouseLockup tone="ivory" data-sg-lockup="ivory-default" />
+              </div>
+              <div class="flex flex-col items-start gap-8">
+                <span class="font-sans text-label text-ivory opacity-80">Focus-visible</span>
+                <WorkouseLockup tone="ivory" data-preview-state="focus" data-sg-lockup="ivory-focus" />
+              </div>
+              <div class="flex flex-col items-start gap-8">
+                <span class="font-sans text-label text-ivory opacity-80">Unlinked (href=&#123;null&#125;)</span>
+                <WorkouseLockup tone="ivory" href={null} data-sg-lockup="ivory-unlinked" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-96" aria-labelledby="mushroom-nebula">
+        <SectionHeading
+          headingId="mushroom-nebula"
+          as="h2"
+          eyebrow="STUDIO SIGNATURE ILLUSTRATION · WOR-9"
+          eyebrowSize={11}
+          heading="MushroomNebula (WOR-9)"
+          size="compact"
+        />
+        <p class="mt-8 font-sans text-body text-secondary mb-32">
+          Decorative inline SVG (<code>viewBox=&quot;0 0 180 160&quot;</code>, <code>aria-hidden=&quot;true&quot;</code>, <code>focusable=&quot;false&quot;</code>, no title) composing the 4 WOR-2 parts in back-to-front paint order (<code>pigment-ribbons</code>, <code>mushroom-stem</code>, <code>mushroom-cap</code>, <code>amber-pigment</code>) at 140&times;124 desktop/tablet and 100&times;89 mobile.
+        </p>
+
+        <div class="flex flex-col gap-32">
+          <div class="border border-line bg-raised p-24">
+            <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+              <h3 class="font-sans text-ui text-ink">Display sizes (180:160 aspect ratio)</h3>
+              <p class="font-sans text-label text-secondary">
+                140&times;124 desktop/tablet (&ge;768px) &middot; 100&times;89 mobile (&lt;768px)
+              </p>
+            </div>
+            <div class="flex flex-wrap items-end gap-48">
+              <div class="flex flex-col items-start gap-8">
+                <span class="font-sans text-label text-secondary">Responsive default</span>
+                <div class="border border-dashed border-line bg-ivory p-8">
+                  <MushroomNebula data-sg-nebula="responsive" />
+                </div>
+              </div>
+              <div class="flex flex-col items-start gap-8">
+                <span class="font-sans text-label text-secondary">Desktop / Tablet (140&times;124)</span>
+                <div class="border border-dashed border-line bg-ivory p-8">
+                  <MushroomNebula size="desktop" data-sg-nebula="desktop" />
+                </div>
+              </div>
+              <div class="flex flex-col items-start gap-8">
+                <span class="font-sans text-label text-secondary">Mobile (100&times;89)</span>
+                <div class="border border-dashed border-line bg-ivory p-8">
+                  <MushroomNebula size="mobile" data-sg-nebula="mobile" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="border border-line bg-raised p-24">
+            <p class="font-sans text-label text-secondary mb-16">
+              Editorial heading context (#FFFFFF surface &middot; &ldquo;The people behind the engineering.&rdquo;)
+            </p>
+            <div class="flex flex-col items-start justify-between gap-24 md:flex-row md:items-center">
+              <SectionHeading
+                as="h3"
+                eyebrow={team.eyebrow}
+                eyebrowSize={11}
+                heading={team.headingLines}
+                size="section"
+                tone="ink"
+              />
+              <MushroomNebula data-sg-nebula="editorial-context" />
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
