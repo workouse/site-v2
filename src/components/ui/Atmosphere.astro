@@ -1,0 +1,186 @@
+---
+/**
+ * Atmosphere — the soft indigo/lilac pigment background behind the hero.
+ *
+ * Usage: place as the first child of a hero that has
+ * `position: relative; isolation: isolate;`. The atmosphere sits at z-index -1
+ * inside that stacking context, so hero content needs no z-index of its own and
+ * is never transformed by the effect.
+ *
+ * Static composition mirrors the WOR-2 artboards (hero-atmosphere-{desktop,tablet,mobile}.svg).
+ * Horizontal geometry is expressed as a fraction of the artboard width (the tablet
+ * artboard is the desktop one scaled horizontally); vertical geometry is in px from
+ * the hero top, so the art stays top-anchored when the hero grows with its content.
+ *
+ * Motion is CSS-only; ../../scripts/atmosphere.ts adds pointer parallax and
+ * offscreen/hidden-tab pausing. Without JS the drift still runs; with
+ * `prefers-reduced-motion: reduce` the static composition is shown.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div class:list={['atmo', className]} aria-hidden="true" data-atmosphere>
+  <div class="atmo__group" data-atmosphere-group>
+    <div class="atmo__layer atmo__layer--indigo"></div>
+    <div class="atmo__layer atmo__layer--lilac"></div>
+    <div class="atmo__layer atmo__layer--edge"></div>
+  </div>
+</div>
+
+<style>
+  .atmo {
+    /* Palette (from the WOR-2 SVG gradients). */
+    --atmo-base: var(--atmosphere-base, #faf8f4);
+    --atmo-indigo-rgb: 83 101 142; /* #53658E */
+    --atmo-lilac-rgb: 194 163 199; /* #C2A3C7 */
+    --atmo-indigo-core-alpha: 0.105;
+    --atmo-lilac-core-alpha: 0.2;
+    --atmo-mid-alpha: 0.06;
+    --atmo-mid-stop: 55%;
+
+    /* Motion limits. */
+    --atmo-drift-duration: 36s;
+    --atmo-drift-duration-compact: 48s;
+    --atmo-phase-step: -12s;
+    --atmo-pointer-ease-duration: 900ms;
+
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background-color: var(--atmo-base);
+  }
+
+  .atmo__group {
+    position: absolute;
+    inset: 0;
+    /* Pointer parallax, written by atmosphere.ts (clamped to ±6px / ±4px). */
+    transform: translate3d(var(--atmo-px, 0px), var(--atmo-py, 0px), 0);
+    transition: transform var(--atmo-pointer-ease-duration) cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .atmo__layer {
+    position: absolute;
+    left: calc(var(--cx) - var(--rx));
+    top: calc(var(--cy) - var(--ry));
+    width: calc(var(--rx) * 2);
+    height: calc(var(--ry) * 2);
+    /* `closest-side` on a box sized to the ellipse reproduces the SVG radial gradient. */
+    background-image: radial-gradient(
+      closest-side,
+      rgb(var(--pigment) / var(--core-alpha)) 0%,
+      rgb(var(--pigment) / var(--atmo-mid-alpha)) var(--atmo-mid-stop),
+      rgb(var(--pigment) / 0) 100%
+    );
+    will-change: transform;
+    animation: atmo-drift var(--atmo-drift-duration) ease-in-out infinite alternate;
+  }
+
+  /* Desktop + tablet artboards (1440×660, 768×660). */
+  .atmo__layer--indigo {
+    --pigment: var(--atmo-indigo-rgb);
+    --core-alpha: var(--atmo-indigo-core-alpha);
+    --cx: 19.5%;
+    --cy: 270px;
+    --rx: 27.5%;
+    --ry: 230px;
+  }
+
+  .atmo__layer--lilac {
+    --pigment: var(--atmo-lilac-rgb);
+    --core-alpha: var(--atmo-lilac-core-alpha);
+    --cx: 78%;
+    --cy: 230px;
+    --rx: 32%;
+    --ry: 230px;
+    animation-delay: var(--atmo-phase-step);
+  }
+
+  .atmo__layer--edge {
+    --pigment: var(--atmo-indigo-rgb);
+    --core-alpha: var(--atmo-indigo-core-alpha);
+    --cx: 51.5%;
+    --cy: 390px;
+    --rx: 27.5%;
+    --ry: 230px;
+    animation-delay: calc(var(--atmo-phase-step) * 2);
+  }
+
+  .atmo[data-paused] .atmo__layer {
+    animation-play-state: paused;
+  }
+
+  @keyframes atmo-drift {
+    from {
+      transform: translate3d(-12px, -7px, 0) scale(1);
+    }
+    to {
+      transform: translate3d(12px, 7px, 0) scale(1.025);
+    }
+  }
+
+  @keyframes atmo-drift-compact {
+    from {
+      transform: translate3d(-6px, -3px, 0);
+    }
+    to {
+      transform: translate3d(6px, 3px, 0);
+    }
+  }
+
+  /* Tablet + mobile: slower, smaller drift on two layers only. */
+  @media (max-width: 1023px) {
+    .atmo__layer {
+      animation-name: atmo-drift-compact;
+      animation-duration: var(--atmo-drift-duration-compact);
+    }
+
+    .atmo__layer--lilac {
+      animation-delay: calc(var(--atmo-drift-duration-compact) / -3);
+    }
+
+    /* The tablet artboard still shows the diffused edge; it stays static. */
+    .atmo__layer--edge {
+      animation: none;
+      will-change: auto;
+    }
+  }
+
+  /* Mobile artboard (390×640): two pigments. */
+  @media (max-width: 767px) {
+    .atmo__layer--indigo {
+      --cy: 215px;
+      --ry: 175px;
+    }
+
+    .atmo__layer--lilac {
+      --cy: 175px;
+      --ry: 175px;
+    }
+
+    .atmo__layer--edge {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .atmo__group,
+    .atmo__layer {
+      animation: none;
+      transition: none;
+      transform: none;
+      will-change: auto;
+    }
+  }
+</style>
+
+<script>
+  import { initAllAtmospheres } from '../../scripts/atmosphere';
+
+  initAllAtmospheres();
+</script>
