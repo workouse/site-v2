@@ -6,13 +6,15 @@
 import '../styles/global.css';
 import Button from '../components/ui/Button.astro';
 import DirectionalLink from '../components/ui/DirectionalLink.astro';
+import EngagementFilter from '../components/ui/EngagementFilter.astro';
+import EngagementFilterGroup from '../components/ui/EngagementFilterGroup.astro';
 import MediaFrame from '../components/ui/MediaFrame.astro';
 import MushroomNebula from '../components/ui/MushroomNebula.astro';
 import SectionHeading from '../components/ui/SectionHeading.astro';
 import TextLink from '../components/ui/TextLink.astro';
 import WorkouseLockup from '../components/ui/WorkouseLockup.astro';
 import emrePhoto from '../assets/team/emre.jpg';
-import { cta, engagements, hero, links, products, services, team } from '../data/site';
+import { cta, engagements, hero, links, products, services, team, workPage } from '../data/site';
 
 const colorTokens = [
   { name: 'text/primary', hex: '#24354F', className: 'bg-ink' },
@@ -969,6 +971,209 @@ const mediaFrameVariants = [
             </div>
           </div>
         </div>
+      </section>
+
+      <section class="mt-96" aria-labelledby="engagement-filters">
+        <SectionHeading
+          headingId="engagement-filters"
+          as="h2"
+          eyebrow="ENGAGEMENT FILTER PRIMITIVE · WOR-11"
+          eyebrowSize={11}
+          heading="EngagementFilter & EngagementFilterGroup (WOR-11)"
+          size="compact"
+        />
+        <p class="mt-8 font-sans text-body text-secondary mb-32">
+          Single-choice toggle buttons (<code>&lt;button type=&quot;button&quot; aria-pressed&gt;</code>, 48px min-height, 12px 8px padding, DM Sans Medium 500 14px/20px nowrap, 140ms ease-out transitions, reserved 2px bottom border for zero height shift) inside a wrapping <code>role=&quot;group&quot;</code> container with <code>aria-live=&quot;polite&quot;</code> result announcements.
+        </p>
+
+        <div class="flex flex-col gap-32">
+          {/* 1. All 6 visual states (Unselected × 3 + Selected × 3) */}
+          <div class="border border-line bg-ivory p-24 text-ink">
+            <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+              <h3 class="font-sans text-ui">All 6 visual states (Unselected &amp; Selected &times; Default / Hover / Focus-visible)</h3>
+              <p class="font-sans text-label text-secondary">
+                min-height 48px &middot; padding 12px 8px &middot; radius 0px &middot; 2px bottom border reserved
+              </p>
+            </div>
+
+            <div class="grid gap-24 md:grid-cols-2">
+              <div class="border border-line bg-ivory p-16">
+                <p class="font-sans text-label text-secondary mb-16">
+                  Unselected (<code>aria-pressed=&quot;false&quot;</code> &middot; #5B6574)
+                </p>
+                <div class="flex flex-wrap items-center gap-24">
+                  <div class="flex flex-col items-start gap-8">
+                    <span class="font-sans text-label text-secondary">Default</span>
+                    <EngagementFilter
+                      value="php-symfony"
+                      label="PHP & Symfony"
+                      selected={false}
+                      data-preview-static="true"
+                      data-sg-ef-state="unselected-default"
+                    />
+                  </div>
+                  <div class="flex flex-col items-start gap-8">
+                    <span class="font-sans text-label text-secondary">Hover (#F0EEF2)</span>
+                    <EngagementFilter
+                      value="php-symfony"
+                      label="PHP & Symfony"
+                      selected={false}
+                      data-preview-state="hover"
+                      data-preview-static="true"
+                      data-sg-ef-state="unselected-hover"
+                    />
+                  </div>
+                  <div class="flex flex-col items-start gap-8">
+                    <span class="font-sans text-label text-secondary">Focus-visible (2px #53658E)</span>
+                    <EngagementFilter
+                      value="php-symfony"
+                      label="PHP & Symfony"
+                      selected={false}
+                      data-preview-state="focus"
+                      data-preview-static="true"
+                      data-sg-ef-state="unselected-focus"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="border border-line bg-ivory p-16">
+                <p class="font-sans text-label text-secondary mb-16">
+                  Selected (<code>aria-pressed=&quot;true&quot;</code> &middot; #24354F + 2px bottom border)
+                </p>
+                <div class="flex flex-wrap items-center gap-24">
+                  <div class="flex flex-col items-start gap-8">
+                    <span class="font-sans text-label text-secondary">Default</span>
+                    <EngagementFilter
+                      value="php-symfony"
+                      label="PHP & Symfony"
+                      selected={true}
+                      data-preview-static="true"
+                      data-sg-ef-state="selected-default"
+                    />
+                  </div>
+                  <div class="flex flex-col items-start gap-8">
+                    <span class="font-sans text-label text-secondary">Hover (#F0EEF2 + border)</span>
+                    <EngagementFilter
+                      value="php-symfony"
+                      label="PHP & Symfony"
+                      selected={true}
+                      data-preview-state="hover"
+                      data-preview-static="true"
+                      data-sg-ef-state="selected-hover"
+                    />
+                  </div>
+                  <div class="flex flex-col items-start gap-8">
+                    <span class="font-sans text-label text-secondary">Focus-visible (2px #53658E)</span>
+                    <EngagementFilter
+                      value="php-symfony"
+                      label="PHP & Symfony"
+                      selected={true}
+                      data-preview-state="focus"
+                      data-preview-static="true"
+                      data-sg-ef-state="selected-focus"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Canonical /work button sizes & standalone keyboard toggle */}
+          <div class="border border-line bg-ivory p-24 text-ink">
+            <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+              <h3 class="font-sans text-ui">Canonical /work labels &amp; standalone toggle targets</h3>
+              <p class="font-sans text-label text-secondary">
+                All Work (~70&times;48) &middot; PHP &amp; Symfony (~118&times;48) &middot; Shopify (~67&times;48) &middot; Engineering &amp; Integrations (~190&times;48)
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-16" data-sg-ef-standalone>
+              {workPage.filters.map((option, idx) => (
+                <EngagementFilter
+                  value={option.id}
+                  label={option.label}
+                  selected={idx === 0}
+                  data-sg-ef-size={option.id}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* 3. Responsive group wrapping frames (Desktop 1248 / Tablet 688 / Mobile 342) */}
+          <div class="border border-line bg-ivory p-24 text-ink">
+            <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+              <h3 class="font-sans text-ui">EngagementFilterGroup responsive wrapping</h3>
+              <p class="font-sans text-label text-secondary">
+                gap 4px row / 16px column &middot; container padding-bottom 24px &middot; 342px mobile wraps 4th option to row 2
+              </p>
+            </div>
+
+            <div class="flex flex-col gap-24">
+              <div class="border-t border-line pt-16">
+                <p class="font-sans text-label text-secondary mb-12">Desktop &middot; 1440px viewport (1248px content)</p>
+                <div class="border border-dashed border-line bg-raised px-16 pt-16" style="width: 100%; max-width: 1248px;">
+                  <EngagementFilterGroup interactive={false} data-sg-ef-frame="1440" />
+                </div>
+              </div>
+
+              <div class="border-t border-line pt-16">
+                <p class="font-sans text-label text-secondary mb-12">Tablet &middot; 768px viewport (688px content)</p>
+                <div class="border border-dashed border-line bg-raised px-16 pt-16" style="width: 100%; max-width: 688px;">
+                  <EngagementFilterGroup interactive={false} data-sg-ef-frame="768" />
+                </div>
+              </div>
+
+              <div class="border-t border-line pt-16">
+                <p class="font-sans text-label text-secondary mb-12">Mobile &middot; 390px viewport (342px content &mdash; 4th filter wraps to row 2, zero horizontal scroll)</p>
+                <div class="border border-dashed border-line bg-raised" style="width: 342px; max-width: 100%;">
+                  <EngagementFilterGroup interactive={false} data-sg-ef-frame="390" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Live interactive filtering + keyboard + aria-live="polite" demo */}
+          <div class="border border-line bg-raised p-24 text-ink" data-filter-scope data-sg-ef-demo>
+            <div class="flex flex-wrap items-baseline justify-between gap-8 mb-24">
+              <h3 class="font-sans text-ui">Interactive single-choice filtering &amp; polite live-region demo</h3>
+              <p class="font-sans text-label text-secondary" data-sg-ef-event-readout>
+                Active event: initial (All Work &middot; 3 engagements)
+              </p>
+            </div>
+
+            <EngagementFilterGroup data-sg-ef-interactive="true" />
+
+            <ul class="grid gap-16 md:grid-cols-3">
+              {engagements.work.map((item) => (
+                <li
+                  data-filter-item
+                  data-filters={item.filters.join(' ')}
+                  data-sg-ef-card={item.client}
+                  class="border border-line bg-ivory p-16"
+                >
+                  <p class="font-sans text-label text-indigo">{item.category}</p>
+                  <p class="mt-4 font-serif text-body-large text-ink">{item.client}</p>
+                  <p class="mt-8 font-sans text-label text-secondary">{item.technologies}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <script>
+          const demoScope = document.querySelector<HTMLElement>('[data-sg-ef-demo]');
+          const readout = demoScope?.querySelector<HTMLElement>('[data-sg-ef-event-readout]');
+          demoScope?.addEventListener('engagement-filter:change', (event) => {
+            const detail = (event as CustomEvent<{
+              value: string;
+              label: string;
+              visibleCount: number;
+            }>).detail;
+            if (readout && detail) {
+              readout.textContent = `Active event: ${detail.label} (${detail.value}) · Showing ${detail.visibleCount} ${detail.visibleCount === 1 ? 'engagement' : 'engagements'}`;
+            }
+          });
+        </script>
       </section>
     </main>
   </body>
