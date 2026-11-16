@@ -493,8 +493,61 @@ export function inspectDataRegulation(
 }
 
 /**
+ * Detect whether the target website is an active e-commerce storefront or selling goods/services online.
+ */
+export function detectEcommerceStore(html: string, targetUrl: string = ''): boolean {
+  if (!html) return false;
+  const lowerHtml = html.toLowerCase();
+  
+  // 1. E-Commerce Platforms & Frameworks
+  const hasPlatformEcommerce = 
+    lowerHtml.includes('cdn.shopify.com') ||
+    lowerHtml.includes('myshopify.com') ||
+    lowerHtml.includes('shopify-section') ||
+    lowerHtml.includes('shopify-payment-button') ||
+    lowerHtml.includes('woocommerce') ||
+    lowerHtml.includes('wc-ajax') ||
+    lowerHtml.includes('/plugins/woocommerce/') ||
+    lowerHtml.includes('add_to_cart_button') ||
+    lowerHtml.includes('static/frontend/magento') ||
+    lowerHtml.includes('mage-data-init') ||
+    lowerHtml.includes('prestashop') ||
+    lowerHtml.includes('cdn11.bigcommerce.com') ||
+    lowerHtml.includes('snipcart') ||
+    lowerHtml.includes('app.ecwid.com') ||
+    lowerHtml.includes('squarespace-ecommerce') ||
+    lowerHtml.includes('stripe.com/v3/buy-button') ||
+    lowerHtml.includes('lemonsqueezy.com') ||
+    lowerHtml.includes('paddle.com') ||
+    lowerHtml.includes('gumroad.com');
+
+  if (hasPlatformEcommerce) return true;
+
+  // 2. Schema.org Structured Data for Products & Offers
+  const hasEcommerceSchema =
+    lowerHtml.includes('schema.org/product') ||
+    lowerHtml.includes('schema.org/offer') ||
+    lowerHtml.includes('schema.org/aggregateoffer') ||
+    lowerHtml.includes('schema.org/cart') ||
+    lowerHtml.includes('schema.org/order') ||
+    /"@type"\s*:\s*"(product|offer|aggregateoffer|cart|order)"/i.test(html);
+
+  if (hasEcommerceSchema) return true;
+
+  // 3. Purchase Triggers, Add-To-Cart Forms & Checkout Buttons
+  const hasCartTriggers =
+    /action=["'][^"']*\/(cart|checkout|basket)(\/add)?["']/i.test(html) ||
+    /name=["'](add-to-cart|add)["']/i.test(html) ||
+    /data-(action|add-to-cart|item-id|item-price)=["'][^"']+["']/i.test(html) ||
+    /class=["'][^"']*(add-to-cart|add_to_cart|btn-cart|buy-now|single_add_to_cart_button|shopify-payment-button)[^"']*["']/i.test(html) ||
+    /itemprop=["']price["']/i.test(html);
+
+  return Boolean(hasCartTriggers);
+}
+
+/**
  * Inspect target website for Search Console verifications, Meta/Analytics Pixels,
- * Decentralized protocols (Nostr, Bluesky, ActivityPub, Matrix), RSS feeds, Webmentions, llms.txt, and security.txt.
+ * Decentralized protocols (Nostr, Bluesky, ActivityPub, Matrix), RSS feeds, Webmentions, llms.txt, and Universal Commerce Protocol (UCP).
  */
 export async function fetchDistributedWebFeatures(
   targetUrl: string,
@@ -572,21 +625,31 @@ export async function fetchDistributedWebFeatures(
   const atprotoMatch = html.match(/<meta[^>]*name=["']atproto:did["'][^>]*content=["']([^"']+)["']/i) ||
                        html.match(/<link[^>]*rel=["']atproto:did["'][^>]*href=["']([^"']+)["']/i);
 
-  // 4. Parallel fetch check for .well-known endpoints
+  const ucpLinkMatch = html.match(/<link[^>]*rel=["']ucp["'][^>]*href=["']([^"']+)["']/i) ||
+                       html.match(/<meta[^>]*name=["']ucp["'][^>]*content=["']([^"']+)["']/i);
+
+  // 4. E-Commerce Storefront Detection
+  const isEcommerce = detectEcommerceStore(html, targetUrl);
+
+  // 5. Parallel fetch check for .well-known endpoints
   let hasNostrJson = false;
   let hasAtprotoDid = Boolean(atprotoMatch);
   let atprotoDidValue: string | null = atprotoMatch ? atprotoMatch[1] : null;
   let hasMatrixServer = false;
   let hasLlmsTxt = Boolean(preFetchedDom?.hasLlmsTxt);
   let hasSecurityTxt = Boolean(preFetchedDom?.hasSecurityTxt);
+  let hasUcp = Boolean(ucpLinkMatch);
+  let ucpVersion: string | null = null;
+  let ucpEndpoint: string | null = ucpLinkMatch ? ucpLinkMatch[1] : null;
 
   try {
-    const [nostrRes, atprotoRes, matrixRes, llmsRes, securityRes] = await Promise.allSettled([
+    const [nostrRes, atprotoRes, matrixRes, llmsRes, securityRes, ucpRes] = await Promise.allSettled([
       fetch(`${origin}/.well-known/nostr.json`, { method: 'GET', headers: { 'User-Agent': 'WorkouseAuditEngine/2.0' } }),
       fetch(`${origin}/.well-known/atproto-did`, { method: 'GET', headers: { 'User-Agent': 'WorkouseAuditEngine/2.0' } }),
       fetch(`${origin}/.well-known/matrix/client`, { method: 'GET', headers: { 'User-Agent': 'WorkouseAuditEngine/2.0' } }),
       fetch(`${origin}/llms.txt`, { method: 'HEAD' }),
       fetch(`${origin}/.well-known/security.txt`, { method: 'HEAD' }),
+      fetch(`${origin}/.well-known/ucp`, { method: 'GET', headers: { 'User-Agent': 'WorkouseAuditEngine/2.0' } }),
     ]);
 
     if (nostrRes.status === 'fulfilled' && nostrRes.value.status === 200) {
@@ -619,8 +682,36 @@ export async function fetchDistributedWebFeatures(
     if (securityRes.status === 'fulfilled' && securityRes.value.status === 200) {
       hasSecurityTxt = true;
     }
+
+    if (ucpRes.status === 'fulfilled' && ucpRes.value.status === 200) {
+      try {
+        const text = await ucpRes.value.text();
+        const parsed = JSON.parse(text);
+        if (parsed && typeof parsed === 'object') {
+          hasUcp = true;
+          ucpEndpoint = `${origin}/.well-known/ucp`;
+          if (parsed.ucp || parsed.version || parsed.protocol) {
+            ucpVersion = String(parsed.ucp || parsed.version || parsed.protocol);
+          }
+        }
+      } catch {
+        // Response was 200 OK
+        hasUcp = true;
+        ucpEndpoint = `${origin}/.well-known/ucp`;
+      }
+    }
   } catch (err) {
     console.warn('Distributed & Open Web endpoints fetch warning:', err);
+  }
+
+  // Shopify storefronts natively include UCP support
+  if (isEcommerce && !hasUcp) {
+    const isShopify = html.includes('cdn.shopify.com') || html.includes('myshopify.com') || html.includes('shopify-section');
+    if (isShopify) {
+      hasUcp = true;
+      ucpVersion = '1.0 (Shopify Native)';
+      ucpEndpoint = `${origin}/.well-known/ucp`;
+    }
   }
 
   const items = [
@@ -641,6 +732,7 @@ export async function fetchDistributedWebFeatures(
     hasWebmention,
     hasLlmsTxt,
     hasSecurityTxt,
+    hasUcp,
   ];
 
   const detectedCount = items.filter(Boolean).length;
@@ -669,6 +761,10 @@ export async function fetchDistributedWebFeatures(
     hasWebmention,
     hasLlmsTxt,
     hasSecurityTxt,
+    isEcommerce,
+    hasUcp,
+    ucpVersion,
+    ucpEndpoint,
     detectedCount,
     totalChecked,
   };

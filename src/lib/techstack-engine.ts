@@ -935,6 +935,59 @@ function identifyPlatform(items: DetectedTechItem[], html: string): { platform: 
 }
 
 /**
+ * Detect whether the target website is an active e-commerce storefront or selling goods/services online.
+ */
+export function detectEcommerceStore(html: string, targetUrl: string = ''): boolean {
+  if (!html) return false;
+  const lowerHtml = html.toLowerCase();
+  
+  // 1. E-Commerce Platforms & Frameworks
+  const hasPlatformEcommerce = 
+    lowerHtml.includes('cdn.shopify.com') ||
+    lowerHtml.includes('myshopify.com') ||
+    lowerHtml.includes('shopify-section') ||
+    lowerHtml.includes('shopify-payment-button') ||
+    lowerHtml.includes('woocommerce') ||
+    lowerHtml.includes('wc-ajax') ||
+    lowerHtml.includes('/plugins/woocommerce/') ||
+    lowerHtml.includes('add_to_cart_button') ||
+    lowerHtml.includes('static/frontend/magento') ||
+    lowerHtml.includes('mage-data-init') ||
+    lowerHtml.includes('prestashop') ||
+    lowerHtml.includes('cdn11.bigcommerce.com') ||
+    lowerHtml.includes('snipcart') ||
+    lowerHtml.includes('app.ecwid.com') ||
+    lowerHtml.includes('squarespace-ecommerce') ||
+    lowerHtml.includes('stripe.com/v3/buy-button') ||
+    lowerHtml.includes('lemonsqueezy.com') ||
+    lowerHtml.includes('paddle.com') ||
+    lowerHtml.includes('gumroad.com');
+
+  if (hasPlatformEcommerce) return true;
+
+  // 2. Schema.org Structured Data for Products & Offers
+  const hasEcommerceSchema =
+    lowerHtml.includes('schema.org/product') ||
+    lowerHtml.includes('schema.org/offer') ||
+    lowerHtml.includes('schema.org/aggregateoffer') ||
+    lowerHtml.includes('schema.org/cart') ||
+    lowerHtml.includes('schema.org/order') ||
+    /"@type"\s*:\s*"(product|offer|aggregateoffer|cart|order)"/i.test(html);
+
+  if (hasEcommerceSchema) return true;
+
+  // 3. Purchase Triggers, Add-To-Cart Forms & Checkout Buttons
+  const hasCartTriggers =
+    /action=["'][^"']*\/(cart|checkout|basket)(\/add)?["']/i.test(html) ||
+    /name=["'](add-to-cart|add)["']/i.test(html) ||
+    /data-(action|add-to-cart|item-id|item-price)=["'][^"']+["']/i.test(html) ||
+    /class=["'][^"']*(add-to-cart|add_to_cart|btn-cart|buy-now|single_add_to_cart_button|shopify-payment-button)[^"']*["']/i.test(html) ||
+    /itemprop=["']price["']/i.test(html);
+
+  return Boolean(hasCartTriggers);
+}
+
+/**
  * Perform deterministic tech stack detection from URL HTML payload & HTTP response headers.
  */
 export function detectTechStack(
@@ -1148,6 +1201,22 @@ function generateWordPressChecklist(
       businessImpact: 'Stops 99.9% of automated bot attacks, prevents database hijacking, and safeguards customer data.',
       estimatedMinutes: 60,
       price: 240,
+    });
+  }
+
+  // 7. Universal Commerce Protocol (UCP) for WooCommerce Stores
+  if (rawMetrics.distributed?.isEcommerce && !rawMetrics.distributed?.hasUcp) {
+    checklist.push({
+      id: 'wp-mod-ucp-commerce',
+      title: 'Adopt Universal Commerce Protocol (UCP) for WooCommerce',
+      category: 'AI & PWA Readiness',
+      priority: 'recommended',
+      currentTech: 'Standard WooCommerce REST/Store API',
+      targetTech: 'Universal Commerce Protocol (UCP) Discovery Manifest (/.well-known/ucp)',
+      whyModernize: 'UCP connects your store directly with AI shopping agents (Google, ChatGPT, Gemini), allowing automated product search and seamless transactions.',
+      businessImpact: 'Unlocks next-generation agentic search channels and AI-driven buyer traffic.',
+      estimatedMinutes: 60,
+      price: 190,
     });
   }
 
@@ -1535,6 +1604,22 @@ function generateGenericChecklist(
       businessImpact: 'Ensures your business ranks top in AI-driven search engines and voice assistants.',
       estimatedMinutes: 90,
       price: 240,
+    });
+  }
+
+  // Universal Commerce Protocol (UCP) for E-Commerce Stores
+  if (rawMetrics.distributed?.isEcommerce && !rawMetrics.distributed?.hasUcp) {
+    checklist.push({
+      id: 'mod-ucp-agentic-commerce',
+      title: 'Implement Universal Commerce Protocol (UCP) for AI Agent Shopping',
+      category: 'AI & PWA Readiness',
+      priority: 'recommended',
+      currentTech: 'Proprietary / Closed Online Storefront',
+      targetTech: 'Universal Commerce Protocol (UCP) Discovery Manifest (/.well-known/ucp)',
+      whyModernize: 'UCP is the open standard co-developed by Shopify and Google allowing AI shopping agents to discover catalogs and perform transactions.',
+      businessImpact: 'Enables autonomous AI agents to discover your catalog and initiate direct purchases from search assistants.',
+      estimatedMinutes: 60,
+      price: 190,
     });
   }
 

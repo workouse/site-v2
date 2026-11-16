@@ -193,6 +193,175 @@ async function runTests() {
   assert(usRegulation.us?.hasDoNotSellOrShare === true, 'Detects CCPA Do Not Sell link');
   assert(usRegulation.us?.hasTermsOfService === true, 'Detects Terms of Service');
 
+  // 6. Australia on generic .com domain (Carreb real-world footer test)
+  console.log('\n--- Test Suite 6: Australia on Generic .com Domain (Carreb Pty Ltd & ABN) ---');
+  const carrebComHtml = `
+    <!doctype html>
+    <html lang="en">
+    <head><title>Carreb - Vehicle Cost and Emissions</title></head>
+    <body>
+      <main><h1>Independent Vehicle Cost Intelligence</h1></main>
+      <footer>
+        <p>© 2026 Carreb Pty Ltd - ABN 13 686 120 892</p>
+        <p>Disclaimer: Carreb is an editorially independent vehicle cost and emissions information service. We do not sell cars, review cars, or receive commissions, referral fees, or any payments from dealers, manufacturers, insurers, or car sales platforms.</p>
+        <p>All cost, savings, and emissions figures are indicative estimates based on publicly available data, including Australian Government sources, and Carreb’s proprietary methodology.</p>
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/disclaimer">Disclaimer & Terms</a>
+      </footer>
+    </body>
+    </html>
+  `;
+  const carrebJurisdiction = detectSiteJurisdiction(carrebComHtml, 'https://carreb.com');
+  assert(carrebJurisdiction.region === 'AU', 'Detects carreb.com (generic .com) as region AU');
+  assert(carrebJurisdiction.countryCode === 'AU', 'Detects countryCode AU for carreb.com');
+  assert(carrebJurisdiction.flagEmoji === '🇦🇺', 'Provides Australian flag emoji 🇦🇺 for carreb.com');
+  assert(carrebJurisdiction.confidence === 'high', 'High confidence for Australian corporate & ABN footer');
+
+  const carrebRegulation = evaluateSiteDataRegulation(carrebComHtml, 'https://carreb.com', 'en');
+  assert(carrebRegulation.au !== undefined, 'Evaluates under Australian regulation');
+  assert(carrebRegulation.au?.hasAbnOrAcn === true, 'Detects ABN 13 686 120 892');
+  assert(carrebRegulation.au?.detectedAbn === '13 686 120 892', 'Extracts exact formatted ABN 13 686 120 892');
+  assert(carrebRegulation.au?.hasPrivacyPolicy === true, 'Detects Australian Privacy Policy');
+  assert(carrebRegulation.au?.hasTermsOfService === true, 'Detects Australian Terms / Disclaimer');
+
+  const carrebIssues = generateRegulationIssues(carrebRegulation);
+  assert(!carrebIssues.some(i => i.id.includes('impressum')), 'Carreb on .com NEVER flagged for German Impressum');
+  assert(!carrebIssues.some(i => i.id.startsWith('eu-')), 'Carreb on .com NEVER flagged for EU GDPR issues');
+  assert(carrebIssues.length === 0, 'Carreb has 0 regulatory issues');
+
+  // 7. Turkey on generic .com domain
+  console.log('\n--- Test Suite 7: Turkey on Generic .com Domain (A.Ş. & MERSİS & VKN) ---');
+  const trComHtml = `
+    <html lang="tr">
+    <head><title>Global Store</title></head>
+    <body>
+      <footer>
+        <p>© 2026 E-Ticaret Teknoloji A.Ş. - MERSİS No: 0123456789012345 | VKN: 1234567890</p>
+        <p>Maslak Mah. Büyükdere Cad. Sarıyer / İstanbul | Tel: +90 212 333 4455</p>
+        <a href="/kvkk">KVKK Aydınlatma Metni</a>
+        <a href="/mesafeli-satis">Mesafeli Satış Sözleşmesi</a>
+        <a href="/cerez">Çerez Politikası</a>
+      </footer>
+    </body>
+    </html>
+  `;
+  const trComJurisdiction = detectSiteJurisdiction(trComHtml, 'https://globalstore.com');
+  assert(trComJurisdiction.region === 'TR', 'Detects globalstore.com as region TR via A.Ş. & MERSİS');
+  assert(trComJurisdiction.countryCode === 'TR', 'Detects countryCode TR for globalstore.com');
+  assert(trComJurisdiction.flagEmoji === '🇹🇷', 'Provides Turkish flag emoji 🇹🇷');
+
+  const trComRegulation = evaluateSiteDataRegulation(trComHtml, 'https://globalstore.com');
+  assert(trComRegulation.tr?.detectedMersis === '0123456789012345', 'Extracts 16-digit MERSİS on .com site');
+  const trComIssues = generateRegulationIssues(trComRegulation);
+  assert(!trComIssues.some(i => i.id.includes('impressum')), 'Turkish .com site NEVER flagged for Impressum');
+
+  // 8. Germany & France on generic .io / .com domains
+  console.log('\n--- Test Suite 8: EU Entities on Generic Domains (GmbH & SAS) ---');
+  const deIoHtml = `
+    <html lang="de">
+    <head><title>Cloud Service</title></head>
+    <body>
+      <footer>
+        <p>Cloud Solutions GmbH - HRB 54321 Amtsgericht München - USt-IdNr: DE987654321</p>
+        <a href="/impressum">§ 5 DDG Impressum</a>
+        <a href="/datenschutz">Datenschutzerklärung</a>
+      </footer>
+    </body>
+    </html>
+  `;
+  const deIoJurisdiction = detectSiteJurisdiction(deIoHtml, 'https://cloudservice.io');
+  assert(deIoJurisdiction.region === 'EU', 'Detects cloudservice.io as EU region via GmbH & HRB');
+  assert(deIoJurisdiction.countryCode === 'DE', 'Detects countryCode DE for cloudservice.io');
+
+  const frComHtml = `
+    <html lang="fr">
+    <head><title>Paris Digital</title></head>
+    <body>
+      <footer>
+        <p>Paris Digital SAS - SIREN 123 456 789 - RCS Paris | +33 1 44 55 66 77</p>
+        <a href="/mentions-legales">Mentions Légales</a>
+        <a href="/confidentialite">Politique de Confidentialité</a>
+      </footer>
+    </body>
+    </html>
+  `;
+  const frComJurisdiction = detectSiteJurisdiction(frComHtml, 'https://parisdigital.com');
+  assert(frComJurisdiction.region === 'EU', 'Detects parisdigital.com as EU region via SAS & SIREN');
+  assert(frComJurisdiction.countryCode === 'FR', 'Detects countryCode FR for parisdigital.com');
+
+  // 9. Netherlands on generic .com domain
+  console.log('\n--- Test Suite 9: Netherlands on Generic .com Domain (B.V. & KvK) ---');
+  const nlComHtml = `
+    <html lang="nl">
+    <head><title>Amsterdam Logistics</title></head>
+    <body>
+      <footer>
+        <p>Amsterdam Logistics B.V. - KvK 12345678 - Btw-nummer: NL123456789B01</p>
+        <p>Amsterdam, Netherlands | +31 20 123 4567</p>
+        <a href="/privacy">Privacy Policy</a>
+      </footer>
+    </body>
+    </html>
+  `;
+  const nlComJurisdiction = detectSiteJurisdiction(nlComHtml, 'https://amsterdamlogistics.com');
+  assert(nlComJurisdiction.region === 'EU', 'Detects amsterdamlogistics.com as EU region via B.V. & KvK');
+  assert(nlComJurisdiction.countryCode === 'NL', 'Detects countryCode NL for amsterdamlogistics.com');
+
+  // 10. United Kingdom on generic .com domain
+  console.log('\n--- Test Suite 10: United Kingdom on Generic .com Domain (Plc & Postcode) ---');
+  const gbComHtml = `
+    <html lang="en">
+    <head><title>London FinTech</title></head>
+    <body>
+      <footer>
+        <p>London FinTech Plc - Company Registration No. 08765432</p>
+        <p>10 Finsbury Square, London EC1A 1BB, United Kingdom | +44 20 7946 0123</p>
+        <a href="/privacy">Privacy Notice</a>
+        <a href="/terms">Terms of Service</a>
+      </footer>
+    </body>
+    </html>
+  `;
+  const gbComJurisdiction = detectSiteJurisdiction(gbComHtml, 'https://londonfintech.com');
+  assert(gbComJurisdiction.region === 'GB', 'Detects londonfintech.com as GB region via Plc & Postcode');
+  assert(gbComJurisdiction.countryCode === 'GB', 'Detects countryCode GB for londonfintech.com');
+  assert(gbComJurisdiction.flagEmoji === '🇬🇧', 'Provides UK flag emoji 🇬🇧');
+
+  // 11. Canada & New Zealand on generic .com domains
+  console.log('\n--- Test Suite 11: Canada & New Zealand on Generic .com Domains ---');
+  const caComHtml = `
+    <html lang="en">
+    <head><title>Maple Tech</title></head>
+    <body>
+      <footer>
+        <p>Maple Tech Inc. - CRA Business Number: 123456789 RC0001</p>
+        <p>100 King St W, Toronto, ON M5V 2T6, Canada</p>
+        <a href="/privacy">Privacy Policy (PIPEDA & CASL)</a>
+        <a href="/terms">Terms of Service</a>
+      </footer>
+    </body>
+    </html>
+  `;
+  const caComJurisdiction = detectSiteJurisdiction(caComHtml, 'https://mapletech.com');
+  assert(caComJurisdiction.region === 'CA', 'Detects mapletech.com as CA region via CRA BN & Postal Code');
+  assert(caComJurisdiction.countryCode === 'CA', 'Detects countryCode CA for mapletech.com');
+
+  const nzComHtml = `
+    <html lang="en">
+    <head><title>Kiwi Solutions</title></head>
+    <body>
+      <footer>
+        <p>Kiwi Solutions Limited - NZBN 9429012345678</p>
+        <p>Queen Street, Auckland, New Zealand | +64 9 123 4567</p>
+        <a href="/privacy">Privacy Act 2020 Policy</a>
+      </footer>
+    </body>
+    </html>
+  `;
+  const nzComJurisdiction = detectSiteJurisdiction(nzComHtml, 'https://kiwisolutions.com');
+  assert(nzComJurisdiction.region === 'NZ', 'Detects kiwisolutions.com as NZ region via NZBN');
+  assert(nzComJurisdiction.countryCode === 'NZ', 'Detects countryCode NZ for kiwisolutions.com');
+
   console.log(`\n========================================`);
   console.log(`Jurisdiction Engine Test Results: ${passed} Passed, ${failed} Failed`);
   console.log(`========================================\n`);

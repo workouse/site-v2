@@ -144,6 +144,7 @@ function getIssueProof(issue: AuditIssue): string {
     'ca-missing-terms': 'Canadian Consumer Audit: Missing Terms of Service',
     'global-missing-privacy-policy': 'Privacy Standard: Missing standard Privacy Policy link',
     'global-missing-terms': 'Commercial Standard: Missing standard Terms of Service',
+    'missing-ucp': 'Universal Commerce Protocol Audit: Online storefront detected, but /.well-known/ucp discovery manifest was not found or is missing',
   };
   return fallbacks[issue.id] || `Automated audit rule trigger (${issue.category} check by PageSpeed/DOM analyzer)`;
 }

@@ -30,3 +30,6 @@ export function generateToken(bytesCount = 32): string {
   }
   return token;
 }
+
+export const nanoid = generateId;
+

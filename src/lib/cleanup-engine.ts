@@ -71,7 +71,7 @@ export async function purgeExpiredAudits(
       try {
         await env.DB.batch([
           env.DB.prepare('DELETE FROM raw_results WHERE audit_id = ?').bind(auditId),
-          env.DB.prepare('DELETE FROM ai_output WHERE audit_id = ?').bind(auditId),
+          env.DB.prepare('DELETE FROM audit_results WHERE audit_id = ?').bind(auditId),
           env.DB.prepare('DELETE FROM audit_logs WHERE audit_id = ?').bind(auditId),
           env.DB.prepare('DELETE FROM audit_leads WHERE audit_id = ?').bind(auditId),
           env.DB.prepare('DELETE FROM audits WHERE id = ?').bind(auditId),
@@ -92,3 +92,51 @@ export async function purgeExpiredAudits(
     return summary;
   }
 }
+
+/**
+ * Permanently deletes a single audit record, including its associated D1 records
+ * and R2 storage objects if available.
+ */
+export async function deleteAuditRecord(
+  env: Env | any,
+  auditId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!auditId || typeof auditId !== 'string') {
+    return { success: false, error: 'Invalid audit ID provided.' };
+  }
+
+  if (!env?.DB) {
+    return { success: true };
+  }
+
+  try {
+    // 1. Fetch R2 key before deleting record
+    const auditRecord = (await env.DB.prepare('SELECT r2_key FROM audits WHERE id = ?')
+      .bind(auditId)
+      .first()) as { r2_key?: string | null } | null;
+
+    // 2. Delete R2 file if exists
+    if (auditRecord?.r2_key && env.AUDIT_RESULTS) {
+      try {
+        await env.AUDIT_RESULTS.delete(auditRecord.r2_key);
+      } catch (r2Err) {
+        console.error(`Failed to delete R2 key ${auditRecord.r2_key} for audit ${auditId}:`, r2Err);
+      }
+    }
+
+    // 3. Batch delete from all D1 tables
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM raw_results WHERE audit_id = ?').bind(auditId),
+      env.DB.prepare('DELETE FROM audit_results WHERE audit_id = ?').bind(auditId),
+      env.DB.prepare('DELETE FROM audit_logs WHERE audit_id = ?').bind(auditId),
+      env.DB.prepare('DELETE FROM audit_leads WHERE audit_id = ?').bind(auditId),
+      env.DB.prepare('DELETE FROM audits WHERE id = ?').bind(auditId),
+    ]);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error(`Failed to delete audit record ${auditId}:`, err);
+    return { success: false, error: err.message || 'Failed to delete audit record from database.' };
+  }
+}
+

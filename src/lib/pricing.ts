@@ -487,6 +487,13 @@ export const PRICING_TABLE: Record<string, PricingEntry> = {
     'info',
     15
   ),
+  'missing-ucp': createPricingEntry(
+    'missing-ucp',
+    'Agentic AI Commerce Standard Missing: Universal Commerce Protocol (UCP)',
+    'Standards',
+    'warning',
+    45
+  ),
 };
 
 /**

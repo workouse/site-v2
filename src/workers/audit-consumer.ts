@@ -667,6 +667,21 @@ function evaluateIssuesFromRawMetrics(raw: AuditRawResults): AuditIssue[] {
     issues.push(...regIssues);
   }
 
+  // ── Agentic & Universal Commerce Protocol (UCP) ──────────────────────────
+  if (raw.distributed?.isEcommerce && !raw.distributed?.hasUcp) {
+    const p = PRICING_TABLE['missing-ucp'];
+    if (p) issues.push({
+      id: p.id,
+      title: p.label,
+      category: p.category,
+      severity: p.severity,
+      businessImpact: 'Without Universal Commerce Protocol (UCP), AI shopping assistants and autonomous agents (Google, ChatGPT, Gemini) cannot discover your products or complete checkouts on your store.',
+      estimatedMinutes: p.estimatedMinutes,
+      price: p.price,
+      proof: 'Universal Commerce Protocol check: E-commerce storefront detected, but /.well-known/ucp discovery manifest was not found or not configured.',
+    });
+  }
+
   return issues;
 }
 

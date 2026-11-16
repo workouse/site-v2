@@ -262,8 +262,38 @@
     </div>
 
     <!-- Audit Logs List Container -->
-    <div id="auditLogsContainer" class="space-y-4">
+    <div id="auditLogsContainer" class="space-y-3">
       <div class="py-8 text-center text-zinc-500 font-mono text-xs">Loading diagnostic audit logs...</div>
+    </div>
+
+    <!-- Audit Logs Pagination Controls Bar -->
+    <div id="auditPaginationContainer" class="hidden flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-zinc-800/80 font-mono text-xs">
+      <div id="auditPaginationSummary" class="text-zinc-400">
+        Showing <span id="auditPageStart" class="text-white font-semibold">0</span>–<span id="auditPageEnd" class="text-white font-semibold">0</span> of <span id="auditPageTotal" class="text-white font-semibold">0</span> audits
+      </div>
+      <div class="flex items-center gap-2" id="auditPaginationControls">
+        <button
+          id="auditPrevPageBtn"
+          disabled
+          class="bg-zinc-950 hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-zinc-950 text-zinc-300 px-3 py-1.5 rounded-xl border border-zinc-800 transition flex items-center gap-1.5"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Previous
+        </button>
+        <div id="auditPageNumbers" class="flex items-center gap-1"></div>
+        <button
+          id="auditNextPageBtn"
+          disabled
+          class="bg-zinc-950 hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-zinc-950 text-zinc-300 px-3 py-1.5 rounded-xl border border-zinc-800 transition flex items-center gap-1.5"
+        >
+          Next
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -551,7 +581,7 @@
     fetchAuditLogsBtn.addEventListener('click', () => {
       const token = getStoredToken();
       const q = auditLogSearchInput ? auditLogSearchInput.value.trim() : '';
-      fetchAuditLogs(token, q);
+      fetchAuditLogs(token, q, 1);
     });
   }
 
@@ -559,7 +589,7 @@
     auditLogSearchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const token = getStoredToken();
-        fetchAuditLogs(token, auditLogSearchInput.value.trim());
+        fetchAuditLogs(token, auditLogSearchInput.value.trim(), 1);
       }
     });
   }
@@ -691,11 +721,22 @@
     }
   }
 
-  async function fetchAuditLogs(token: string, searchQuery: string = '') {
+  // ─── Pagination & Audit Logs State ─────────────────────────────────────────
+  let _currentAuditPage = 1;
+  let _totalAuditPages = 1;
+  let _totalAuditCount = 0;
+  let _currentAuditSearch = '';
+  const _auditLimit = 10;
+
+  async function fetchAuditLogs(token: string, searchQuery: string = '', page: number = 1) {
     const container = document.getElementById('auditLogsContainer');
+    const paginationContainer = document.getElementById('auditPaginationContainer');
     if (!container) return;
 
-    const url = searchQuery ? `/api/admin/audit-logs?search=${encodeURIComponent(searchQuery)}` : '/api/admin/audit-logs';
+    _currentAuditPage = page;
+    _currentAuditSearch = searchQuery;
+
+    const url = `/api/admin/audit-logs?page=${page}&limit=${_auditLimit}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''}`;
     adminLog('info', 'AUDIT-LOGS', `GET ${url} → pending`);
 
     try {
@@ -712,199 +753,538 @@
       const data: any = await res.json();
 
       if (res.ok && data.success && data.logs) {
-        adminLog('success', 'AUDIT-LOGS', `200 OK — ${data.logs.length} audit record(s) returned`);
+        _totalAuditCount = data.totalCount || data.logs.length;
+        _totalAuditPages = data.totalPages || Math.ceil(_totalAuditCount / _auditLimit) || 1;
+        _currentAuditPage = data.page || page;
+
+        adminLog('success', 'AUDIT-LOGS', `200 OK — page ${_currentAuditPage}/${_totalAuditPages} (${data.logs.length} records, total ${_totalAuditCount})`);
+
         if (data.logs.length === 0) {
-          container.innerHTML = `<div class="py-8 text-center text-zinc-500 font-mono text-xs">No audit logs matching search standard.</div>`;
+          container.innerHTML = `<div class="py-12 text-center text-zinc-500 font-mono text-xs">No audit logs matching search standard.</div>`;
+          if (paginationContainer) paginationContainer.classList.add('hidden');
           return;
         }
 
         container.innerHTML = data.logs
-          .map((item: any, idx: number) => {
+          .map((item: any) => {
             const { audit, aiOutput, rawResults, auditLogs } = item;
             const createdDate = new Date(audit.createdAt * 1000).toLocaleString();
-            const completedDate = audit.completedAt ? new Date(audit.completedAt * 1000).toLocaleString() : 'In Progress';
             const score = aiOutput?.score ?? '--';
-            const issuesCount = aiOutput?.issues?.length ?? 0;
-            const cardId = `audit_card_${audit.id}`;
+            const cardId = `audit_details_${audit.id}`;
+
+            const statusClass =
+              audit.status === 'complete' ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60'
+              : audit.status === 'failed' ? 'bg-rose-950/80 text-rose-400 border-rose-800/60'
+              : 'bg-amber-950/80 text-amber-400 border-amber-800/60';
+
+            const scoreClass =
+              typeof score === 'number'
+                ? score >= 70
+                  ? 'text-emerald-400 bg-emerald-950/50 border-emerald-800/50'
+                  : score >= 50
+                  ? 'text-amber-400 bg-amber-950/50 border-amber-800/50'
+                  : 'text-rose-400 bg-rose-950/50 border-rose-800/50'
+                : 'text-zinc-400 bg-zinc-900 border-zinc-800';
 
             return `
-              <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-4 font-mono text-xs">
-                <!-- Header Row -->
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-zinc-800/80 pb-3">
-                  <div class="space-y-1">
-                    <div class="flex items-center gap-2">
-                      <span class="font-bold text-white text-sm">${audit.url}</span>
-                      <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        audit.status === 'complete' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'
-                      }">${audit.status}</span>
-                    </div>
-                    <div class="text-[11px] text-zinc-500 flex flex-wrap gap-x-3">
-                      <span>ID: <strong class="text-zinc-300">${audit.id}</strong></span>
-                      <span>Email: ${audit.email}</span>
-                      <span>Created: ${createdDate}</span>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center gap-3">
-                    <div class="text-right">
-                      <div class="text-[10px] text-zinc-400 uppercase">Health Score</div>
-                      <div class="text-lg font-black ${typeof score === 'number' && score >= 70 ? 'text-emerald-400' : 'text-amber-400'}">${score} / 100</div>
-                    </div>
-                    <a
-                      href="/audit/${audit.id}"
-                      target="_blank"
-                      class="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+              <div class="bg-zinc-950 border border-zinc-800 hover:border-zinc-700/80 rounded-xl transition overflow-hidden font-mono text-xs" id="audit_row_${audit.id}">
+                <!-- Compact Row (Summary) -->
+                <div class="p-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-zinc-950/90">
+                  <!-- URL, Email & Status -->
+                  <div class="flex flex-wrap items-center gap-2.5 min-w-0 flex-1">
+                    <button
+                      type="button"
+                      data-target="${cardId}"
+                      class="btn-toggle-accordion text-left font-bold text-white hover:text-[#FEC500] transition flex items-center gap-1.5 truncate max-w-md group"
+                      title="Click to expand/collapse details"
                     >
-                      View Report
+                      <svg class="chevron-icon w-4 h-4 text-zinc-500 group-hover:text-[#FEC500] transform transition-transform duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                      </svg>
+                      <span class="truncate">${audit.url}</span>
+                    </button>
+
+                    <a href="${audit.url.startsWith('http') ? audit.url : `https://${audit.url}`}" target="_blank" rel="noopener noreferrer" class="text-zinc-500 hover:text-zinc-300 transition shrink-0" title="Open website in new tab">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                      </svg>
                     </a>
-                  </div>
-                </div>
 
-                <!-- Raw Results & Diagnostics Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <!-- PageSpeed Diagnostics -->
-                  <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-lg space-y-1">
-                    <div class="text-[#FEC500] font-bold text-[11px] uppercase tracking-wider">PageSpeed Metrics</div>
-                    ${
-                      rawResults?.pagespeed
-                        ? `
-                        <div class="text-zinc-300 text-[11px] space-y-0.5">
-                          <div>LCP: <strong class="${rawResults.pagespeed.lcp > 2500 ? 'text-amber-400' : 'text-emerald-400'}">${rawResults.pagespeed.lcp}ms</strong></div>
-                          <div>CLS: <strong class="${rawResults.pagespeed.cls > 0.1 ? 'text-amber-400' : 'text-emerald-400'}">${rawResults.pagespeed.cls}</strong></div>
-                          <div>TBT: <strong>${rawResults.pagespeed.tbt}ms</strong></div>
-                          <div>TTFB: <strong>${rawResults.pagespeed.ttfb}ms</strong></div>
-                          <div>Render Blocking JS: <strong>${rawResults.pagespeed.hasRenderBlockingJs ? 'Yes' : 'No'}</strong></div>
-                          <div>Unoptimized Images: <strong>${rawResults.pagespeed.hasUnoptimizedImages ? 'Yes' : 'No'}</strong></div>
-                        </div>
-                      `
-                        : '<div class="text-zinc-500 text-[11px]">No raw PageSpeed data recorded</div>'
-                    }
+                    <!-- Reporter Email Badge -->
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 text-[11px] font-normal" title="Reporter Email">
+                      <svg class="w-3 h-3 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                      </svg>
+                      <span>${audit.email}</span>
+                    </span>
+
+                    <!-- Status Badge -->
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${statusClass}">
+                      ${audit.status}
+                    </span>
+
+                    <!-- Date & Time -->
+                    <span class="text-[11px] text-zinc-500 hidden sm:inline">
+                      ${createdDate}
+                    </span>
                   </div>
 
-                  <!-- Security Headers Diagnostics -->
-                  <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-lg space-y-1">
-                    <div class="text-blue-400 font-bold text-[11px] uppercase tracking-wider">Security Headers</div>
-                    ${
-                      rawResults?.security
-                        ? `
-                        <div class="text-zinc-300 text-[11px] space-y-0.5">
-                          <div>HTTPS: <strong class="${rawResults.security.isHttps ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.security.isHttps ? 'Yes' : 'No'}</strong></div>
-                          <div>HSTS: <strong class="${rawResults.security.hasHsts ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.security.hasHsts ? 'Present' : 'Missing'}</strong></div>
-                          <div>CSP: <strong class="${rawResults.security.hasCsp ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.security.hasCsp ? 'Present' : 'Missing'}</strong></div>
-                          <div>X-Frame-Options: <strong class="${rawResults.security.hasXFrameOptions ? 'text-emerald-400' : 'text-amber-400'}">${rawResults.security.hasXFrameOptions ? 'Present' : 'Missing'}</strong></div>
-                          <div>Referrer-Policy: <strong class="${rawResults.security.hasReferrerPolicy ? 'text-emerald-400' : 'text-amber-400'}">${rawResults.security.hasReferrerPolicy ? 'Present' : 'Missing'}</strong></div>
-                        </div>
-                      `
-                        : '<div class="text-zinc-500 text-[11px]">No raw security header data recorded</div>'
-                    }
-                  </div>
-
-                  <!-- SEO Metadata Diagnostics -->
-                  <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-lg space-y-1">
-                    <div class="text-purple-400 font-bold text-[11px] uppercase tracking-wider">SEO Crawl Diagnostics</div>
-                    ${
-                      rawResults?.seo
-                        ? `
-                        <div class="text-zinc-300 text-[11px] space-y-0.5">
-                          <div>Title: <strong class="${rawResults.seo.hasTitle ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.seo.hasTitle ? 'Present' : 'Missing'}</strong></div>
-                          <div>Meta Description: <strong class="${rawResults.seo.hasMetaDescription ? 'text-emerald-400' : 'text-amber-400'}">${rawResults.seo.hasMetaDescription ? 'Present' : 'Missing'}</strong></div>
-                          <div>H1 Count: <strong>${rawResults.seo.h1Count}</strong></div>
-                          <div>Canonical Tag: <strong>${rawResults.seo.hasCanonical ? 'Present' : 'Missing'}</strong></div>
-                          <div>Robots.txt: <strong>${rawResults.seo.hasRobotsTxt ? 'Present' : 'Missing'}</strong></div>
-                        </div>
-                      `
-                        : '<div class="text-zinc-500 text-[11px]">No raw SEO data recorded</div>'
-                    }
-                  </div>
-                </div>
-
-                <!-- Actionable Issues & Flagged Items Breakdown -->
-                ${
-                  aiOutput?.issues && aiOutput.issues.length > 0
-                    ? `
-                  <div class="bg-zinc-900/90 border border-zinc-800 p-3.5 rounded-xl space-y-2.5">
-                    <div class="flex items-center justify-between">
-                      <span class="text-[#FEC500] font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-                        <span>⚡ Actionable Issues & Flagged Items (${aiOutput.issues.length})</span>
-                      </span>
-                      <span class="text-[10px] text-zinc-400 font-mono">Immediate Developer & Admin Targets</span>
+                  <!-- Score, Re-audit, Delete & Accordion Toggle Actions -->
+                  <div class="flex items-center gap-2 shrink-0 self-end lg:self-auto">
+                    <!-- Health Score Badge -->
+                    <div class="px-2.5 py-1 rounded-lg border font-bold text-xs flex items-center gap-1.5 ${scoreClass}">
+                      <span class="text-[10px] uppercase font-normal text-zinc-400">Score</span>
+                      <span>${score}</span>
                     </div>
-                    <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
-                      ${aiOutput.issues
-                        .map(
-                          (iss: any) => `
-                        <div class="p-2.5 rounded-lg bg-zinc-950 border border-zinc-850 space-y-1.5 font-mono text-[11px]">
-                          <div class="flex flex-wrap items-center justify-between gap-2">
-                            <div class="flex items-center gap-2">
-                              <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                iss.severity === 'critical'
-                                  ? 'bg-rose-950 text-rose-400 border border-rose-800'
-                                  : iss.severity === 'warning'
-                                  ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                                  : 'bg-blue-950 text-blue-400 border border-blue-800'
-                              }">${iss.severity}</span>
-                              <strong class="text-zinc-100 font-bold">${iss.title}</strong>
-                            </div>
-                            <span class="text-zinc-400 text-[10px]">${iss.estimatedMinutes}m · $${iss.price} USD</span>
+
+                    <!-- Inline Re-audit Button -->
+                    <button
+                      type="button"
+                      data-audit-id="${audit.id}"
+                      data-url="${audit.url}"
+                      data-email="${audit.email}"
+                      class="btn-reaudit-item bg-zinc-900 hover:bg-zinc-800 text-amber-400 hover:text-amber-300 border border-zinc-700/80 hover:border-amber-500/50 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5"
+                      title="Trigger differential re-audit"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                      </svg>
+                      <span>Re-audit</span>
+                    </button>
+
+                    <!-- Delete / Remove Report Button -->
+                    <button
+                      type="button"
+                      data-audit-id="${audit.id}"
+                      data-url="${audit.url}"
+                      class="btn-delete-item bg-zinc-900 hover:bg-rose-950/80 text-zinc-400 hover:text-rose-400 border border-zinc-800 hover:border-rose-800/60 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5"
+                      title="Permanently remove and delete audit report"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                      <span>Delete</span>
+                    </button>
+
+                    <!-- Accordion Details Button -->
+                    <button
+                      type="button"
+                      data-target="${cardId}"
+                      class="btn-toggle-accordion bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1"
+                      title="Toggle diagnostic details"
+                    >
+                      <span>Details</span>
+                      <svg class="chevron-icon w-3.5 h-3.5 text-zinc-400 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Expandable Accordion Content (Diagnostic Details) -->
+                <div id="${cardId}" class="hidden border-t border-zinc-850 p-4 space-y-4 bg-zinc-900/40">
+                  <!-- Meta summary banner -->
+                  <div class="bg-zinc-950/80 border border-zinc-850 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-400">
+                    <div>
+                      <span>Audit ID: <strong class="text-zinc-200">${audit.id}</strong></span>
+                      <span class="mx-2">•</span>
+                      <span>Target: <strong class="text-zinc-200">${audit.url}</strong></span>
+                      <span class="mx-2">•</span>
+                      <span>Reporter: <strong class="text-zinc-200">${audit.email}</strong></span>
+                    </div>
+                    <div>
+                      <span>Created: ${createdDate}</span>
+                      ${audit.completedAt ? `<span class="mx-2">•</span><span>Completed: ${new Date(audit.completedAt * 1000).toLocaleString()}</span>` : ''}
+                    </div>
+                  </div>
+
+                  <!-- Raw Diagnostics Grid (PageSpeed, Security, SEO) -->
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <!-- PageSpeed Diagnostics -->
+                    <div class="bg-zinc-950/90 border border-zinc-850 p-3 rounded-lg space-y-1">
+                      <div class="text-[#FEC500] font-bold text-[11px] uppercase tracking-wider">PageSpeed Metrics</div>
+                      ${
+                        rawResults?.pagespeed
+                          ? `
+                          <div class="text-zinc-300 text-[11px] space-y-0.5">
+                            <div>LCP: <strong class="${rawResults.pagespeed.lcp > 2500 ? 'text-amber-400' : 'text-emerald-400'}">${rawResults.pagespeed.lcp}ms</strong></div>
+                            <div>CLS: <strong class="${rawResults.pagespeed.cls > 0.1 ? 'text-amber-400' : 'text-emerald-400'}">${rawResults.pagespeed.cls}</strong></div>
+                            <div>TBT: <strong>${rawResults.pagespeed.tbt}ms</strong></div>
+                            <div>TTFB: <strong>${rawResults.pagespeed.ttfb}ms</strong></div>
+                            <div>Render Blocking JS: <strong>${rawResults.pagespeed.hasRenderBlockingJs ? 'Yes' : 'No'}</strong></div>
+                            <div>Unoptimized Images: <strong>${rawResults.pagespeed.hasUnoptimizedImages ? 'Yes' : 'No'}</strong></div>
                           </div>
-                          ${
-                            iss.proof
-                              ? `<div class="text-[10px] text-zinc-400">🔍 <span class="text-zinc-300">${iss.proof}</span></div>`
-                              : ''
-                          }
-                          ${
-                            iss.items && iss.items.length > 0
-                              ? `
-                            <div class="mt-1.5 space-y-1 border-t border-zinc-900 pt-1.5">
-                              ${iss.items
-                                .map(
-                                  (it: any) => `
-                                <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] text-zinc-400 bg-zinc-900/70 p-1.5 rounded border border-zinc-850">
-                                  <div class="truncate max-w-md">
-                                    ${it.url ? `<a href="${it.url.startsWith('http') ? it.url : '#'}" target="_blank" class="text-blue-400 hover:underline font-mono font-semibold">${it.url}</a>` : ''}
-                                    ${it.selector ? `<code class="text-purple-300 font-mono bg-zinc-950 px-1 py-0.5 rounded">${it.selector}</code>` : ''}
-                                    ${it.label ? `<span class="text-zinc-200 font-bold ml-1">${it.label}</span>` : ''}
-                                    ${it.snippet ? `<span class="text-zinc-400 font-mono ml-1">(${it.snippet})</span>` : ''}
-                                  </div>
-                                  <div class="flex items-center gap-1.5 shrink-0 font-mono">
-                                    ${it.size ? `<span class="text-zinc-200 font-bold bg-zinc-800 px-1.5 py-0.5 rounded text-[9px]">${it.size}</span>` : ''}
-                                    ${it.wasted ? `<span class="text-amber-400 font-bold bg-amber-950/40 px-1.5 py-0.5 rounded text-[9px]">${it.wasted}</span>` : ''}
-                                    ${it.details ? `<span class="text-zinc-400 text-[9px]">${it.details}</span>` : ''}
-                                  </div>
-                                </div>
-                              `
-                                )
-                                .join('')}
-                            </div>
-                          `
-                              : ''
-                          }
-                        </div>
-                      `
-                        )
-                        .join('')}
+                        `
+                          : '<div class="text-zinc-500 text-[11px]">No raw PageSpeed data recorded</div>'
+                      }
+                    </div>
+
+                    <!-- Security Headers Diagnostics -->
+                    <div class="bg-zinc-950/90 border border-zinc-850 p-3 rounded-lg space-y-1">
+                      <div class="text-blue-400 font-bold text-[11px] uppercase tracking-wider">Security Headers</div>
+                      ${
+                        rawResults?.security
+                          ? `
+                          <div class="text-zinc-300 text-[11px] space-y-0.5">
+                            <div>HTTPS: <strong class="${rawResults.security.isHttps ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.security.isHttps ? 'Yes' : 'No'}</strong></div>
+                            <div>HSTS: <strong class="${rawResults.security.hasHsts ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.security.hasHsts ? 'Present' : 'Missing'}</strong></div>
+                            <div>CSP: <strong class="${rawResults.security.hasCsp ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.security.hasCsp ? 'Present' : 'Missing'}</strong></div>
+                            <div>X-Frame-Options: <strong class="${rawResults.security.hasXFrameOptions ? 'text-emerald-400' : 'text-amber-400'}">${rawResults.security.hasXFrameOptions ? 'Present' : 'Missing'}</strong></div>
+                            <div>Referrer-Policy: <strong class="${rawResults.security.hasReferrerPolicy ? 'text-emerald-400' : 'text-amber-400'}">${rawResults.security.hasReferrerPolicy ? 'Present' : 'Missing'}</strong></div>
+                          </div>
+                        `
+                          : '<div class="text-zinc-500 text-[11px]">No raw security header data recorded</div>'
+                      }
+                    </div>
+
+                    <!-- SEO Metadata Diagnostics -->
+                    <div class="bg-zinc-950/90 border border-zinc-850 p-3 rounded-lg space-y-1">
+                      <div class="text-purple-400 font-bold text-[11px] uppercase tracking-wider">SEO Crawl Diagnostics</div>
+                      ${
+                        rawResults?.seo
+                          ? `
+                          <div class="text-zinc-300 text-[11px] space-y-0.5">
+                            <div>Title: <strong class="${rawResults.seo.hasTitle ? 'text-emerald-400' : 'text-rose-400'}">${rawResults.seo.hasTitle ? 'Present' : 'Missing'}</strong></div>
+                            <div>Meta Description: <strong class="${rawResults.seo.hasMetaDescription ? 'text-emerald-400' : 'text-amber-400'}">${rawResults.seo.hasMetaDescription ? 'Present' : 'Missing'}</strong></div>
+                            <div>H1 Count: <strong>${rawResults.seo.h1Count}</strong></div>
+                            <div>Canonical Tag: <strong>${rawResults.seo.hasCanonical ? 'Present' : 'Missing'}</strong></div>
+                            <div>Robots.txt: <strong>${rawResults.seo.hasRobotsTxt ? 'Present' : 'Missing'}</strong></div>
+                          </div>
+                        `
+                          : '<div class="text-zinc-500 text-[11px]">No raw SEO data recorded</div>'
+                      }
                     </div>
                   </div>
-                `
-                    : ''
-                }
 
-                <!-- Raw JSON Accordion -->
-                <details class="bg-zinc-900/60 border border-zinc-800 rounded-lg p-2">
-                  <summary class="cursor-pointer font-bold text-zinc-400 hover:text-white transition text-[11px]">
-                    🔍 View Complete Raw API Payload JSON (Debug Mode)
-                  </summary>
-                  <pre class="mt-2 p-3 bg-black/80 rounded border border-zinc-800 text-[10px] text-emerald-400 overflow-x-auto max-h-60 font-mono">${JSON.stringify({ rawResults, aiOutput, auditLogs }, null, 2)}</pre>
-                </details>
+                  <!-- Actionable Issues & Flagged Items Breakdown -->
+                  ${
+                    aiOutput?.issues && aiOutput.issues.length > 0
+                      ? `
+                    <div class="bg-zinc-950/90 border border-zinc-850 p-3.5 rounded-xl space-y-2.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[#FEC500] font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                          <span>⚡ Actionable Issues & Flagged Items (${aiOutput.issues.length})</span>
+                        </span>
+                        <span class="text-[10px] text-zinc-400 font-mono">Immediate Targets</span>
+                      </div>
+                      <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        ${aiOutput.issues
+                          .map(
+                            (iss: any) => `
+                          <div class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 space-y-1.5 font-mono text-[11px]">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                              <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                  iss.severity === 'critical'
+                                    ? 'bg-rose-950 text-rose-400 border border-rose-800'
+                                    : iss.severity === 'warning'
+                                    ? 'bg-amber-950 text-amber-400 border border-amber-800'
+                                    : 'bg-blue-950 text-blue-400 border border-blue-800'
+                                }">${iss.severity}</span>
+                                <strong class="text-zinc-100 font-bold">${iss.title}</strong>
+                              </div>
+                              <span class="text-zinc-400 text-[10px]">${iss.estimatedMinutes || 0}m · $${iss.price || 0} USD</span>
+                            </div>
+                            ${
+                              iss.proof
+                                ? `<div class="text-[10px] text-zinc-400">🔍 <span class="text-zinc-300">${iss.proof}</span></div>`
+                                : ''
+                            }
+                            ${
+                              iss.items && iss.items.length > 0
+                                ? `
+                              <div class="mt-1.5 space-y-1 border-t border-zinc-800 pt-1.5">
+                                ${iss.items
+                                  .map(
+                                    (it: any) => `
+                                  <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] text-zinc-400 bg-zinc-950 p-1.5 rounded border border-zinc-850">
+                                    <div class="truncate max-w-md">
+                                      ${it.url ? `<a href="${it.url.startsWith('http') ? it.url : '#'}" target="_blank" class="text-blue-400 hover:underline font-mono font-semibold">${it.url}</a>` : ''}
+                                      ${it.selector ? `<code class="text-purple-300 font-mono bg-zinc-900 px-1 py-0.5 rounded">${it.selector}</code>` : ''}
+                                      ${it.label ? `<span class="text-zinc-200 font-bold ml-1">${it.label}</span>` : ''}
+                                      ${it.snippet ? `<span class="text-zinc-400 font-mono ml-1">(${it.snippet})</span>` : ''}
+                                    </div>
+                                    <div class="flex items-center gap-1.5 shrink-0 font-mono">
+                                      ${it.size ? `<span class="text-zinc-200 font-bold bg-zinc-800 px-1.5 py-0.5 rounded text-[9px]">${it.size}</span>` : ''}
+                                      ${it.wasted ? `<span class="text-amber-400 font-bold bg-amber-950/40 px-1.5 py-0.5 rounded text-[9px]">${it.wasted}</span>` : ''}
+                                      ${it.details ? `<span class="text-zinc-400 text-[9px]">${it.details}</span>` : ''}
+                                    </div>
+                                  </div>
+                                `
+                                  )
+                                  .join('')}
+                              </div>
+                            `
+                                : ''
+                            }
+                          </div>
+                        `
+                          )
+                          .join('')}
+                      </div>
+                    </div>
+                  `
+                      : ''
+                  }
+
+                  <!-- Raw JSON Accordion -->
+                  <details class="bg-zinc-950/80 border border-zinc-850 rounded-lg p-2.5">
+                    <summary class="cursor-pointer font-bold text-zinc-400 hover:text-white transition text-[11px] select-none">
+                      🔍 View Complete Raw API Payload JSON (Debug Mode)
+                    </summary>
+                    <pre class="mt-2 p-3 bg-black rounded border border-zinc-850 text-[10px] text-emerald-400 overflow-x-auto max-h-60 font-mono">${JSON.stringify({ rawResults, aiOutput, auditLogs }, null, 2)}</pre>
+                  </details>
+                </div>
               </div>
             `;
           })
           .join('');
+
+        // Wire Accordion Toggle Handlers
+        container.querySelectorAll('.btn-toggle-accordion').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const targetId = btn.getAttribute('data-target');
+            if (!targetId) return;
+            const content = document.getElementById(targetId);
+            const parentRow = document.getElementById(targetId.replace('audit_details_', 'audit_row_'));
+            const chevrons = parentRow?.querySelectorAll('.chevron-icon');
+
+            if (content?.classList.contains('hidden')) {
+              content.classList.remove('hidden');
+              chevrons?.forEach((c) => c.classList.add('rotate-180'));
+            } else if (content) {
+              content.classList.add('hidden');
+              chevrons?.forEach((c) => c.classList.remove('rotate-180'));
+            }
+          });
+        });
+
+        // Wire Inline Re-audit Handlers
+        container.querySelectorAll('.btn-reaudit-item').forEach((btn) => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const buttonEl = btn as HTMLButtonElement;
+            const auditId = buttonEl.getAttribute('data-audit-id') || '';
+            const targetUrl = buttonEl.getAttribute('data-url') || '';
+            const email = buttonEl.getAttribute('data-email') || '';
+            const originalContent = buttonEl.innerHTML;
+
+            buttonEl.disabled = true;
+            buttonEl.innerHTML = `
+              <svg class="w-3.5 h-3.5 animate-spin text-amber-400" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span>Queuing...</span>
+            `;
+
+            adminLog('info', 'RE-AUDIT', `POST /api/admin/re-audit (item inline) → ${JSON.stringify({ auditId, url: targetUrl, email })}`);
+
+            try {
+              const res = await fetch('/api/admin/re-audit', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ auditId, url: targetUrl, email }),
+              });
+
+              if (res.status === 401 || res.status === 403) {
+                handleUnauthorized();
+                return;
+              }
+
+              const resData: any = await res.json();
+              if (res.ok && resData.success) {
+                adminLog('success', 'RE-AUDIT', `Enqueued — auditId: ${resData.auditId}`);
+                buttonEl.innerHTML = `<span>✓ Queued</span>`;
+                buttonEl.className = 'btn-reaudit-item bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5';
+                setTimeout(() => {
+                  fetchAuditLogs(token, _currentAuditSearch, _currentAuditPage);
+                }, 1200);
+              } else {
+                adminLog('error', 'RE-AUDIT', `${res.status} — ${resData?.error || 'Failed to trigger re-audit'}`);
+                alert(`Re-audit error: ${resData?.error || 'Failed to trigger re-audit'}`);
+                buttonEl.disabled = false;
+                buttonEl.innerHTML = originalContent;
+              }
+            } catch (err: any) {
+              adminLog('error', 'RE-AUDIT', `Network error — ${err.message}`);
+              alert(`Network error: ${err.message}`);
+              buttonEl.disabled = false;
+              buttonEl.innerHTML = originalContent;
+            }
+          });
+        });
+
+        // Wire Delete / Remove Handlers
+        container.querySelectorAll('.btn-delete-item').forEach((btn) => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const buttonEl = btn as HTMLButtonElement;
+            const auditId = buttonEl.getAttribute('data-audit-id') || '';
+            const targetUrl = buttonEl.getAttribute('data-url') || '';
+
+            const confirmed = window.confirm(
+              `Are you sure you want to permanently delete the audit report for:\n${targetUrl} (ID: ${auditId})?\n\nThis will remove all associated database records and R2 storage objects.`
+            );
+
+            if (!confirmed) return;
+
+            buttonEl.disabled = true;
+            buttonEl.innerHTML = `
+              <svg class="w-3.5 h-3.5 animate-spin text-rose-400" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span>Deleting...</span>
+            `;
+
+            adminLog('info', 'DELETE-AUDIT', `DELETE /api/admin/audit-logs?id=${auditId} → pending`);
+
+            try {
+              const res = await fetch(`/api/admin/audit-logs?id=${encodeURIComponent(auditId)}`, {
+                method: 'DELETE',
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              if (res.status === 401 || res.status === 403) {
+                handleUnauthorized();
+                return;
+              }
+
+              const resData: any = await res.json();
+              if (res.ok && resData.success) {
+                adminLog('success', 'DELETE-AUDIT', `Deleted audit ${auditId}`);
+                // Refresh list on current page (or previous if last item on page)
+                const newPage = (_currentAuditPage > 1 && data.logs.length === 1) ? _currentAuditPage - 1 : _currentAuditPage;
+                fetchAuditLogs(token, _currentAuditSearch, newPage);
+              } else {
+                adminLog('error', 'DELETE-AUDIT', `${res.status} — ${resData?.error || 'Failed to delete audit'}`);
+                alert(`Delete error: ${resData?.error || 'Failed to delete audit'}`);
+                buttonEl.disabled = false;
+                buttonEl.innerHTML = `
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                  <span>Delete</span>
+                `;
+              }
+            } catch (err: any) {
+              adminLog('error', 'DELETE-AUDIT', `Network error — ${err.message}`);
+              alert(`Network error: ${err.message}`);
+              buttonEl.disabled = false;
+              buttonEl.innerHTML = `
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                <span>Delete</span>
+              `;
+            }
+          });
+        });
+
+        // Update Pagination Controls UI
+        renderPaginationControls(token);
       } else {
         adminLog('error', 'AUDIT-LOGS', `${res.status} ${res.statusText} — ${data?.error || 'unexpected response'}`);
       }
     } catch (err: any) {
       adminLog('error', 'AUDIT-LOGS', `Network error — ${err.message}`);
+    }
+  }
+
+  function renderPaginationControls(token: string) {
+    const paginationContainer = document.getElementById('auditPaginationContainer');
+    const startEl = document.getElementById('auditPageStart');
+    const endEl = document.getElementById('auditPageEnd');
+    const totalEl = document.getElementById('auditPageTotal');
+    const prevBtn = document.getElementById('auditPrevPageBtn') as HTMLButtonElement | null;
+    const nextBtn = document.getElementById('auditNextPageBtn') as HTMLButtonElement | null;
+    const numbersContainer = document.getElementById('auditPageNumbers');
+
+    if (!paginationContainer) return;
+
+    if (_totalAuditCount === 0) {
+      paginationContainer.classList.add('hidden');
+      return;
+    }
+
+    paginationContainer.classList.remove('hidden');
+
+    const startIdx = (_currentAuditPage - 1) * _auditLimit + 1;
+    const endIdx = Math.min(_currentAuditPage * _auditLimit, _totalAuditCount);
+
+    if (startEl) startEl.innerText = startIdx.toString();
+    if (endEl) endEl.innerText = endIdx.toString();
+    if (totalEl) totalEl.innerText = _totalAuditCount.toString();
+
+    if (prevBtn) {
+      prevBtn.disabled = _currentAuditPage <= 1;
+      prevBtn.onclick = () => {
+        if (_currentAuditPage > 1) {
+          fetchAuditLogs(token, _currentAuditSearch, _currentAuditPage - 1);
+        }
+      };
+    }
+
+    if (nextBtn) {
+      nextBtn.disabled = _currentAuditPage >= _totalAuditPages;
+      nextBtn.onclick = () => {
+        if (_currentAuditPage < _totalAuditPages) {
+          fetchAuditLogs(token, _currentAuditSearch, _currentAuditPage + 1);
+        }
+      };
+    }
+
+    if (numbersContainer) {
+      // Build sliding window of pages
+      const pagesToShow: number[] = [];
+      const delta = 2;
+      for (let i = 1; i <= _totalAuditPages; i++) {
+        if (i === 1 || i === _totalAuditPages || (i >= _currentAuditPage - delta && i <= _currentAuditPage + delta)) {
+          pagesToShow.push(i);
+        }
+      }
+
+      let html = '';
+      let lastPage = 0;
+
+      for (const p of pagesToShow) {
+        if (lastPage && p - lastPage > 1) {
+          html += `<span class="px-2 py-1 text-zinc-600">...</span>`;
+        }
+        const isActive = p === _currentAuditPage;
+        html += `
+          <button
+            type="button"
+            data-page="${p}"
+            class="pagination-page-btn px-3 py-1 rounded-lg text-xs font-semibold transition ${
+              isActive
+                ? 'bg-[#FEC500] text-zinc-950 shadow'
+                : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800'
+            }"
+          >
+            ${p}
+          </button>
+        `;
+        lastPage = p;
+      }
+
+      numbersContainer.innerHTML = html;
+
+      numbersContainer.querySelectorAll('.pagination-page-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const pageNum = parseInt(btn.getAttribute('data-page') || '1', 10);
+          if (pageNum !== _currentAuditPage) {
+            fetchAuditLogs(token, _currentAuditSearch, pageNum);
+          }
+        });
+      });
     }
   }
 
@@ -958,7 +1338,7 @@
         if (res.ok && data.success) {
           adminLog('success', 'RE-AUDIT', `Enqueued — auditId: ${data.auditId}`);
           reAuditFeedback.className = 'text-xs px-3 py-2 rounded-lg font-mono bg-emerald-950 text-emerald-400 border border-emerald-800 block';
-          reAuditFeedback.innerHTML = `Success! Enqueued Re-audit (ID: <a href="/audit/${data.auditId}" target="_blank" class="underline font-bold">${data.auditId}</a>)`;
+          reAuditFeedback.innerHTML = `Success! Enqueued Re-audit (ID: <span class="font-bold text-white">${data.auditId}</span>)`;
           reAuditInput.value = '';
           loadAdminData();
         } else {
@@ -977,3 +1357,4 @@
   // Initial load
   loadAdminData();
 </script>
+

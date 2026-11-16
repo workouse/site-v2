@@ -116,6 +116,16 @@ const openWeb = [
     detected: distributed.hasSecurityTxt,
     detail: '/.well-known/security.txt vulnerability disclosure policy',
     badge: 'SecOps Standard',
+    isWarning: false,
+  },
+  {
+    name: 'Universal Commerce Protocol (`/ucp`)',
+    detected: distributed.hasUcp,
+    detail: distributed.hasUcp
+      ? (distributed.ucpVersion ? `UCP v${distributed.ucpVersion} enabled (${distributed.ucpEndpoint || '/.well-known/ucp'})` : '/.well-known/ucp agentic commerce ready')
+      : (distributed.isEcommerce ? 'Missing /.well-known/ucp (Agentic AI Commerce Disabled)' : 'Not an e-commerce storefront (Optional)'),
+    badge: 'Agentic Commerce',
+    isWarning: distributed.isEcommerce && !distributed.hasUcp,
   },
 ];
 ---
@@ -260,6 +270,10 @@ const openWeb = [
             {item.detected ? (
               <span class="shrink-0 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px]">
                 ✅ Ready
+              </span>
+            ) : item.isWarning ? (
+              <span class="shrink-0 text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px]">
+                ⚠️ Missing
               </span>
             ) : (
               <span class="shrink-0 text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded text-[10px]">

@@ -210,6 +210,12 @@ export interface DistributedWebDiagnostics {
   hasLlmsTxt: boolean;
   hasSecurityTxt: boolean;
 
+  // Agentic & Universal Commerce Protocol (UCP)
+  isEcommerce: boolean;
+  hasUcp: boolean;
+  ucpVersion?: string | null;
+  ucpEndpoint?: string | null;
+
   // Summary Metrics
   detectedCount: number;
   totalChecked: number;
@@ -239,6 +245,44 @@ export type {
   DataRegulationDiagnostics,
 } from './jurisdiction-engine';
 
+// API Authentication & Identity Types
+export type ApiUserTier = 'free' | 'pro' | 'enterprise';
+
+export interface ApiUser {
+  id: string;
+  pubkey: string;
+  npub: string;
+  tier: ApiUserTier;
+  daily_quota: number;
+  is_active: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface ApiKey {
+  id: string;
+  user_id: string;
+  key_hash: string;
+  key_prefix: string;
+  name: string;
+  permissions: string[];
+  expires_at: number | null;
+  last_used_at: number | null;
+  created_at: number;
+}
+
+export interface ApiUsageLog {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  target_module: string;
+  target_url: string;
+  status_code: number;
+  duration_ms: number;
+  cost_credits: number;
+  timestamp: number;
+}
+
 // Env interface — typed Cloudflare bindings
 export interface Env {
   DB: D1Database;
@@ -259,4 +303,5 @@ export interface Env {
   ADMIN_SECRET_KEY?: string;
   APP_URL?: string;
 }
+
 
