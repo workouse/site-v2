@@ -1,0 +1,67 @@
+---
+/**
+ * SpecialistServices — homepage section 04. Two service blocks: PHP & Symfony
+ * (primary, wider) and Shopify (secondary). Desktop lays them out as unequal
+ * columns side by side; tablet and mobile stack them with PHP first.
+ * The section label is the section's <h2>; each block title is an <h3>.
+ * All copy comes from the site data module. Renders without JS.
+ */
+import ServicePhpSymfony from './ServicePhpSymfony.astro';
+import ServiceShopify from './ServiceShopify.astro';
+import { services } from '../../data/site';
+---
+
+<section class="specialist-services" aria-labelledby="specialist-services-label">
+  <h2 id="specialist-services-label" class="specialist-services__label">{services.eyebrow}</h2>
+  <div class="specialist-services__wrapper">
+    <ServicePhpSymfony />
+    <ServiceShopify />
+  </div>
+</section>
+
+<style>
+  .specialist-services {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 64px 24px;
+    background-color: #faf8f4;
+  }
+
+  .specialist-services__label {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1.58;
+    letter-spacing: 0.14em;
+    color: #53658e;
+  }
+
+  .specialist-services__wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  @media (min-width: 768px) {
+    .specialist-services {
+      padding: 96px 40px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .specialist-services {
+      padding: 96px;
+    }
+
+    .specialist-services__wrapper {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 80px;
+    }
+  }
+</style>
