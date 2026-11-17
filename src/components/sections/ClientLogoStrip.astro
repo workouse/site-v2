@@ -1,0 +1,256 @@
+---
+/**
+ * ClientLogoStrip — homepage section 03 ("client credibility").
+ *
+ * Renders the "Selected clients" strip from `src/data/site.ts` (`clientStrip`).
+ * While approved client logos are not supplied (`logo: null`), each client mark
+ * displays its name as live text above a "LOGO PENDING" caption. Once a logo
+ * path or `ImageMetadata` is supplied in data, `<img alt="{client name}">` is
+ * rendered and the placeholder caption is omitted.
+ */
+import type { ImageMetadata } from 'astro';
+import { clientStrip } from '../../data/site';
+import type { ClientStripContent, ClientStripItem } from '../../data/site';
+
+export interface ClientLogoItem extends Omit<ClientStripItem, 'logo' | 'pendingCaption'> {
+  readonly logo: ImageMetadata | string | null;
+  readonly pendingCaption?: string;
+}
+
+export interface Props {
+  content?: ClientStripContent;
+  label?: readonly string[];
+  clients?: readonly ClientLogoItem[];
+  ariaLabel?: string;
+  class?: string;
+  id?: string;
+  [key: `data-${string}`]: unknown;
+}
+
+interface ResolvedLogo {
+  readonly src: string;
+  readonly width?: number;
+  readonly height?: number;
+}
+
+function isImageMetadata(value: unknown): value is ImageMetadata {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'src' in value &&
+    typeof (value as ImageMetadata).src === 'string' &&
+    'width' in value &&
+    'height' in value &&
+    'format' in value
+  );
+}
+
+const assetLoaders = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/assets/**/*.{svg,png,webp,avif,jpg,jpeg,gif}',
+  { eager: true },
+);
+
+function resolveClientLogo(logo: ImageMetadata | string | null | undefined): ResolvedLogo | null {
+  if (!logo) {
+    return null;
+  }
+
+  if (isImageMetadata(logo)) {
+    return {
+      src: logo.src,
+      width: logo.width,
+      height: logo.height,
+    };
+  }
+
+  const trimmed = logo.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  if (trimmed.startsWith('src/assets/') || trimmed.startsWith('/src/assets/')) {
+    const assetKey = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    const loaded = assetLoaders[assetKey];
+    if (loaded) {
+      return {
+        src: loaded.default.src,
+        width: loaded.default.width,
+        height: loaded.default.height,
+      };
+    }
+  }
+
+  return { src: trimmed };
+}
+
+const {
+  content = clientStrip,
+  label,
+  clients,
+  ariaLabel = 'Selected clients',
+  class: className,
+  ...rest
+} = Astro.props;
+
+const resolvedLabel = label ?? content.label;
+const resolvedClients = clients ?? content.clients;
+---
+
+<section aria-label={ariaLabel} class:list={['client-logo-strip', className]} {...rest}>
+  <p class="client-logo-strip__label">{
+    resolvedLabel.map((line, index) => (
+      <>
+        {index < resolvedLabel.length - 1 ? `${line} ` : line}
+        {index < resolvedLabel.length - 1 && <br />}
+      </>
+    ))
+  }</p>
+
+  <ul class="client-logo-strip__list">
+    {
+      resolvedClients.map((client) => {
+        const resolvedLogo = resolveClientLogo(client.logo);
+        return (
+          <li class="client-logo-strip__item">
+            {resolvedLogo ? (
+              <img
+                src={resolvedLogo.src}
+                alt={client.name}
+                width={resolvedLogo.width}
+                height={resolvedLogo.height}
+                loading="lazy"
+                decoding="async"
+                class="client-logo-strip__logo"
+              />
+            ) : (
+              <div class="client-logo-strip__placeholder">
+                <span class="client-logo-strip__name">{client.name}</span>
+                <span class="client-logo-strip__caption">{client.pendingCaption ?? 'LOGO PENDING'}</span>
+              </div>
+            )}
+          </li>
+        );
+      })
+    }
+  </ul>
+</section>
+
+<style>
+  .client-logo-strip {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 28px;
+    box-sizing: border-box;
+    width: 100%;
+    padding-block: var(--space-32, 32px);
+    padding-inline: var(--space-24, 24px);
+    background-color: var(--surface-page, #faf8f4);
+  }
+
+  .client-logo-strip__label {
+    margin: 0;
+    max-width: 100%;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-secondary, #5b6574);
+  }
+
+  .client-logo-strip__list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-24, 24px);
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .client-logo-strip__item {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    max-width: 100%;
+  }
+
+  .client-logo-strip__placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    white-space: nowrap;
+  }
+
+  .client-logo-strip__name {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--text-primary, #24354f);
+  }
+
+  .client-logo-strip__caption {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 8px;
+    line-height: 1.55;
+    color: var(--text-secondary, #5b6574);
+  }
+
+  .client-logo-strip__logo {
+    display: block;
+    width: auto;
+    max-width: min(160px, 100%);
+    height: auto;
+    max-height: 30px;
+    object-fit: contain;
+  }
+
+  @media (min-width: 768px) {
+    .client-logo-strip {
+      padding-inline: var(--space-40, 40px);
+    }
+
+    .client-logo-strip__name {
+      font-size: 27px;
+    }
+
+    .client-logo-strip__caption {
+      font-size: 9px;
+    }
+
+    .client-logo-strip__logo {
+      max-width: min(200px, 100%);
+      max-height: 42px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .client-logo-strip {
+      flex-direction: row;
+      align-items: center;
+      gap: 72px;
+      padding-inline: var(--space-96, 96px);
+    }
+
+    .client-logo-strip__label {
+      flex: 0 0 220px;
+      width: 220px;
+    }
+
+    .client-logo-strip__list {
+      flex: 1 1 0%;
+      width: auto;
+    }
+  }
+</style>
