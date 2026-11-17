@@ -1,0 +1,147 @@
+---
+/**
+ * PeopleBehindWorkouse — homepage section 04 ("the people behind the engineering").
+ *
+ * Renders the team from `team` in `src/data/site.ts`, in data order (Emre first).
+ * The second profile carries an editorial 64px top offset on desktop only.
+ * Decorative MushroomNebula is hidden from assistive technology.
+ */
+import MushroomNebula from '../ui/MushroomNebula.astro';
+import TeamProfile from './TeamProfile.astro';
+import type { MediaRatios } from './TeamProfile.astro';
+import { team } from '../../data/site';
+
+const PROFILE_RATIOS: readonly MediaRatios[] = [
+  { desktop: '624 / 440', tablet: '328 / 320', mobile: '342 / 360' },
+  { desktop: '544 / 376', tablet: '328 / 320', mobile: '342 / 340' },
+];
+
+const [headingFirst, headingSecond] = team.headingLines;
+---
+
+<section class="people-behind" aria-labelledby="people-behind-heading">
+  <p class="people-behind__eyebrow">{team.eyebrow}</p>
+  <div class="people-behind__heading-row">
+    <h2 id="people-behind-heading" class="people-behind__title">
+      {headingFirst}<br />
+      {headingSecond}
+    </h2>
+    <MushroomNebula size="responsive" aria-hidden="true" class="people-behind__mushroom" />
+  </div>
+  <div class="people-behind__profiles">
+    {
+      team.people.map((member, index) => (
+        <TeamProfile
+          member={member}
+          ratios={PROFILE_RATIOS[index] ?? PROFILE_RATIOS[0]}
+          class={index === 1 ? 'people-behind__profile people-behind__profile--offset' : 'people-behind__profile'}
+        />
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .people-behind {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 64px 24px;
+    background-color: #ffffff;
+  }
+
+  .people-behind__eyebrow {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1.55;
+    letter-spacing: 0.14em;
+    color: #53658e;
+  }
+
+  .people-behind__heading-row {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  .people-behind__title {
+    margin: 0;
+    width: 342px;
+    max-width: 100%;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 48px;
+    line-height: 1.06;
+    color: #24354f;
+    overflow-wrap: break-word;
+  }
+
+  .people-behind__profiles {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  .people-behind__profile {
+    width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .people-behind {
+      padding: 96px 40px;
+    }
+
+    .people-behind__heading-row {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+
+    .people-behind__title {
+      width: 484px;
+      font-size: 64px;
+    }
+
+    .people-behind__profiles {
+      flex-direction: row;
+      gap: 32px;
+    }
+
+    .people-behind__profile {
+      width: 328px;
+      flex-shrink: 0;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .people-behind {
+      padding: 96px;
+    }
+
+    .people-behind__title {
+      width: 900px;
+    }
+
+    .people-behind__profiles {
+      gap: 80px;
+    }
+
+    .people-behind__profile {
+      width: 624px;
+    }
+
+    .people-behind__profile + .people-behind__profile {
+      width: 544px;
+    }
+
+    .people-behind__profile--offset {
+      padding-top: 64px;
+    }
+  }
+</style>
