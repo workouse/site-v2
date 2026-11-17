@@ -1,0 +1,74 @@
+---
+/**
+ * ProductCard — supporting studio product in StudioProducts (homepage section 06).
+ * Renders a bordered `<article>` with the product name as its `<h3>`, body copy,
+ * a placeholder-or-screenshot MediaFrame, and an external TextLink. The external
+ * link opens in a new tab and carries an accessible "(opens in a new tab)" suffix.
+ */
+import MediaFrame from '../ui/MediaFrame.astro';
+import TextLink from '../ui/TextLink.astro';
+import type { SupportingProduct } from '../../data/site';
+
+export interface Props {
+  product: SupportingProduct;
+}
+
+const { product } = Astro.props;
+const screenshotSrc = product.screenshot?.src ?? null;
+const screenshotAlt = product.screenshot?.alt ?? product.name;
+---
+
+<article class="product-card">
+  <h3 class="product-card__title">{product.name}</h3>
+  <p class="product-card__body">{product.body}</p>
+  <MediaFrame
+    class="product-card__media"
+    variant="card"
+    src={screenshotSrc}
+    alt={screenshotAlt}
+    ratio="600/172"
+    tabletRatio="688/180"
+    mobileRatio="342/180"
+    gap={8}
+    lines={['SCREENSHOT PLACEHOLDER', product.placeholder]}
+  />
+  <TextLink href={product.href} label={product.linkLabel} size={14} tone="link" external />
+</article>
+
+<style>
+  .product-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
+    width: 100%;
+    padding-top: 24px;
+    border-top: 1px solid #d7d9df;
+  }
+
+  .product-card__title,
+  .product-card__body {
+    margin: 0;
+  }
+
+  .product-card__title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 1.08;
+    color: #24354f;
+  }
+
+  .product-card__body {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.55;
+    color: #5b6574;
+  }
+
+  .product-card__media {
+    width: 100%;
+  }
+</style>

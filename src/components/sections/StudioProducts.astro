@@ -1,0 +1,130 @@
+---
+/**
+ * StudioProducts — homepage section 06 ("Products from our studio").
+ * Composes the intro, the featured Bitig block, and the supporting product cards.
+ * Bitig stays larger than the supporting cards at every breakpoint: its media
+ * frame is wider than the card media frames and its title is larger. All copy
+ * comes from the site data module. The section label is the section's <h2>
+ * sibling intro heading; product names are <h3>s. Renders without JS.
+ */
+import FeaturedProduct from './FeaturedProduct.astro';
+import ProductCard from './ProductCard.astro';
+import { products } from '../../data/site';
+---
+
+<section class="studio-products" aria-labelledby="studio-products-heading">
+  <p class="studio-products__label">{products.eyebrow}</p>
+  <div class="studio-products__intro">
+    <h2 id="studio-products-heading" class="studio-products__heading">{products.heading}</h2>
+    <p class="studio-products__intro-body">{products.intro}</p>
+  </div>
+  <FeaturedProduct />
+  <div class="studio-products__supporting">
+    {products.supporting.map((product) => (
+      <ProductCard product={product} />
+    ))}
+  </div>
+</section>
+
+<style>
+  .studio-products {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 64px 24px;
+    background-color: #faf8f4;
+  }
+
+  .studio-products__label,
+  .studio-products__heading,
+  .studio-products__intro-body {
+    margin: 0;
+  }
+
+  .studio-products__label {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1.55;
+    color: #53658e;
+  }
+
+  .studio-products__intro {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .studio-products__heading {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 48px;
+    line-height: 1.08;
+    color: #24354f;
+  }
+
+  .studio-products__intro-body {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.55;
+    color: #5b6574;
+  }
+
+  .studio-products__supporting {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .studio-products {
+      padding: 96px 40px;
+    }
+
+    .studio-products__heading {
+      font-size: 64px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .studio-products {
+      padding: 96px;
+    }
+
+    .studio-products__intro {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 32px;
+    }
+
+    .studio-products__heading {
+      flex: 0 0 720px;
+      max-width: 720px;
+    }
+
+    .studio-products__intro-body {
+      flex: 0 0 496px;
+      max-width: 496px;
+    }
+
+    .studio-products__supporting {
+      flex-direction: row;
+      gap: 48px;
+    }
+
+    .studio-products__supporting > * {
+      flex: 1 1 0%;
+      min-width: 0;
+    }
+  }
+</style>
