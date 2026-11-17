@@ -1,0 +1,105 @@
+---
+/**
+ * SelectedClientEngagements — homepage section 05. Intro (eyebrow label +
+ * serif H2 heading) followed by one EngagementRow per client. Rows link to
+ * client sites ("Visit"), not case studies. Desktop lays the intro out as a
+ * row; tablet and mobile stack it. Renders without JS.
+ * The eyebrow is a <p>; the heading is the section's only <h2>.
+ */
+import EngagementRow from './EngagementRow.astro';
+import { engagementsHome } from '../../data/site';
+
+const [headingFirstLine, headingSecondLine] = engagementsHome.headingLines;
+---
+
+<section class="selected-client-engagements" aria-labelledby="selected-client-engagements-heading">
+  <div class="selected-client-engagements__intro">
+    <p class="selected-client-engagements__label">{engagementsHome.eyebrow}</p>
+    <h2 id="selected-client-engagements-heading" class="selected-client-engagements__heading">
+      <span class="selected-client-engagements__heading-line">{headingFirstLine}</span>
+      <span class="selected-client-engagements__heading-line">{headingSecondLine}</span>
+    </h2>
+  </div>
+  <div class="selected-client-engagements__rows">
+    {engagementsHome.items.map((item) => <EngagementRow item={item} />)}
+  </div>
+</section>
+
+<style>
+  .selected-client-engagements {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 64px 24px;
+    background-color: #ffffff;
+  }
+
+  .selected-client-engagements__intro {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .selected-client-engagements__label {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1.55;
+    letter-spacing: 0.14em;
+    color: #53658e;
+  }
+
+  .selected-client-engagements__heading {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 48px;
+    line-height: 1.05;
+    color: #24354f;
+  }
+
+  .selected-client-engagements__heading-line {
+    display: block;
+  }
+
+  .selected-client-engagements__rows {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (min-width: 768px) {
+    .selected-client-engagements {
+      padding: 96px 40px;
+    }
+
+    .selected-client-engagements__heading {
+      font-size: 64px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .selected-client-engagements {
+      padding: 96px;
+    }
+
+    .selected-client-engagements__intro {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 24px;
+    }
+
+    .selected-client-engagements__label {
+      flex: 0 0 280px;
+      width: 280px;
+    }
+
+    .selected-client-engagements__heading {
+      flex: 0 0 780px;
+      width: 780px;
+    }
+  }
+</style>
