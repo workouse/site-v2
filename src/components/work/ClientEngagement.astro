@@ -1,0 +1,316 @@
+---
+/**
+ * ClientEngagement — one large editorial engagement block on the /work page.
+ *
+ * Three layouts share one DOM structure so that natural DOM order equals the
+ * stacked reading order (client, category, headline, description → screenshot →
+ * technologies, link). Desktop (>=1440px) re-places the same nodes with CSS grid:
+ *   - featured: text column (480px) | screenshot column (720px)
+ *   - standard: identity (360px) + headline (840px) over screenshot (744px) + details (456px)
+ *   - compact:  text column (456px) | screenshot column (744px)
+ * Tablet (768px) and mobile (390px) stack every layout in reading order.
+ *
+ * Descriptions are owner-supplied copy and are not claims of measured outcomes.
+ * Text heights are flexible: no line clamping is applied anywhere.
+ */
+import type { ImageMetadata } from 'astro';
+import MediaFrame from '../ui/MediaFrame.astro';
+import DirectionalLink from '../ui/DirectionalLink.astro';
+
+export type ClientEngagementLayout = 'featured' | 'standard' | 'compact';
+
+export interface ClientEngagementScreenshot {
+  src: ImageMetadata | string;
+  alt: string;
+}
+
+export interface ClientEngagementLogo {
+  src: string;
+  alt: string;
+}
+
+export interface Props {
+  layout: ClientEngagementLayout;
+  client: string;
+  category: string;
+  headline: string;
+  description: string;
+  technologies: string;
+  href: string;
+  screenshot?: ClientEngagementScreenshot;
+  screenshotLabel: string;
+  logo?: ClientEngagementLogo;
+  filters: string[];
+}
+
+const SCREENSHOT_PLACEHOLDER_TEXT = 'SCREENSHOT / AWAITING APPROVED CAPTURE';
+const LOGO_WIDTH = 160;
+const LOGO_HEIGHT = 48;
+const STACKED_RATIO = '8 / 5';
+const DESKTOP_RATIO: Record<ClientEngagementLayout, string> = {
+  featured: '8 / 5',
+  standard: '744 / 417',
+  compact: '8 / 5',
+};
+
+const {
+  layout,
+  client,
+  category,
+  headline,
+  description,
+  technologies,
+  href,
+  screenshot,
+  screenshotLabel,
+  logo,
+  filters,
+} = Astro.props;
+
+const visitLabel = `Visit ${client}`;
+const visitAccessibleLabel = `Visit ${client} website`;
+const screenshotLines = [SCREENSHOT_PLACEHOLDER_TEXT, screenshotLabel];
+---
+
+<article
+  class={`client-engagement client-engagement--${layout}`}
+  data-layout={layout}
+  data-filters={filters.join(' ')}
+>
+  <div class="client-engagement__header">
+    <div class="client-engagement__identity">
+      <h2 class="client-engagement__client">{client}</h2>
+      <p class="client-engagement__category">{category}</p>
+      {
+        logo && (
+          <img
+            class="client-engagement__logo"
+            src={logo.src}
+            alt={logo.alt}
+            width={LOGO_WIDTH}
+            height={LOGO_HEIGHT}
+            loading="lazy"
+            decoding="async"
+          />
+        )
+      }
+    </div>
+    <p class="client-engagement__headline">{headline}</p>
+    <p class="client-engagement__description">{description}</p>
+  </div>
+
+  <div class="client-engagement__media">
+    <MediaFrame
+      variant="work"
+      src={screenshot?.src ?? null}
+      alt={screenshot?.alt}
+      ratio={DESKTOP_RATIO[layout]}
+      tabletRatio={STACKED_RATIO}
+      mobileRatio={STACKED_RATIO}
+      lines={screenshot ? [] : screenshotLines}
+    />
+  </div>
+
+  <div class="client-engagement__details">
+    <p class="client-engagement__technologies">{technologies}</p>
+    <DirectionalLink
+      href={href}
+      label={visitLabel}
+      arrow="↗"
+      external
+      aria-label={visitAccessibleLabel}
+    />
+  </div>
+</article>
+
+<style>
+  .client-engagement {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    box-sizing: border-box;
+    width: 100%;
+    padding-top: 32px;
+    border-top: 1px solid #d7d9df;
+    background-color: #faf8f4;
+  }
+
+  .client-engagement__header,
+  .client-engagement__identity,
+  .client-engagement__details {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 0;
+  }
+
+  .client-engagement__media {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .client-engagement__client {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 40px;
+    line-height: 44px;
+    color: #24354f;
+    overflow-wrap: break-word;
+  }
+
+  .client-engagement__category,
+  .client-engagement__technologies {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .client-engagement__category {
+    color: #53658e;
+  }
+
+  .client-engagement__technologies {
+    color: #5b6574;
+  }
+
+  .client-engagement__headline {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 40px;
+    line-height: 44px;
+    color: #24354f;
+    overflow-wrap: break-word;
+  }
+
+  .client-engagement__description {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 26px;
+    color: #5b6574;
+    overflow-wrap: break-word;
+  }
+
+  .client-engagement__logo {
+    display: block;
+    width: 160px;
+    height: 48px;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  /* Desktop (1440px viewport, 1248px content). Below this breakpoint every layout stacks. */
+  @media (min-width: 1440px) {
+    .client-engagement--featured,
+    .client-engagement--standard,
+    .client-engagement--compact {
+      display: grid;
+      align-items: start;
+      gap: 48px;
+    }
+
+    .client-engagement--featured .client-engagement__headline,
+    .client-engagement--standard .client-engagement__headline {
+      font-size: 64px;
+      line-height: 66px;
+    }
+
+    .client-engagement--featured {
+      grid-template-columns: 480px 720px;
+      column-gap: 48px;
+      row-gap: 24px;
+    }
+
+    .client-engagement--featured .client-engagement__header {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .client-engagement--featured .client-engagement__details {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .client-engagement--featured .client-engagement__media {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+
+    .client-engagement--compact {
+      grid-template-columns: 456px 744px;
+      column-gap: 48px;
+      row-gap: 24px;
+    }
+
+    .client-engagement--compact .client-engagement__header {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .client-engagement--compact .client-engagement__details {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .client-engagement--compact .client-engagement__media {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+
+    /*
+     * Standard: row 1 holds identity (360px) and headline (840px); row 2 holds the
+     * screenshot (744px) and details (456px). Tracks are 360 | 48 | 336 | 48 | 456 so
+     * the 744px screenshot and 840px headline both land on exact track boundaries.
+     * Header and details are unwrapped with display: contents so their children
+     * can be placed on that track grid.
+     */
+    .client-engagement--standard {
+      grid-template-columns: 360px 48px 336px 48px 456px;
+      column-gap: 0;
+      row-gap: 48px;
+    }
+
+    .client-engagement--standard .client-engagement__header {
+      display: contents;
+    }
+
+    .client-engagement--standard .client-engagement__identity {
+      grid-column: 1 / 2;
+      grid-row: 1;
+    }
+
+    .client-engagement--standard .client-engagement__headline {
+      grid-column: 3 / 6;
+      grid-row: 1;
+    }
+
+    .client-engagement--standard .client-engagement__media {
+      grid-column: 1 / 4;
+      grid-row: 2;
+    }
+
+    /*
+     * Description sits at the top of the details column and technologies + link at
+     * its bottom, so the 456px column spans the screenshot height without changing
+     * the row height.
+     */
+    .client-engagement--standard .client-engagement__description {
+      grid-column: 5;
+      grid-row: 2;
+      align-self: start;
+    }
+
+    .client-engagement--standard .client-engagement__details {
+      grid-column: 5;
+      grid-row: 2;
+      align-self: end;
+    }
+  }
+</style>
