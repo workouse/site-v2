@@ -1,7 +1,5 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
 import AuditProgress from '../../components/AuditProgress.astro';
 import AuditReport from '../../components/AuditReport.astro';
 import NewsletterSubscribe from '../../components/NewsletterSubscribe.astro';
@@ -155,9 +153,8 @@ if (!audit && id) {
   title={audit ? `Audit Report for ${audit.url} — Workouse` : 'Audit Report — Workouse'}
   description="Automated website performance, security header, and SEO audit report."
 >
-  <Header />
 
-  <main class="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+  <div class="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
     {audit && audit.status === 'complete' && aiOutput ? (
       <AuditReport audit={audit} aiOutput={aiOutput} />
     ) : audit ? (
@@ -171,5 +168,4 @@ if (!audit && id) {
     )}
   <NewsletterSubscribe />
 
-  <Footer />
 </Layout>

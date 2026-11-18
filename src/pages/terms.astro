@@ -1,7 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
 
 const lastUpdated = "August 13, 2026";
 ---
@@ -10,54 +8,53 @@ const lastUpdated = "August 13, 2026";
   title="Terms of Service | Workouse" 
   description="Terms of Service for Workouse. Read the terms governing the use of our web services, automated audit tools, and software consulting."
 >
-  <Header />
 
-  <main id="main-content" class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+  <div class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
     <!-- Header -->
     <div class="space-y-4 mb-12 text-center sm:text-left">
       <div class="inline-flex items-center gap-3">
         <span class="text-xs font-mono font-bold tracking-widest text-brand-yellow uppercase">Legal Agreement</span>
         <span class="h-[1px] w-8 bg-zinc-800"></span>
       </div>
-      <h1 class="font-display text-3xl sm:text-5xl font-bold text-white tracking-tight">
+      <h1 class="font-display text-3xl sm:text-5xl font-bold text-zinc-950 tracking-tight">
         Terms of Service
       </h1>
-      <p class="text-zinc-400 font-mono text-xs">
+      <p class="text-zinc-600 font-mono text-xs">
         Last Updated: {lastUpdated}
       </p>
     </div>
 
     <!-- Content Sections -->
-    <div class="space-y-8 text-zinc-300 text-sm sm:text-base leading-relaxed">
+    <div class="space-y-8 text-zinc-700 text-sm sm:text-base leading-relaxed">
       
       <!-- Acceptance of Terms -->
       <section class="glow-card p-6 sm:p-8 rounded-2xl">
-        <h2 class="text-xl font-bold font-display text-white mb-3">1. Acceptance of Terms</h2>
-        <p class="text-zinc-300">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">1. Acceptance of Terms</h2>
+        <p class="text-zinc-700">
           By accessing or using <a href="https://workouse.com" class="text-brand-yellow hover:underline">workouse.com</a>, utilizing our automated site audit tools, or engaging Workouse for software architecture and engineering services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please refrain from using our platform.
         </p>
       </section>
 
       <!-- Services Overview -->
       <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-3">
-        <h2 class="text-xl font-bold font-display text-white mb-3">2. Description of Services</h2>
-        <p class="text-zinc-300">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">2. Description of Services</h2>
+        <p class="text-zinc-700">
           Workouse provides software engineering, architecture, technical advisory services, and web performance analysis tools, including:
         </p>
-        <ul class="list-disc list-inside space-y-2 text-zinc-400 text-sm">
-          <li><strong class="text-zinc-200">Solo Software Engineering & Fractional CTO Services:</strong> Tailored software development, cloud architecture, and system performance optimizations under formal client contracts.</li>
-          <li><strong class="text-zinc-200">Automated Web Audit Tool:</strong> Free and on-demand automated scans evaluating website performance, accessibility, security headers, tech stack detection, and SEO health.</li>
-          <li><strong class="text-zinc-200">Technical Articles & Resources:</strong> Engineering publications, benchmarks, and software best-practice guides.</li>
+        <ul class="list-disc list-inside space-y-2 text-zinc-600 text-sm">
+          <li><strong class="text-zinc-950">Solo Software Engineering & Fractional CTO Services:</strong> Tailored software development, cloud architecture, and system performance optimizations under formal client contracts.</li>
+          <li><strong class="text-zinc-950">Automated Web Audit Tool:</strong> Free and on-demand automated scans evaluating website performance, accessibility, security headers, tech stack detection, and SEO health.</li>
+          <li><strong class="text-zinc-950">Technical Articles & Resources:</strong> Engineering publications, benchmarks, and software best-practice guides.</li>
         </ul>
       </section>
 
       <!-- Acceptable Use Policy -->
       <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-3">
-        <h2 class="text-xl font-bold font-display text-white mb-3">3. Acceptable Use & Audit Engine Rules</h2>
-        <p class="text-zinc-300">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">3. Acceptable Use & Audit Engine Rules</h2>
+        <p class="text-zinc-700">
           When using our site or audit engine, you agree to the following rules:
         </p>
-        <ul class="list-disc list-inside space-y-2 text-zinc-400 text-sm">
+        <ul class="list-disc list-inside space-y-2 text-zinc-600 text-sm">
           <li>You may only initiate automated audits for websites that you own, operate, or have explicit authorization to inspect.</li>
           <li>You must not submit malicious URLs, exploits, illegal content, or attempt to use our headless audit engine for DDoS attacks or illegal port scanning.</li>
           <li>You agree not to bypass rate limits, probe administrative endpoints, or overload our Cloudflare Workers infrastructure.</li>
@@ -67,22 +64,22 @@ const lastUpdated = "August 13, 2026";
 
       <!-- Intellectual Property -->
       <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-3">
-        <h2 class="text-xl font-bold font-display text-white mb-3">4. Intellectual Property</h2>
-        <p class="text-zinc-300">
-          All original content, branding, logos, design elements, source code, and custom algorithms on <strong class="text-white">workouse.com</strong> are the property of Emre Yılmaz / Workouse and are protected by applicable intellectual property and copyright laws.
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">4. Intellectual Property</h2>
+        <p class="text-zinc-700">
+          All original content, branding, logos, design elements, source code, and custom algorithms on <strong class="text-zinc-950">workouse.com</strong> are the property of Emre Yılmaz / Workouse and are protected by applicable intellectual property and copyright laws.
         </p>
-        <p class="text-zinc-400 text-sm">
+        <p class="text-zinc-600 text-sm">
           Generated audit reports may be shared and referenced for non-commercial internal evaluation and engineering reviews.
         </p>
       </section>
 
       <!-- Disclaimer & Limitation of Liability -->
       <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-3">
-        <h2 class="text-xl font-bold font-display text-white mb-3">5. Disclaimer of Warranties & Limitation of Liability</h2>
-        <p class="text-zinc-300">
-          The website and automated audit tools are provided on an <strong class="text-white">"AS IS"</strong> and <strong class="text-white">"AS AVAILABLE"</strong> basis without warranties of any kind, whether express or implied.
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">5. Disclaimer of Warranties & Limitation of Liability</h2>
+        <p class="text-zinc-700">
+          The website and automated audit tools are provided on an <strong class="text-zinc-950">"AS IS"</strong> and <strong class="text-zinc-950">"AS AVAILABLE"</strong> basis without warranties of any kind, whether express or implied.
         </p>
-        <ul class="list-disc list-inside space-y-2 text-zinc-400 text-sm">
+        <ul class="list-disc list-inside space-y-2 text-zinc-600 text-sm">
           <li>Audit scores and recommendations are advisory automated estimates based on synthetic metrics and public headers. They do not constitute formal legal or security compliance certification.</li>
           <li>In no event shall Workouse or Emre Yılmaz be liable for any indirect, incidental, consequential, or punitive damages arising out of your access to or use of the website or audit tools.</li>
         </ul>
@@ -90,30 +87,29 @@ const lastUpdated = "August 13, 2026";
 
       <!-- Governing Law -->
       <section class="glow-card p-6 sm:p-8 rounded-2xl">
-        <h2 class="text-xl font-bold font-display text-white mb-3">6. Governing Law & Modifications</h2>
-        <p class="text-zinc-300 mb-3">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">6. Governing Law & Modifications</h2>
+        <p class="text-zinc-700 mb-3">
           These Terms shall be governed by and construed in accordance with applicable laws, without regard to conflict of law principles.
         </p>
-        <p class="text-zinc-400 text-sm">
+        <p class="text-zinc-600 text-sm">
           We reserve the right to modify or update these Terms at any time. Changes will be posted on this page with an updated "Last Updated" date.
         </p>
       </section>
 
       <!-- Contact Section -->
       <section class="glow-card p-6 sm:p-8 rounded-2xl border-brand-yellow/30 bg-zinc-900/30">
-        <h2 class="text-xl font-bold font-display text-white mb-2">7. Questions & Inquiries</h2>
-        <p class="text-zinc-300 text-sm mb-4">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-2">7. Questions & Inquiries</h2>
+        <p class="text-zinc-700 text-sm mb-4">
           For any questions regarding these Terms of Service, please reach out directly:
         </p>
-        <div class="font-mono text-sm space-y-1 text-zinc-300">
-          <p class="text-white font-bold">WORKOUSE — Emre Yılmaz</p>
+        <div class="font-mono text-sm space-y-1 text-zinc-700">
+          <p class="text-zinc-950 font-bold">WORKOUSE — Emre Yılmaz</p>
           <p>Email: <a href="mailto:z@emre.xyz" class="text-brand-yellow hover:underline">z@emre.xyz</a></p>
           <p>Website: <a href="https://workouse.com" class="text-brand-yellow hover:underline">https://workouse.com</a></p>
         </div>
       </section>
 
     </div>
-  </main>
+  </div>
 
-  <Footer />
 </Layout>
