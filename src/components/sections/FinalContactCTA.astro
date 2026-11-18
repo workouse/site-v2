@@ -1,0 +1,159 @@
+---
+/**
+ * FinalContactCTA — dark ink closing CTA rendered directly above the footer.
+ *
+ * Defaults to the homepage closing copy from `src/data/site.ts` (`cta.home`)
+ * while allowing per-page overrides (`eyebrow`, `heading`, `body`), such as
+ * `cta.work` on `/work`. Destinations resolve from the central register
+ * (`links.booking` in a new tab and `links.email` mailto).
+ */
+import Button from '../ui/Button.astro';
+import TextLink from '../ui/TextLink.astro';
+import { cta, resolveLink } from '../../data/site';
+
+export interface Props {
+  eyebrow?: string;
+  heading?: string;
+  body?: string;
+  headingId?: string;
+  id?: string;
+  class?: string;
+  [key: `data-${string}`]: unknown;
+  [key: `aria-${string}`]: unknown;
+}
+
+const {
+  eyebrow = cta.home.eyebrow,
+  heading = cta.home.heading,
+  body = cta.home.body,
+  headingId,
+  id,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const resolvedHeadingId = headingId ?? (id ? `${id}-heading` : 'final-contact-cta-heading');
+const ariaLabelledBy =
+  rest['aria-label'] !== undefined
+    ? undefined
+    : ((rest['aria-labelledby'] as string | undefined) ?? resolvedHeadingId);
+
+const primaryAction = resolveLink(cta.primary.ref, cta.primary.label);
+const secondaryAction = resolveLink(cta.secondary.ref, cta.secondary.label);
+---
+
+<section
+  id={id}
+  aria-labelledby={ariaLabelledBy}
+  class:list={['final-contact-cta', className]}
+  {...rest}
+>
+  <p class="final-contact-cta__eyebrow">{eyebrow}</p>
+  <h2 id={resolvedHeadingId} class="final-contact-cta__heading">{heading}</h2>
+  <p class="final-contact-cta__body">{body}</p>
+  <div class="final-contact-cta__actions">
+    <Button
+      kind="inverse"
+      href={primaryAction.href}
+      external={primaryAction.external}
+      label={primaryAction.label}
+      icon="↗"
+    />
+    <TextLink
+      href={secondaryAction.href}
+      label={secondaryAction.label}
+      size={14}
+      tone="ivory"
+    />
+  </div>
+</section>
+
+<style>
+  .final-contact-cta {
+    --focus-color: var(--surface-page, #faf8f4);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-32, 32px);
+    box-sizing: border-box;
+    width: 100%;
+    padding: var(--space-64, 64px) var(--space-24, 24px);
+    background-color: var(--action-primary, #24354f);
+    color: var(--surface-page, #faf8f4);
+  }
+
+  .final-contact-cta__eyebrow,
+  .final-contact-cta__heading,
+  .final-contact-cta__body {
+    margin: 0;
+  }
+
+  .final-contact-cta__eyebrow {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--surface-page, #faf8f4);
+  }
+
+  /* 58px @ 390px -> 80px @ 768px -> 104px @ 1440px */
+  .final-contact-cta__heading {
+    width: 100%;
+    max-width: 100%;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(
+      58px,
+      min(
+        calc(58px + (var(--wo-viewport-w, 100vw) - 390px) * 22 / 378),
+        calc(80px + (var(--wo-viewport-w, 100vw) - 768px) * 24 / 672)
+      ),
+      104px
+    );
+    line-height: 1.04;
+    color: var(--surface-page, #faf8f4);
+    overflow-wrap: break-word;
+  }
+
+  .final-contact-cta__body {
+    width: 100%;
+    max-width: 620px;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--surface-page, #faf8f4);
+  }
+
+  .final-contact-cta__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-12, 12px);
+  }
+
+  @media (min-width: 768px) {
+    .final-contact-cta {
+      padding: var(--space-96, 96px) var(--space-40, 40px);
+    }
+
+    .final-contact-cta__body {
+      font-size: 18px;
+    }
+
+    .final-contact-cta__actions {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-32, 32px);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .final-contact-cta {
+      padding: var(--space-96, 96px);
+    }
+  }
+</style>
