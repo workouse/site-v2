@@ -125,7 +125,9 @@ const resolvedClients = clients ?? content.clients;
             ) : (
               <div class="client-logo-strip__placeholder">
                 <span class="client-logo-strip__name">{client.name}</span>
-                <span class="client-logo-strip__caption">{client.pendingCaption ?? 'LOGO PENDING'}</span>
+                {client.pendingCaption && (
+                  <span class="client-logo-strip__caption">{client.pendingCaption}</span>
+                )}
               </div>
             )}
           </li>

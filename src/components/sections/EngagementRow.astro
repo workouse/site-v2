@@ -7,6 +7,7 @@
  * The client name is the row's <h3>. The logo placeholder is hidden once an
  * approved logo is supplied through `logo`, which replaces it.
  */
+import type { ImageMetadata } from 'astro';
 import MediaFrame from '../ui/MediaFrame.astro';
 import TextLink from '../ui/TextLink.astro';
 import type { HomeEngagementItem } from '../../data/site';
@@ -18,8 +19,26 @@ export interface Props {
 
 const { item, class: className } = Astro.props;
 
-const LOGO_PLACEHOLDER_TEXT = 'LOGO PLACEHOLDER';
-const SCREENSHOT_PLACEHOLDER_TEXT = 'SCREENSHOT PLACEHOLDER';
+const assetLoaders = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/assets/**/*.{svg,png,webp,avif,jpg,jpeg,gif}',
+  { eager: true },
+);
+
+function resolveLogoSrc(logo: string | null | undefined): string | null {
+  if (!logo) return null;
+  const trimmed = logo.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('src/assets/') || trimmed.startsWith('/src/assets/')) {
+    const key = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    const loaded = assetLoaders[key];
+    if (loaded) return loaded.default.src;
+  }
+  return trimmed;
+}
+
+const resolvedLogo = resolveLogoSrc(item.logo);
+const screenshotSrc = item.screenshot?.src ?? null;
+const screenshotAlt = item.screenshot?.alt ?? item.client;
 const DESKTOP_MEDIA_RATIO = '368 / 200';
 const TABLET_MEDIA_RATIO = '688 / 240';
 const MOBILE_MEDIA_RATIO = '342 / 192';
@@ -31,10 +50,8 @@ const VISIT_ACCESSIBLE_LABEL = `Visit ${item.client} website`;
     <p class="engagement-row__index">{item.index}</p>
     <h3 class="engagement-row__client">{item.client}</h3>
     {
-      item.logo ? (
-        <img class="engagement-row__logo" src={item.logo} alt={item.client} loading="lazy" decoding="async" />
-      ) : (
-        <p class="engagement-row__logo-placeholder">{LOGO_PLACEHOLDER_TEXT}</p>
+      resolvedLogo && (
+        <img class="engagement-row__logo" src={resolvedLogo} alt={item.client} loading="lazy" decoding="async" />
       )
     }
   </div>
@@ -55,10 +72,12 @@ const VISIT_ACCESSIBLE_LABEL = `Visit ${item.client} website`;
   <div class="engagement-row__media">
     <MediaFrame
       variant="card"
+      src={screenshotSrc}
+      alt={screenshotAlt}
       ratio={DESKTOP_MEDIA_RATIO}
       tabletRatio={TABLET_MEDIA_RATIO}
       mobileRatio={MOBILE_MEDIA_RATIO}
-      lines={[SCREENSHOT_PLACEHOLDER_TEXT, item.screenshotLabel]}
+      lines={screenshotSrc ? [] : [item.client, item.screenshotLabel]}
     />
   </div>
 </article>

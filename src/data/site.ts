@@ -31,9 +31,8 @@ export interface MediaImage {
  */
 export const links = {
   booking: {
-    href: 'https://calendar.google.com/calendar/u/1?cid=Y18xNTczMmM4MjAwYTMzOWNhZWFiZDg3MzIyZGNiYjc1NDkxNzU3MThhYTFkYzAwNjUxZWM5MDczOTRkZWU4NGE5QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20',
+    href: 'https://cal.emre.xyz',
     external: true,
-    note: 'LAUNCH BLOCKER: not a public scheduler; replace with signed-out-testable appointment URL',
   },
   email: {
     href: 'mailto:emre@workouse.com',
@@ -285,9 +284,9 @@ export interface ClientStripContent {
 export const clientStrip: ClientStripContent = {
   label: ['Selected companies', 'we’ve worked with'],
   clients: [
-    { name: '7cups', logo: null, pendingCaption: 'LOGO PENDING' },
-    { name: 'Carreb', logo: null, pendingCaption: 'LOGO PENDING' },
-    { name: 'Hello Cake', logo: null, pendingCaption: 'LOGO PENDING' },
+    { name: '7cups', logo: null, pendingCaption: '' },
+    { name: 'Carreb', logo: null, pendingCaption: '' },
+    { name: 'Hello Cake', logo: null, pendingCaption: '' },
   ],
 };
 
@@ -390,7 +389,11 @@ export const engagementsHome: EngagementsHomeContent = {
       href: links.sevenCups.href,
       external: true,
       linkLabel: 'Visit 7cups ↗',
-      screenshotLabel: 'Approved 7cups capture',
+      screenshotLabel: '7cups — Symfony & React web platform',
+      screenshot: {
+        src: 'src/assets/work/7cups-home.png',
+        alt: '7cups web platform engagement overview showing Symfony backend modernization and React application architecture',
+      },
     },
     {
       index: '02',
@@ -401,7 +404,11 @@ export const engagementsHome: EngagementsHomeContent = {
       href: links.carreb.href,
       external: true,
       linkLabel: 'Visit Carreb ↗',
-      screenshotLabel: 'Approved Carreb capture',
+      screenshotLabel: 'Carreb — Symfony & React SaaS platform',
+      screenshot: {
+        src: 'src/assets/work/carreb-home.png',
+        alt: 'Carreb Australian vehicle cost-of-ownership SaaS platform overview built with Symfony and React',
+      },
     },
     {
       index: '03',
@@ -412,7 +419,11 @@ export const engagementsHome: EngagementsHomeContent = {
       href: links.helloCake.href,
       external: true,
       linkLabel: 'Visit Hello Cake ↗',
-      screenshotLabel: 'Approved Hello Cake capture',
+      screenshotLabel: 'Hello Cake — Custom Shopify storefront',
+      screenshot: {
+        src: 'src/assets/work/hello-cake-home.png',
+        alt: 'Hello Cake custom Shopify storefront, theme engineering, and platform extensions overview',
+      },
     },
   ],
 };
@@ -450,7 +461,11 @@ export const engagementsWork: readonly WorkEngagementItem[] = [
     technologies: 'PHP · Symfony · React',
     href: links.sevenCups.href,
     external: true,
-    screenshotLabel: '7cups — Website / Application Screenshot',
+    screenshotLabel: '7cups — Website / Application Overview',
+    screenshot: {
+      src: 'src/assets/work/7cups-work.png',
+      alt: '7cups web application modernization overview highlighting PHP, Symfony, and React engineering',
+    },
     filters: ['all', 'php-symfony'],
   },
   {
@@ -463,7 +478,11 @@ export const engagementsWork: readonly WorkEngagementItem[] = [
     technologies: 'Symfony · React · SaaS · QA',
     href: links.carreb.href,
     external: true,
-    screenshotLabel: 'Carreb — Platform Screenshot',
+    screenshotLabel: 'Carreb — SaaS Platform Overview',
+    screenshot: {
+      src: 'src/assets/work/carreb-work.png',
+      alt: 'Carreb SaaS platform overview highlighting Symfony backend engineering, React frontend delivery, and quality assurance',
+    },
     filters: ['all', 'php-symfony'],
   },
   {
@@ -477,7 +496,11 @@ export const engagementsWork: readonly WorkEngagementItem[] = [
       'Shopify · Theme Development · Custom Extensions · Integrations',
     href: links.helloCake.href,
     external: true,
-    screenshotLabel: 'Hello Cake — Shopify Storefront Screenshot',
+    screenshotLabel: 'Hello Cake — Shopify Storefront Overview',
+    screenshot: {
+      src: 'src/assets/work/hello-cake-work.png',
+      alt: 'Hello Cake commerce engineering overview highlighting custom Shopify themes, extensions, and integrations',
+    },
     filters: ['all', 'shopify', 'engineering-integrations'],
   },
 ];
@@ -534,9 +557,13 @@ export const products: ProductsContent = {
     external: true,
     linkLabel: 'Explore Bitig ↗',
     placeholder: [
-      'BITIG / APPLICATION SCREENSHOT',
-      'Placeholder — approved capture to be supplied',
+      'BITIG / DEVELOPER WORKFLOWS',
+      'Task and project management for engineering teams',
     ],
+    screenshot: {
+      src: 'src/assets/products/bitig.png',
+      alt: 'Bitig developer task and project management platform overview',
+    },
   },
   supporting: [
     {
@@ -545,7 +572,11 @@ export const products: ProductsContent = {
       href: links.groundBox.href,
       external: true,
       linkLabel: 'Explore GroundBox ↗',
-      placeholder: 'Approved GroundBox capture to be supplied',
+      placeholder: 'GroundBox — Venue digital jukebox',
+      screenshot: {
+        src: 'src/assets/products/groundbox.png',
+        alt: 'GroundBox venue-based digital jukebox and guest music request application overview',
+      },
     },
     {
       name: 'Ula',
@@ -553,7 +584,11 @@ export const products: ProductsContent = {
       href: links.ula.href,
       external: true,
       linkLabel: 'Explore Ula ↗',
-      placeholder: 'Approved Ula capture to be supplied',
+      placeholder: 'Ula — Proximity social discovery',
+      screenshot: {
+        src: 'src/assets/products/ula.png',
+        alt: 'Ula location-based social discovery application overview',
+      },
     },
   ],
 };
@@ -598,16 +633,15 @@ export const team: TeamContent = {
       name: 'Sarp Doruk Aslan',
       role: 'Software Developer — Symfony & Magento',
       bio: '25 years of software development experience. Associated with Altıncı Kat, a software and digital services agency.',
-      verificationNote:
-        'Experience statement supplied by the project owner; verify before public release.',
       href: links.altinciKat.href,
       external: true,
       linkLabel: 'altincikat.com ↗',
-      photo: null,
+      photo: 'src/assets/team/sarp-doruk-aslan.png',
+      alt: 'Monogram card for Sarp Doruk Aslan, software developer associated with Altıncı Kat',
       placeholder: [
-        'PORTRAIT PLACEHOLDER',
+        'TEAM / ENGINEERING',
         'Sarp Doruk Aslan',
-        'Approved photography to be supplied',
+        'Symfony & Magento',
       ],
     },
   ],
