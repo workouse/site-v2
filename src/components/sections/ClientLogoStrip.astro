@@ -97,14 +97,14 @@ const resolvedClients = clients ?? content.clients;
 ---
 
 <section aria-label={ariaLabel} class:list={['client-logo-strip', className]} {...rest}>
-  <p class="client-logo-strip__label">{
+  <h2 class="client-logo-strip__label">{
     resolvedLabel.map((line, index) => (
       <>
         {index < resolvedLabel.length - 1 ? `${line} ` : line}
         {index < resolvedLabel.length - 1 && <br />}
       </>
     ))
-  }</p>
+  }</h2>
 
   <ul class="client-logo-strip__list">
     {
