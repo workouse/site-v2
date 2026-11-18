@@ -1,0 +1,1226 @@
+---
+import type { AuditIssue, ModernizationReport, ExecutiveBriefing, DataRegulationDiagnostics } from '../lib/types';
+import { parseStoryToBriefing } from '../lib/story-engine';
+import { detectSiteJurisdiction, type DetectedJurisdiction } from '../lib/jurisdiction-engine';
+import AuditReportActions from './AuditReportActions.astro';
+import AuditLeadModal from './AuditLeadModal.astro';
+import ModernizationChecklist from './ModernizationChecklist.astro';
+import DistributedWebReport from './DistributedWebReport.astro';
+
+const logoURL = "https://avatars.githubusercontent.com/u/55496985?s=400&u=cf5cb2d74029d653813b39d624e44b8f74bc63c1&v=4";
+
+interface Props {
+  audit: {
+    id: string;
+    url: string;
+    status: string;
+    createdAt: number;
+    completedAt: number | null;
+  };
+  aiOutput: {
+    score: number;
+    performanceScore: number;
+    securityScore: number;
+    seoScore: number;
+    standardsScore: number;
+    issues: AuditIssue[];
+    recommendation: 'fix' | 'rebuild';
+    recommendationReason: string;
+    summary: string;
+    story?: string;
+    executiveBriefing?: ExecutiveBriefing;
+    processedAt: number;
+    modernizationReport?: ModernizationReport;
+    regulation?: DataRegulationDiagnostics;
+  };
+}
+
+const { audit, aiOutput } = Astro.props;
+
+const totalFixMinutes = aiOutput.issues.reduce((sum, item) => sum + item.estimatedMinutes, 0);
+const totalFixHours = Math.round((totalFixMinutes / 60) * 10) / 10;
+const totalPrice = Math.ceil(aiOutput.issues.reduce((sum, item) => sum + (item.price || 0), 0));
+
+const criticalIssues = aiOutput.issues.filter(i => i.severity === 'critical');
+const warningIssues = aiOutput.issues.filter(i => i.severity === 'warning');
+const infoIssues = aiOutput.issues.filter(i => i.severity === 'info');
+
+// Parse structured 3-card executive briefing
+const briefing: ExecutiveBriefing = aiOutput.executiveBriefing || parseStoryToBriefing(aiOutput.story || aiOutput.summary, {
+  url: audit.url,
+  scores: {
+    overall: aiOutput.score,
+    performance: aiOutput.performanceScore,
+    security: aiOutput.securityScore,
+    seo: aiOutput.seoScore,
+    standards: aiOutput.standardsScore,
+  },
+  issues: aiOutput.issues,
+  recommendation: aiOutput.recommendation,
+  platform: aiOutput.modernizationReport?.techStack?.platform,
+  platformVersion: aiOutput.modernizationReport?.techStack?.platformVersion,
+  detectedExtensionsCount: aiOutput.modernizationReport?.techStack?.detectedExtensions?.length,
+  isWafBlocked: aiOutput.modernizationReport?.isWafBlocked,
+});
+
+// Top 3 highest impact priorities to fix first
+const topPriorities = [...aiOutput.issues]
+  .sort((a, b) => {
+    const sevOrder: Record<string, number> = { critical: 0, warning: 1, info: 2 };
+    const sevDiff = (sevOrder[a.severity] ?? 2) - (sevOrder[b.severity] ?? 2);
+    if (sevDiff !== 0) return sevDiff;
+    return (b.price || 0) - (a.price || 0);
+  })
+  .slice(0, 3);
+
+const scoreColor = aiOutput.score >= 80 ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10'
+  : aiOutput.score >= 60 ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
+  : 'text-red-400 border-red-500/30 bg-red-500/10';
+
+function subScoreColor(score: number): string {
+  if (score >= 80) return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+  if (score >= 60) return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+  return 'text-red-400 bg-red-500/10 border-red-500/20';
+}
+
+function getIssueProof(issue: AuditIssue): string {
+  if (issue.proof) return issue.proof;
+  const fallbacks: Record<string, string> = {
+    'slow-lcp': 'PageSpeed Insights Core Web Vital: LCP measured in field or lab data',
+    'poor-fid': 'PageSpeed Insights Core Web Vital: Total Blocking Time (TBT) / INP',
+    'poor-cls': 'PageSpeed Insights Core Web Vital: Cumulative Layout Shift (CLS)',
+    'large-images': 'Asset Audit: Unoptimized image payloads exceeding 100KB',
+    'render-blocking-js': 'Asset Audit: Synchronous \u003Cscript\u003E tags delaying first paint',
+    'no-gzip': 'Network Audit: Static assets delivered without gzip or brotli compression',
+    'no-robots-txt': 'Crawlability Audit: robots.txt file returned 404 or was empty',
+    'missing-schema-org': 'Structured Data Audit: No schema.org JSON-LD found in DOM',
+    'invalid-title-length': 'SEO Audit: <title> tag is missing or exceeds 60 characters',
+    'invalid-meta-description-length': 'SEO Audit: <meta name="description"> tag is missing or exceeds 160 characters',
+    'multiple-h1': 'DOM Audit: Page contains multiple or zero <h1> headings',
+    'missing-og-image': 'Social Audit: <meta property="og:image"> tag missing',
+    'missing-csp': 'Security Audit: Content-Security-Policy header not provided by origin',
+    'missing-hsts': 'Security Audit: Strict-Transport-Security header missing on HTTPS host',
+    'missing-x-frame-options': 'Security Audit: X-Frame-Options header missing (clickjacking risk)',
+    'missing-referrer-policy': 'Security Audit: Referrer-Policy header not set to safe default',
+    'missing-nosniff': 'Security Audit: X-Content-Type-Options: nosniff header missing',
+    'missing-permissions-policy': 'Security Audit: Permissions-Policy header missing',
+    'legacy-stack-migration': 'Tech Stack Audit: End-of-life monolithic CMS or backend detected',
+    'edge-serverless-migration': 'Infrastructure Audit: Monolithic server infrastructure without edge SSR caching',
+    'css-modernization': 'Styling Audit: Legacy CSS framework detected (e.g. Bootstrap 3/4, jQuery UI)',
+    'missing-image-alt': 'Accessibility Audit: Image elements missing alt text',
+    'missing-charset': 'DOM Audit: <meta charset> tag missing in head',
+    'missing-lang': 'DOM Audit: <html lang="..."> attribute missing',
+    'missing-viewport': 'Mobile Audit: Viewport meta tag missing',
+    'observatory-low-grade': 'Mozilla HTTP Observatory: Host received grade F/D/C',
+    'pa11y-wcag-violations': 'Pa11y WCAG 2.1 AA Audit: Found accessibility rule violations',
+    'mobile-layout-overflow': 'Mobile Viewport Audit: Content horizontally overflows 375px viewport',
+    'tiny-touch-targets': 'Mobile UX Audit: Touch target bounding rects smaller than 44x44px',
+    'illegible-mobile-text': 'Mobile UX Audit: Text element computed font size less than 12px',
+    'disabled-viewport-zoom': 'Mobile Viewport Audit: Meta tag user-scalable=no or maximum-scale=1',
+    'broken-heading-hierarchy': 'Heading Hierarchy Audit: Skipped heading levels (e.g. H1 to H3) detected in DOM outline',
+    'missing-semantic-landmarks': 'Semantic Structure Audit: Document missing standard <header>, <nav>, <main>, or <footer> tags',
+    'poor-url-structure': 'URL Quality Audit: Permalink exceeds 75 chars or contains non-standard casing/underscores',
+    'poor-image-alt-text': 'Alt Text Quality Audit: Image descriptions contain generic filenames or redundant "image of" phrases',
+    'missing-breadcrumbs-schema': 'Structured Data Audit: Missing BreadcrumbList JSON-LD for rich search engine result snippets',
+    'accidental-noindex': 'Robots & Crawlability Audit: <meta name="robots" content="noindex"> tag or header is blocking search indexing',
+    'au-missing-privacy-policy': 'Australian Privacy Act Audit: No Privacy Policy or APP disclosure found in footer/header',
+    'au-missing-terms-acl': 'Australian Consumer Law (ACL) Audit: Missing commercial terms & consumer guarantee terms',
+    'au-missing-abn-disclosure': 'Corporations Act Audit: Missing Australian Business Number (ABN/ACN) in footer',
+    'au-unconsented-trackers': 'APPs Privacy Audit: Analytics & marketing trackers loaded without consent transparency',
+    'tr-missing-kvkk-notice': 'KVKK Denetimi: Sitede KVKK Aydınlatma Metni veya Gizlilik Politikası tespit edilemedi',
+    'tr-missing-mersis-kunye': 'TTK & ETBİS Denetimi: MERSİS numarası veya Şirket Künyesi bilgisi bulunamadı',
+    'tr-missing-ecommerce-terms': 'E-Ticaret Denetimi: Kullanım Koşulları veya Mesafeli Satış Sözleşmesi eksik',
+    'tr-missing-cookie-policy': 'KVKK Çerez Denetimi: Açık Çerez Politikası veya bilgilendirme metni bulunamadı',
+    'tr-unconsented-trackers': 'KVKK Veri Güvenliği: Açık rıza alınmadan çalışan üçüncü taraf izleyiciler',
+    'eu-missing-privacy-policy': 'GDPR Audit: No Privacy Policy link found in footer/header',
+    'eu-unconsented-trackers': 'ePrivacy Audit: Third-party scripts executed without consent banner',
+    'eu-missing-impressum': 'E-Commerce Audit: Missing Impressum / Legal Notice link',
+    'eu-external-font-transfer': 'Privacy Audit: Remote Google Fonts asset request detected',
+    'gb-missing-privacy-notice': 'UK GDPR Audit: Missing UK Privacy Notice in page navigation',
+    'gb-missing-company-number': 'Companies Act 2006 Audit: Missing UK Company Registration Number',
+    'us-ccpa-missing-optout': 'CCPA/CPRA Audit: Missing Do Not Sell / Your Privacy Choices link',
+    'us-missing-terms': 'Commercial Audit: Missing Terms of Service link',
+    'ca-missing-privacy-policy': 'PIPEDA Audit: Missing Canadian Privacy Policy disclosure',
+    'ca-missing-terms': 'Canadian Consumer Audit: Missing Terms of Service',
+    'global-missing-privacy-policy': 'Privacy Standard: Missing standard Privacy Policy link',
+    'global-missing-terms': 'Commercial Standard: Missing standard Terms of Service',
+    'missing-ucp': 'Universal Commerce Protocol Audit: Online storefront detected, but /.well-known/ucp discovery manifest was not found or is missing',
+  };
+  return fallbacks[issue.id] || `Automated audit rule trigger (${issue.category} check by PageSpeed/DOM analyzer)`;
+}
+
+const categoryDisplayNames: Record<string, string> = {
+  Performance: 'Speed & Smoothness',
+  Security: 'Safety & Protection',
+  SEO: 'Google Visibility',
+  Standards: 'Mobile Best Practices',
+};
+
+const subScores = [
+  { label: categoryDisplayNames['Performance'], value: aiOutput.performanceScore },
+  { label: categoryDisplayNames['Security'],    value: aiOutput.securityScore },
+  { label: categoryDisplayNames['SEO'],         value: aiOutput.seoScore },
+  { label: categoryDisplayNames['Standards'],   value: aiOutput.standardsScore },
+];
+
+const jurisdiction: DetectedJurisdiction =
+  aiOutput.regulation?.jurisdiction ||
+  aiOutput.modernizationReport?.regulation?.jurisdiction ||
+  detectSiteJurisdiction('', audit.url);
+
+const regionalIssues = aiOutput.issues.filter((i) =>
+  i.id.startsWith('au-') ||
+  i.id.startsWith('tr-') ||
+  i.id.startsWith('eu-') ||
+  i.id.startsWith('us-') ||
+  i.id.startsWith('gb-') ||
+  i.id.startsWith('ca-') ||
+  i.id.startsWith('global-')
+);
+---
+
+<div
+  id="auditReportContainer"
+  class="max-w-5xl mx-auto space-y-8"
+  data-audit-id={audit.id}
+  data-url={audit.url}
+  data-score={aiOutput.score}
+  data-perf={aiOutput.performanceScore}
+  data-security={aiOutput.securityScore}
+  data-seo={aiOutput.seoScore}
+  data-standards={aiOutput.standardsScore}
+  data-rec={aiOutput.recommendation}
+>
+
+  <!-- Action Toolbar (PDF Export, Share Link, Request Quote) -->
+  <AuditReportActions auditId={audit.id} />
+
+  <!-- Dual-View Switcher (Executive Briefing vs Deep Diagnostics) -->
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-3 p-2 bg-zinc-100/90 dark:bg-zinc-900/90 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm backdrop-blur-xl">
+    <div class="flex items-center gap-1.5 w-full sm:w-auto p-1 bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-mono">
+      <button
+        type="button"
+        id="btn-view-executive"
+        class="flex-1 sm:flex-initial px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 bg-brand-blue text-white dark:bg-brand-yellow dark:text-zinc-950 shadow-sm"
+      >
+        <span>👔</span>
+        <span>Executive Briefing</span>
+      </button>
+      <button
+        type="button"
+        id="btn-view-technical"
+        class="flex-1 sm:flex-initial px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white"
+      >
+        <span>🛠️</span>
+        <span>Deep Diagnostics</span>
+        <span class="px-1.5 py-0.5 rounded text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-normal">5 Modules</span>
+      </button>
+    </div>
+
+    <div class="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 flex items-center gap-2 px-3 py-1">
+      <span>Flat Repair Rate:</span>
+      <span class="font-bold text-brand-blue dark:text-brand-yellow">$35.00/hr</span>
+    </div>
+  </div>
+
+  <!-- Website Screenshot & Browser Preview -->
+  <div class="glow-card rounded-3xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl overflow-hidden transition-colors duration-300">
+    <!-- Browser Window Titlebar with Viewport Switcher -->
+    <div class="flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-zinc-100 dark:bg-zinc-900/90 border-b border-zinc-200 dark:border-zinc-800 text-xs font-mono text-zinc-600 dark:text-zinc-400 gap-2">
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+        <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+        <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+      </div>
+      <div class="flex-1 mx-2 sm:mx-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-full px-3 py-1 text-center truncate text-[11px] text-zinc-700 dark:text-zinc-400 font-sans flex items-center justify-center gap-1.5 w-full sm:w-auto">
+        <svg class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        <span class="truncate">{audit.url}</span>
+      </div>
+      <!-- Dual Viewport Switcher -->
+      <div class="flex items-center gap-1 bg-white dark:bg-zinc-950 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0 text-[10px]">
+        <button
+          type="button"
+          id="btn-viewport-desktop"
+          onclick="document.getElementById('img-screenshot-desktop').classList.remove('hidden'); document.getElementById('img-screenshot-mobile').classList.add('hidden'); this.classList.add('bg-zinc-800', 'text-white'); document.getElementById('btn-viewport-mobile').classList.remove('bg-zinc-800', 'text-white');"
+          class="px-2.5 py-1 rounded font-mono font-bold bg-zinc-800 text-white transition flex items-center gap-1"
+        >
+          🖥️ Desktop (1280px)
+        </button>
+        <button
+          type="button"
+          id="btn-viewport-mobile"
+          onclick="document.getElementById('img-screenshot-mobile').classList.remove('hidden'); document.getElementById('img-screenshot-desktop').classList.add('hidden'); this.classList.add('bg-zinc-800', 'text-white'); document.getElementById('btn-viewport-desktop').classList.remove('bg-zinc-800', 'text-white');"
+          class="px-2.5 py-1 rounded font-mono font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition flex items-center gap-1"
+        >
+          📱 Mobile (375px)
+        </button>
+      </div>
+    </div>
+
+    <!-- Screenshot Image Container -->
+    <div class="relative bg-zinc-900 aspect-video max-h-[440px] w-full overflow-hidden flex items-center justify-center p-2">
+      <img
+        id="img-screenshot-desktop"
+        src={`/api/audit/${audit.id}/screenshot?type=desktop`}
+        alt={`Desktop website screenshot preview for ${audit.url}`}
+        class="w-full h-full object-cover object-top rounded"
+        onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling?.classList.remove('hidden');"
+      />
+      <img
+        id="img-screenshot-mobile"
+        src={`/api/audit/${audit.id}/screenshot?type=mobile`}
+        alt={`Mobile website screenshot preview for ${audit.url}`}
+        class="hidden h-full max-h-[420px] w-auto object-contain object-top rounded shadow-2xl border border-zinc-700"
+        onerror="this.onerror=null; this.style.display='none';"
+      />
+      <div class="hidden p-8 text-center text-zinc-500 text-sm font-mono">
+        Screenshot preview unavailable
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Overview Card -->
+  <div class="glow-card p-6 sm:p-10 rounded-3xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl backdrop-blur-xl relative overflow-hidden transition-colors duration-300">
+    <!-- Ambient glow -->
+    <div class="absolute -top-12 -right-12 sm:-top-24 sm:-right-24 w-48 h-48 sm:w-72 sm:h-72 bg-brand-yellow/10 rounded-full blur-2xl sm:blur-3xl pointer-events-none"></div>
+
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+      <div class="space-y-3 min-w-0 flex-1">
+        <div class="flex items-center gap-3 flex-wrap">
+          <a href="/" class="inline-flex items-center gap-2 group transition shrink-0">
+            <div class="w-7 h-7 rounded-md overflow-hidden border border-zinc-300 dark:border-zinc-800 group-hover:border-brand-blue dark:group-hover:border-brand-yellow/50 transition">
+              <img src={logoURL} alt="Workouse Logo" width="28" height="28" class="w-full h-full object-cover" />
+            </div>
+            <span class="font-display font-bold text-sm tracking-wider text-zinc-950 dark:text-white group-hover:text-brand-blue dark:group-hover:text-brand-yellow transition">WORKOUSE</span>
+          </a>
+          <span class="text-zinc-300 dark:text-zinc-700">|</span>
+          <span class="text-xs font-mono font-semibold uppercase tracking-wider text-brand-blue dark:text-brand-yellow px-2.5 py-0.5 rounded-full bg-brand-yellow/10 border border-brand-yellow/30">
+            WEBSITE HEALTH REPORT
+          </span>
+          <span class="text-xs font-mono text-zinc-600 dark:text-zinc-500">ID: {audit.id}</span>
+        </div>
+        <h1 class="font-display text-2xl sm:text-4xl font-extrabold text-zinc-950 dark:text-white tracking-tight break-all sm:break-words">
+          {audit.url}
+        </h1>
+        <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 font-sans">
+          Simple English breakdown of your site's speed, search visibility, mobile readiness, and visitor experience.
+        </p>
+      </div>
+
+      <!-- Score Gauge + Sub-Scores -->
+      <div class="flex flex-col items-center gap-3 shrink-0 w-full sm:w-auto">
+        <!-- Overall Score -->
+        <div class={`w-28 h-28 rounded-2xl border-2 flex flex-col items-center justify-center p-2 ${scoreColor}`}>
+          <span class="text-3xl font-extrabold font-mono tracking-tight">{aiOutput.score}</span>
+          <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-600 dark:text-zinc-400 mt-0.5">Overall Grade</span>
+        </div>
+
+        <!-- 4 Sub-score Pills -->
+        <div class="grid grid-cols-2 gap-1.5 w-full">
+          {subScores.map(({ label, value }) => (
+            <div class={`flex items-center justify-between px-2 py-1 rounded-lg border text-[10px] font-mono font-bold ${subScoreColor(value)}`}>
+              <span class="text-zinc-600 dark:text-zinc-400 font-normal">{label}</span>
+              <span>{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendation Banner -->
+    <div class="mt-8 p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 space-y-2">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <span class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">Recommended Next Step</span>
+        {aiOutput.recommendation === 'rebuild' ? (
+          <span class="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 dark:text-red-400 font-mono font-bold text-xs self-start sm:self-auto">
+            {aiOutput.modernizationReport?.platformContext === 'wordpress' ? '⚡ WordPress Modernization Recommended'
+              : aiOutput.modernizationReport?.platformContext === 'shopify' ? '⚡ Shopify Optimization Recommended'
+              : aiOutput.modernizationReport?.platformContext === 'wix' ? '⚡ Wix Studio / Webflow Upgrade'
+              : aiOutput.modernizationReport?.platformContext === 'webflow' ? '⚡ Webflow Edge Tuning Recommended'
+              : aiOutput.modernizationReport?.platformContext === 'magento' ? '⚡ Magento Hyvä Modernization'
+              : '🚀 Architecture Modernization Recommended'}
+          </span>
+        ) : (
+          <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs self-start sm:self-auto">
+            🛠️ Quick Fixes & Tune-Up Recommended
+          </span>
+        )}
+      </div>
+      <p class="text-xs sm:text-sm text-zinc-800 dark:text-zinc-300 font-sans leading-relaxed">
+        {aiOutput.recommendationReason}
+      </p>
+    </div>
+  </div>
+
+  <!-- EXECUTIVE VIEW SECTION (Active by default) -->
+  <div id="section-executive-view" class="space-y-8">
+
+    <!-- Executive Briefing Hero Card (Verdict & 3-Card Grid) -->
+    <div class="glow-card p-6 sm:p-10 rounded-3xl bg-white/95 dark:bg-zinc-950/95 border border-zinc-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl relative overflow-hidden transition-colors duration-300 space-y-8">
+      <div class="absolute -top-12 -right-12 w-64 h-64 bg-brand-blue/5 dark:bg-brand-yellow/5 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Top Header & Verdict -->
+      <div class="relative z-10 space-y-4 border-b border-zinc-200 dark:border-zinc-800/80 pb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-brand-blue dark:bg-brand-yellow animate-pulse"></span>
+            <span class="text-xs font-mono font-bold uppercase tracking-wider text-brand-blue dark:text-brand-yellow">
+              Executive Briefing & Strategic Assessment
+            </span>
+          </div>
+          <span class="text-xs font-mono text-zinc-500 dark:text-zinc-400">
+            Automated Consulting Vector
+          </span>
+        </div>
+
+        <!-- 1-Sentence Executive Verdict Headline -->
+        <h2 class="font-display text-lg sm:text-2xl font-bold text-zinc-950 dark:text-white leading-snug">
+          "{briefing.headline}"
+        </h2>
+      </div>
+
+      <!-- 3-Card Executive Grid (Bottlenecks, Opportunities, Resolution Roadmap) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+
+        <!-- Card 1: The Bottlenecks -->
+        <div class="p-6 rounded-2xl bg-red-50/50 dark:bg-red-950/10 border border-red-200/80 dark:border-red-900/30 space-y-4 flex flex-col justify-between">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400">
+                1. The Friction Points
+              </span>
+              <span class="text-lg">⚠️</span>
+            </div>
+            <h3 class="font-display text-base font-bold text-zinc-950 dark:text-white">
+              Where You Lose Visitors
+            </h3>
+            <ul class="space-y-2.5 font-sans text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+              {briefing.bottlenecks.map((item) => (
+                <li class="flex items-start gap-2">
+                  <span class="text-red-500 dark:text-red-400 font-bold shrink-0 mt-0.5">•</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div class="pt-3 border-t border-red-200/50 dark:border-red-900/20 text-[11px] font-mono text-red-700 dark:text-red-300 font-semibold">
+            {criticalIssues.length} Critical Bottlenecks Flagged
+          </div>
+        </div>
+
+        <!-- Card 2: The Opportunities -->
+        <div class="p-6 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200/80 dark:border-emerald-900/30 space-y-4 flex flex-col justify-between">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+                2. The Upside
+              </span>
+              <span class="text-lg">📈</span>
+            </div>
+            <h3 class="font-display text-base font-bold text-zinc-950 dark:text-white">
+              What You Gain by Fixing It
+            </h3>
+            <ul class="space-y-2.5 font-sans text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+              {briefing.opportunities.map((item) => (
+                <li class="flex items-start gap-2">
+                  <span class="text-emerald-600 dark:text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div class="pt-3 border-t border-emerald-200/50 dark:border-emerald-900/20 text-[11px] font-mono text-emerald-700 dark:text-emerald-300 font-semibold">
+            Sub-second global performance potential
+          </div>
+        </div>
+
+        <!-- Card 3: The Roadmap -->
+        <div class="p-6 rounded-2xl bg-brand-yellow/5 dark:bg-brand-yellow/5 border border-brand-yellow/30 space-y-4 flex flex-col justify-between">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-brand-yellow/20 border border-brand-yellow/40 text-amber-700 dark:text-brand-yellow">
+                3. The 48-Hour Plan
+              </span>
+              <span class="text-lg">🛠️</span>
+            </div>
+            <h3 class="font-display text-base font-bold text-zinc-950 dark:text-white">
+              Workouse Execution Roadmap
+            </h3>
+            <ul class="space-y-2.5 font-sans text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+              {briefing.roadmap.map((item) => (
+                <li class="flex items-start gap-2">
+                  <span class="text-brand-blue dark:text-brand-yellow font-bold shrink-0 mt-0.5">→</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div class="pt-3 border-t border-brand-yellow/20 space-y-2">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="text-zinc-500">Fixed Repair Rate:</span>
+              <span class="font-bold text-zinc-900 dark:text-white">${totalPrice} USD Est.</span>
+            </div>
+            <button
+              type="button"
+              onclick="const modal = document.getElementById('lead-modal'); if (modal) { modal.showModal(); }"
+              class="w-full py-2.5 px-3 rounded-xl bg-brand-blue dark:bg-brand-yellow text-white dark:text-zinc-950 font-mono font-bold text-xs text-center hover:opacity-90 transition shadow-sm"
+            >
+              Request Workouse Fix →
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Action Row -->
+      <div class="pt-4 border-t border-zinc-200 dark:border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono text-zinc-500 dark:text-zinc-400">
+        <div class="flex items-center gap-2">
+          <span class="text-brand-blue dark:text-brand-yellow font-bold">💡 Bottom Line:</span>
+          <span>
+            {aiOutput.recommendation === 'rebuild'
+              ? 'Modernizing architecture gives instant sub-second speeds and eliminates legacy drag.'
+              : 'Targeted tuning of speed and security seals will immediately boost visitor confidence and revenue.'}
+          </span>
+        </div>
+        <button
+          type="button"
+          id="btn-jump-to-technical"
+          class="text-brand-blue dark:text-brand-yellow hover:underline flex items-center gap-1 shrink-0 font-bold cursor-pointer"
+        >
+          <span>Explore deep technical diagnostics (5 modules)</span>
+          <span>↓</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Top 3 Priorities to Fix First Section -->
+    {topPriorities.length > 0 && (
+      <div class="glow-card p-6 sm:p-10 rounded-3xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-brand-blue dark:text-brand-yellow px-2 py-0.5 rounded bg-brand-yellow/10 border border-brand-yellow/30">
+                ACTION PLAN
+              </span>
+              <span class="text-xs font-mono text-zinc-500">Highest ROI Repairs</span>
+            </div>
+            <h3 class="font-display text-xl sm:text-2xl font-bold text-zinc-950 dark:text-white mt-1">
+              Top 3 Priorities to Fix First
+            </h3>
+          </div>
+          <span class="text-xs font-mono text-zinc-500">
+            {aiOutput.issues.length} total points identified
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
+          {topPriorities.map((issue, idx) => (
+            <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-3 flex flex-col justify-between hover:border-zinc-300 dark:hover:border-zinc-700 transition">
+              <div class="space-y-2.5">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="w-6 h-6 rounded-full bg-brand-blue/10 dark:bg-brand-yellow/10 text-brand-blue dark:text-brand-yellow font-bold text-xs flex items-center justify-center shrink-0 border border-brand-yellow/30">
+                    #{idx + 1}
+                  </span>
+                  {issue.severity === 'critical' && (
+                    <span class="px-2 py-0.5 rounded text-[9px] uppercase font-bold bg-red-500/10 border border-red-500/30 text-red-500 dark:text-red-400">
+                      CRITICAL
+                    </span>
+                  )}
+                  {issue.severity === 'warning' && (
+                    <span class="px-2 py-0.5 rounded text-[9px] uppercase font-bold bg-amber-500/10 border border-amber-500/30 text-amber-500 dark:text-amber-400">
+                      WARNING
+                    </span>
+                  )}
+                  {issue.severity === 'info' && (
+                    <span class="px-2 py-0.5 rounded text-[9px] uppercase font-bold bg-blue-500/10 border border-blue-500/30 text-blue-500 dark:text-blue-400">
+                      MINOR
+                    </span>
+                  )}
+                </div>
+
+                <h4 class="font-bold text-sm text-zinc-950 dark:text-white font-sans leading-snug">
+                  {issue.title}
+                </h4>
+                <p class="text-xs text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
+                  {issue.businessImpact}
+                </p>
+              </div>
+
+              <div class="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-bold text-zinc-900 dark:text-zinc-200">
+                <span class="text-zinc-500 font-normal">{issue.estimatedMinutes} mins</span>
+                <span class="text-brand-blue dark:text-brand-yellow">${Math.ceil(issue.price)} USD</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+  </div>
+
+  <!-- Summary & Estimate Metric Bar -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+    <div class="p-6 rounded-2xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm dark:shadow-none">
+      <div class="text-xs text-zinc-600 dark:text-zinc-500 uppercase tracking-wider">Points to Fix</div>
+      <div class="text-2xl font-bold text-zinc-950 dark:text-white">{aiOutput.issues.length} <span class="text-xs text-zinc-600 dark:text-zinc-400 font-normal">items</span></div>
+      <div class="text-[11px] text-zinc-600 dark:text-zinc-500 pt-1">
+        <span class="text-red-500 dark:text-red-400 font-bold">{criticalIssues.length} high priority</span> · <span class="text-amber-500 dark:text-amber-400 font-bold">{warningIssues.length} medium</span> · <span class="text-blue-500 dark:text-blue-400 font-bold">{infoIssues.length} minor</span>
+      </div>
+    </div>
+
+    <div class="p-6 rounded-2xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm dark:shadow-none">
+      <div class="text-xs text-zinc-600 dark:text-zinc-500 uppercase tracking-wider">Estimated Fix Time</div>
+      <div class="text-2xl font-bold text-brand-blue dark:text-brand-yellow">{totalFixHours} <span class="text-xs text-zinc-600 dark:text-zinc-400 font-normal">hours</span></div>
+      <div class="text-[11px] text-zinc-600 dark:text-zinc-500 pt-1">
+        Based on itemized repair scope
+      </div>
+    </div>
+
+    <div class="p-6 rounded-2xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm dark:shadow-none">
+      <div class="text-xs text-zinc-600 dark:text-zinc-500 uppercase tracking-wider">Total Fix Cost ($35/hr)</div>
+      <div class="text-2xl font-bold text-zinc-950 dark:text-white">${totalPrice} <span class="text-xs text-zinc-600 dark:text-zinc-400 font-normal">USD</span></div>
+      <div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold pt-1">
+        Flat-rate baseline pricing
+      </div>
+    </div>
+  </div>
+
+  <!-- Legal Notice & Price Disclaimer -->
+  <div class="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800/80 text-[11px] text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed space-y-1">
+    <div class="font-mono font-bold text-zinc-900 dark:text-zinc-300 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+      <svg class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      <span>Pricing Disclaimer & Technical Scope Notice</span>
+    </div>
+    <p>
+      All cost and time estimates presented in this audit are non-binding baseline figures calculated for entry-level, standard fixes at flat-rate pricing ($35/hr). Actual repair costs, labor hours, and implementation complexity depend on target infrastructure parameters, legacy codebase constraints, edge-case dependencies, and custom client requirements.
+    </p>
+  </div>
+
+  <!-- Deep Diagnostics & Technical Details Container / Accordion -->
+  <details
+    id="detailed-diagnostics-accordion"
+    class="group rounded-3xl bg-zinc-50/60 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800/80 p-6 sm:p-8 transition-all duration-300 shadow-sm dark:shadow-none"
+  >
+    <summary class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer list-none select-none">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-brand-blue dark:text-brand-yellow px-2 py-0.5 rounded bg-brand-yellow/10 border border-brand-yellow/30">
+            TECHNICAL AUDIT & LINE ITEMS
+          </span>
+          <span class="text-xs font-mono text-zinc-500">5 Detailed Diagnostic Modules</span>
+        </div>
+        <h2 class="font-display text-xl sm:text-2xl font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+          <span>Technical Deep Diagnostics</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 font-sans">
+          Click to explore category sub-scores, line-item repair costs ($35/hr), empirical proof markers, GDPR/CCPA privacy checks, and modernization architecture.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3 shrink-0 pt-2 sm:pt-0">
+        <span class="px-4 py-2.5 rounded-xl text-xs font-mono font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 group-open:bg-brand-blue group-open:dark:bg-brand-yellow group-open:text-white group-open:dark:text-zinc-950 group-open:border-transparent transition-all duration-200 flex items-center gap-2 shadow-sm">
+          <span class="group-open:hidden">Show Full Details ↓</span>
+          <span class="hidden group-open:inline">Hide Full Details ↑</span>
+          <svg class="w-4 h-4 transform group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </span>
+      </div>
+    </summary>
+
+    <!-- Expanded Content Container -->
+    <div class="pt-8 space-y-8 border-t border-zinc-200 dark:border-zinc-800/80 mt-6">
+
+      <!-- Category Score Breakdown Bar -->
+      <div class="glow-card p-6 sm:p-8 rounded-3xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 space-y-5 shadow-sm dark:shadow-none">
+        <h3 class="font-display text-lg font-bold text-zinc-950 dark:text-white">Score Breakdown by Category</h3>
+        <div class="space-y-4">
+          {subScores.map(({ label, value }) => {
+            const barColor = value >= 80 ? 'bg-emerald-500' : value >= 60 ? 'bg-amber-500' : 'bg-red-500';
+            const textColor = value >= 80 ? 'text-emerald-600 dark:text-emerald-400' : value >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
+            return (
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between font-mono text-xs">
+                  <span class="text-zinc-800 dark:text-zinc-300 font-semibold">{label}</span>
+                  <span class={`font-bold ${textColor}`}>{value}/100</span>
+                </div>
+                <div class="h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    class={`h-full rounded-full transition-all duration-700 ${barColor}`}
+                    style={`width: ${value}%`}
+                  ></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <!-- Detailed Issues Breakdown (Line Items & Proofs) -->
+      <div class="glow-card p-6 sm:p-8 rounded-3xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 space-y-6 shadow-sm dark:shadow-none">
+        <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-4">
+          <h3 class="font-display text-xl font-bold text-zinc-950 dark:text-white">Simple Action Plan & Fixes</h3>
+          <span class="text-xs font-mono text-zinc-600 dark:text-zinc-400">Rate: $35.00 / hr</span>
+        </div>
+
+        {aiOutput.issues.length === 0 ? (
+          <div class="text-center py-12 text-zinc-600 dark:text-zinc-400 font-sans text-sm">
+            🎉 Great news! No speed, safety, or Google visibility issues were found on your website.
+          </div>
+        ) : (
+          <div class="space-y-4 font-mono">
+            {aiOutput.issues.map((issue) => (
+              <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-850 hover:border-zinc-300 dark:hover:border-zinc-700 transition duration-200 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div class="flex flex-wrap items-center gap-3">
+                    {issue.severity === 'critical' && (
+                      <span class="px-2.5 py-0.5 rounded text-[10px] uppercase font-bold bg-red-500/10 border border-red-500/30 text-red-500 dark:text-red-400">
+                        HIGH PRIORITY
+                      </span>
+                    )}
+                    {issue.severity === 'warning' && (
+                      <span class="px-2.5 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-500/10 border border-amber-500/30 text-amber-500 dark:text-amber-400">
+                        MEDIUM
+                      </span>
+                    )}
+                    {issue.severity === 'info' && (
+                      <span class="px-2.5 py-0.5 rounded text-[10px] uppercase font-bold bg-blue-500/10 border border-blue-500/30 text-blue-500 dark:text-blue-400">
+                        MINOR
+                      </span>
+                    )}
+                    <span class="text-xs text-zinc-600 dark:text-zinc-400 font-semibold font-sans">{categoryDisplayNames[issue.category] || issue.category}</span>
+
+                    <!-- Prove? Badge with Hover Tooltip -->
+                    <div class="relative group/proof inline-block">
+                      <button
+                        type="button"
+                        class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-brand-blue dark:text-brand-yellow border border-brand-yellow/30 hover:border-brand-yellow cursor-help transition flex items-center gap-1 shadow-sm"
+                        aria-label="View empirical diagnostic proof for this item"
+                      >
+                        <span>Prove?</span>
+                        <svg class="w-3 h-3 text-brand-blue dark:text-brand-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      </button>
+                      <div class="absolute left-0 top-full mt-2 w-72 max-w-[calc(100vw-48px)] p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-[11px] font-sans rounded-xl shadow-2xl opacity-0 invisible group-hover/proof:opacity-100 group-hover/proof:visible group-focus-within/proof:opacity-100 group-focus-within/proof:visible transition-all duration-150 z-30 pointer-events-none leading-normal">
+                        <div class="font-mono text-[10px] font-bold uppercase text-brand-blue dark:text-brand-yellow mb-1 flex items-center gap-1">
+                          <span>⚡ Diagnostic Proof</span>
+                        </div>
+                        <p>{getIssueProof(issue)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-xs text-zinc-900 dark:text-zinc-300 font-bold">
+                    {issue.estimatedMinutes} mins · <span class="text-brand-blue dark:text-brand-yellow">${Math.ceil(issue.price)} USD</span>
+                  </div>
+                </div>
+
+                <h4 class="font-bold text-sm text-zinc-950 dark:text-white font-sans">{issue.title}</h4>
+                <p class="text-xs text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">{issue.businessImpact}</p>
+
+                {issue.items && issue.items.length > 0 && (
+                  <details class="group/items pt-2 border-t border-zinc-200/80 dark:border-zinc-800/80" open>
+                    <summary class="cursor-pointer select-none flex items-center justify-between text-[11px] font-mono font-bold text-zinc-700 dark:text-zinc-300 hover:text-brand-blue dark:hover:text-brand-yellow transition">
+                      <span class="flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-brand-blue dark:text-brand-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                        <span>Flagged Resource & Item Details ({issue.items.length})</span>
+                      </span>
+                      <span class="text-[10px] text-zinc-600 dark:text-zinc-400 group-open/items:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <div class="mt-3 space-y-2 max-h-60 overflow-y-auto pr-1">
+                      {issue.items.map((item) => (
+                        <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[11px] font-mono space-y-1">
+                          <div class="flex flex-wrap items-center justify-between gap-2">
+                            {item.url && (
+                              <a
+                                href={item.url.startsWith('http') ? item.url : undefined}
+                                target={item.url.startsWith('http') ? "_blank" : undefined}
+                                rel="noopener noreferrer"
+                                class="text-zinc-800 dark:text-zinc-200 hover:text-brand-blue dark:hover:text-brand-yellow truncate max-w-full font-semibold underline decoration-zinc-400 dark:decoration-zinc-700 underline-offset-2"
+                                title={item.url}
+                              >
+                                {item.url}
+                              </a>
+                            )}
+                            {item.selector && !item.url && (
+                              <code class="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-900 text-purple-600 dark:text-purple-400 font-bold border border-zinc-200 dark:border-zinc-800 truncate max-w-full">
+                                {item.selector}
+                              </code>
+                            )}
+                            {item.label && !item.url && !item.selector && (
+                              <span class="font-bold text-zinc-900 dark:text-white">{item.label}</span>
+                            )}
+                            <div class="flex items-center gap-2 shrink-0">
+                              {item.size && (
+                                <span class="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold border border-zinc-200 dark:border-zinc-700 text-[10px]">
+                                  {item.size}
+                                </span>
+                              )}
+                              {item.wasted && (
+                                <span class="px-2 py-0.5 rounded bg-amber-500/10 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/20 dark:border-amber-800/60 text-[10px]">
+                                  {item.wasted}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {item.snippet && (
+                            <div class="text-[10px] text-zinc-600 dark:text-zinc-400 truncate bg-zinc-50 dark:bg-zinc-900/80 p-1.5 rounded border border-zinc-100 dark:border-zinc-850">
+                              <code>{item.snippet}</code>
+                            </div>
+                          )}
+                          {item.details && (
+                            <div class="text-[10px] text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
+                              <span class="text-brand-blue dark:text-brand-yellow font-bold">Detail:</span>
+                              <span>{item.details}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- Data Regulation & Privacy Checks (Jurisdiction-Aware) -->
+      <div class="glow-card p-6 sm:p-8 rounded-3xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 space-y-6 shadow-sm dark:shadow-none">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
+                LEGAL & REGULATORY ENGINE
+              </span>
+              <span class="text-xs font-mono text-zinc-600 dark:text-zinc-500 flex items-center gap-1.5">
+                <span>{jurisdiction.flagEmoji}</span>
+                <span class="font-bold text-zinc-900 dark:text-zinc-200">{jurisdiction.countryName} ({jurisdiction.region})</span>
+                <span>•</span>
+                <span>{jurisdiction.applicableLaws.slice(0, 2).join(' • ')}</span>
+              </span>
+            </div>
+            <h3 class="font-display text-xl font-bold text-zinc-950 dark:text-white mt-1">Data Regulation & Legal Compliance</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            {regionalIssues.length === 0 ? (
+              <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold flex items-center gap-1">
+                <span>{jurisdiction.flagEmoji} {jurisdiction.countryName}: Passed</span>
+              </span>
+            ) : (
+              <span class="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 dark:text-red-400 font-mono text-xs font-bold flex items-center gap-1">
+                <span>{jurisdiction.flagEmoji} {jurisdiction.countryName}: {regionalIssues.length} Risk{regionalIssues.length > 1 ? 's' : ''}</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        <!-- Detection Signals Proof Ribbon -->
+        {jurisdiction.detectionSignals && jurisdiction.detectionSignals.length > 0 && (
+          <div class="flex items-center gap-2 flex-wrap p-3 rounded-xl bg-zinc-100/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 text-[11px] font-mono text-zinc-600 dark:text-zinc-400">
+            <span class="font-bold text-zinc-900 dark:text-zinc-300">Jurisdiction Proof Signals:</span>
+            {jurisdiction.detectionSignals.map((signal) => (
+              <span class="px-2 py-0.5 rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200">
+                {signal}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <!-- Regional Breakdown Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Primary Regional Box -->
+          <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">{jurisdiction.flagEmoji}</span>
+                <span class="font-mono font-bold text-sm text-zinc-950 dark:text-white">
+                  {jurisdiction.region === 'AU' && 'Australia (Privacy Act & ACL)'}
+                  {jurisdiction.region === 'TR' && 'Türkiye (KVKK & TTK Künye)'}
+                  {(jurisdiction.region === 'EU' || jurisdiction.region === 'DE') && 'Europe (GDPR & ePrivacy)'}
+                  {jurisdiction.region === 'GB' && 'United Kingdom (UK GDPR & Companies Act)'}
+                  {jurisdiction.region === 'US' && 'United States (CCPA/CPRA & State Laws)'}
+                  {jurisdiction.region === 'CA' && 'Canada (PIPEDA & CASL)'}
+                  {jurisdiction.region === 'GLOBAL' && 'International Standard Baseline'}
+                </span>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-600 dark:text-zinc-400">Applicable Jurisdiction</span>
+            </div>
+
+            <div class="space-y-2.5 font-mono text-xs">
+              {jurisdiction.region === 'AU' && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Privacy Act 1988 (APPs) Notice</span>
+                    {aiOutput.issues.some((i) => i.id === 'au-missing-privacy-policy') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Missing Policy</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Compliant</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Australian Consumer Law (ACL) Terms</span>
+                    {aiOutput.issues.some((i) => i.id === 'au-missing-terms-acl') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Missing Terms</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Terms Active</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">ABN / ACN Company Disclosure</span>
+                    {aiOutput.issues.some((i) => i.id === 'au-missing-abn-disclosure') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ ABN Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ ABN Identified</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Pre-Consent Trackers & Cookies</span>
+                    {aiOutput.issues.some((i) => i.id === 'au-unconsented-trackers') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Firing Without Consent</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Transparent</span>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {jurisdiction.region === 'TR' && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">KVKK Aydınlatma Metni (Madde 10)</span>
+                    {aiOutput.issues.some((i) => i.id === 'tr-missing-kvkk-notice') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Aydınlatma Eksik</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Mevcut</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">MERSİS No / Şirket Künyesi (TTK 39)</span>
+                    {aiOutput.issues.some((i) => i.id === 'tr-missing-mersis-kunye') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Künye Eksik</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Künye Mevcut</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">E-Ticaret & Mesafeli Satış Şartları</span>
+                    {aiOutput.issues.some((i) => i.id === 'tr-missing-ecommerce-terms') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Sözleşme Eksik</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Şartlar Mevcut</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">KVKK Çerez Politikası & İzleyiciler</span>
+                    {aiOutput.issues.some((i) => i.id === 'tr-missing-cookie-policy' || i.id === 'tr-unconsented-trackers') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Çerez Politikası Eksik</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Uyumlu</span>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {(jurisdiction.region === 'EU' || jurisdiction.region === 'DE') && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">GDPR Privacy Policy (Article 13)</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-missing-privacy-policy') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Detected</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Cookie Consent Banner (CMP)</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-unconsented-trackers') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Pre-Consent Active</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Consent Active</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Impressum / Legal Notice (§ 5 DDG)</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-missing-impressum') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Compliant</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Remote Font Transfer (IP leak)</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-external-font-transfer') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Remote Google Fonts</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Self-Hosted / Clean</span>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {jurisdiction.region === 'US' && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">"Do Not Sell or Share" Opt-Out</span>
+                    {aiOutput.issues.some((i) => i.id === 'us-ccpa-missing-optout') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Opt-Out Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Opt-Out Ready</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">State Notice at Collection</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-missing-privacy-policy' || i.id === 'global-missing-privacy-policy') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Notice Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Notice Available</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Terms of Service</span>
+                    {aiOutput.issues.some((i) => i.id === 'us-missing-terms') ? (
+                      <span class="text-zinc-500 flex items-center gap-1">ℹ️ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Terms Available</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Global Privacy Control (GPC)</span>
+                    <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Standard Signal</span>
+                  </div>
+                </>
+              )}
+
+              {jurisdiction.region === 'GB' && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">UK GDPR Privacy Notice</span>
+                    {aiOutput.issues.some((i) => i.id === 'gb-missing-privacy-notice') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Notice Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Compliant</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Companies Act Reg Number</span>
+                    {aiOutput.issues.some((i) => i.id === 'gb-missing-company-number') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Registered</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">PECR Cookie Consent</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-unconsented-trackers') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Unconsented Trackers</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Compliant</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Terms of Service</span>
+                    {aiOutput.issues.some((i) => i.id === 'gb-missing-terms' || i.id === 'global-missing-terms') ? (
+                      <span class="text-zinc-500 flex items-center gap-1">ℹ️ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Available</span>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {(jurisdiction.region === 'CA' || jurisdiction.region === 'GLOBAL') && (
+                <>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Foundational Privacy Policy</span>
+                    {aiOutput.issues.some((i) => i.id === 'global-missing-privacy-policy' || i.id === 'ca-missing-privacy-policy' || i.id === 'eu-missing-privacy-policy') ? (
+                      <span class="text-red-500 dark:text-red-400 font-semibold flex items-center gap-1">❌ Missing Policy</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Detected</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Terms of Service Agreement</span>
+                    {aiOutput.issues.some((i) => i.id === 'global-missing-terms' || i.id === 'ca-missing-terms' || i.id === 'us-missing-terms') ? (
+                      <span class="text-zinc-500 flex items-center gap-1">ℹ️ Missing</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Available</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Tracking Transparency</span>
+                    {aiOutput.issues.some((i) => i.id === 'eu-unconsented-trackers') ? (
+                      <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Untracked Consent</span>
+                    ) : (
+                      <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Transparent</span>
+                    )}
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-zinc-600 dark:text-zinc-400">Encrypted Transport (HTTPS)</span>
+                    <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Valid TLS</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <!-- Cross-Border & Commercial Standards Box -->
+          <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">🌐</span>
+                <span class="font-mono font-bold text-sm text-zinc-950 dark:text-white">Cross-Border & Commercial Standards</span>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-600 dark:text-zinc-400">Global Trade Baseline</span>
+            </div>
+
+            <div class="space-y-2.5 font-mono text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-zinc-600 dark:text-zinc-400">Encrypted Data in Transit (HTTPS / TLS)</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ TLS 1.3 Active</span>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-zinc-600 dark:text-zinc-400">HSTS & Clickjacking Defenses</span>
+                {aiOutput.issues.some((i) => i.id === 'missing-hsts' || i.id === 'missing-x-frame-options') ? (
+                  <span class="text-amber-500 dark:text-amber-400 font-semibold flex items-center gap-1">⚠️ Headers Missing</span>
+                ) : (
+                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Hardened</span>
+                )}
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-zinc-600 dark:text-zinc-400">Export & Cross-Border Readiness</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Evaluated</span>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-zinc-600 dark:text-zinc-400">Bot & Scraping Protections</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">✅ Cloudflare Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Webmaster Verifications, Pixels & Open Web Features -->
+      <DistributedWebReport distributed={aiOutput.modernizationReport?.distributedWeb} />
+
+      <!-- Modernisation Checklist Section -->
+      {aiOutput.modernizationReport && (
+        <ModernizationChecklist report={aiOutput.modernizationReport} auditId={audit.id} url={audit.url} />
+      )}
+
+    </div>
+  </details>
+
+  <!-- Direct Conversion Hire CTA -->
+  <div class="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-zinc-100 via-white to-zinc-100 dark:from-zinc-900 dark:via-zinc-950 dark:to-zinc-900 border border-brand-yellow/30 text-center space-y-6 shadow-xl dark:shadow-2xl relative overflow-hidden transition-colors duration-300">
+    <div class="max-w-2xl mx-auto space-y-3">
+      <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white">
+        Ready to optimize or rebuild this project?
+      </h2>
+      <p class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
+        Workouse delivers high-performance web engineering on Cloudflare Pages and Astro with zero fluff.
+      </p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 font-mono text-xs">
+      <button
+        id="report-bottom-quote-btn"
+        type="button"
+        class="w-full sm:w-auto px-8 py-4 rounded-xl font-bold uppercase tracking-wider bg-brand-blue dark:bg-brand-yellow text-white dark:text-zinc-950 hover:bg-blue-600 dark:hover:bg-yellow-400 transition duration-200 shadow-lg"
+      >
+        Request Workouse Consultation (${totalPrice} USD Est.) →
+      </button>
+      <a
+        href="/"
+        class="w-full sm:w-auto px-6 py-4 rounded-xl font-bold uppercase tracking-wider bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition duration-200"
+      >
+        Audit Another Site
+      </a>
+    </div>
+  </div>
+
+  <!-- Lead Capture Modal Component -->
+  <AuditLeadModal
+    auditId={audit.id}
+    targetUrl={audit.url}
+    totalPrice={totalPrice}
+    recommendation={aiOutput.recommendation}
+  />
+
+</div>
+
+<script>
+  import { trackEvent } from '../lib/analytics';
+
+  const reportContainer = document.getElementById('auditReportContainer');
+  if (reportContainer) {
+    const ds = reportContainer.dataset;
+    trackEvent('audit-viewed', {
+      audit_id: ds.auditId,
+      target_url: ds.url,
+      score: ds.score ? Number(ds.score) : undefined,
+      performance_score: ds.perf ? Number(ds.perf) : undefined,
+      security_score: ds.security ? Number(ds.security) : undefined,
+      seo_score: ds.seo ? Number(ds.seo) : undefined,
+      standards_score: ds.standards ? Number(ds.standards) : undefined,
+      recommendation: ds.rec,
+    });
+  }
+
+  const bottomQuoteBtn = document.getElementById('report-bottom-quote-btn');
+  const leadModal = document.getElementById('lead-modal') as HTMLDialogElement | null;
+  bottomQuoteBtn?.addEventListener('click', () => {
+    trackEvent('request-quote-form-opened', { source: 'report_bottom' });
+    leadModal?.showModal();
+  });
+
+  // Dual View Mode Controller
+  const btnExecutive = document.getElementById('btn-view-executive') as HTMLButtonElement | null;
+  const btnTechnical = document.getElementById('btn-view-technical') as HTMLButtonElement | null;
+  const btnJumpTech = document.getElementById('btn-jump-to-technical') as HTMLButtonElement | null;
+  const techAccordion = document.getElementById('detailed-diagnostics-accordion') as HTMLDetailsElement | null;
+  const executiveSection = document.getElementById('section-executive-view');
+
+  function setExecutiveView() {
+    if (btnExecutive && btnTechnical) {
+      btnExecutive.className = 'flex-1 sm:flex-initial px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 bg-brand-blue text-white dark:bg-brand-yellow dark:text-zinc-950 shadow-sm';
+      btnTechnical.className = 'flex-1 sm:flex-initial px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white';
+    }
+    if (techAccordion) {
+      techAccordion.open = false;
+    }
+    executiveSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    trackEvent('audit-view-switched', { view: 'executive' });
+  }
+
+  function setTechnicalView() {
+    if (btnExecutive && btnTechnical) {
+      btnTechnical.className = 'flex-1 sm:flex-initial px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 bg-brand-blue text-white dark:bg-brand-yellow dark:text-zinc-950 shadow-sm';
+      btnExecutive.className = 'flex-1 sm:flex-initial px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white';
+    }
+    if (techAccordion) {
+      techAccordion.open = true;
+      setTimeout(() => {
+        techAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+    trackEvent('audit-view-switched', { view: 'technical' });
+  }
+
+  btnExecutive?.addEventListener('click', setExecutiveView);
+  btnTechnical?.addEventListener('click', setTechnicalView);
+  btnJumpTech?.addEventListener('click', setTechnicalView);
+
+  // Sync tab styles if user opens the accordion manually
+  techAccordion?.addEventListener('toggle', () => {
+    if (techAccordion.open) {
+      if (btnExecutive && btnTechnical) {
+        btnTechnical.className = 'flex-1 sm:flex-initial px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 bg-brand-blue text-white dark:bg-brand-yellow dark:text-zinc-950 shadow-sm';
+        btnExecutive.className = 'flex-1 sm:flex-initial px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white';
+      }
+    }
+  });
+</script>

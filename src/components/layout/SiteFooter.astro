@@ -1,0 +1,280 @@
+---
+/**
+ * SiteFooter — global ink footer rendered below the FinalContactCTA.
+ *
+ * Destinations resolve from the central register (`src/data/site.ts`) so the
+ * routes stay in one place. The cookie control does not own consent state: it
+ * calls `window.openCookiePreferences`, which is exposed by the existing
+ * CookieBanner preferences modal.
+ */
+import TextLink from '../ui/TextLink.astro';
+import WorkouseLockup from '../ui/WorkouseLockup.astro';
+import { resolveLink } from '../../data/site';
+
+const COOKIE_PREFERENCES_BUTTON_ID = 'footer-cookie-preferences';
+const SIGNATURE_TEXT = 'WORKOUSE / SOFTWARE THAT KEEPS MOVING FORWARD';
+const TAGLINE_LINES = ['Independent minds.', 'Reliable engineering.'] as const;
+
+const engineeringLinks = [
+  resolveLink('phpSymfony'),
+  resolveLink('shopify'),
+];
+
+const studioLinks = [
+  resolveLink('work'),
+  resolveLink('products'),
+  resolveLink('about'),
+];
+
+const exploreLinks = [
+  resolveLink('audit', 'Resources / Website Audit'),
+  resolveLink('blog'),
+  resolveLink('email', 'Contact'),
+];
+
+const legalLinks = [
+  resolveLink('privacy'),
+  resolveLink('terms'),
+  resolveLink('impressum'),
+];
+
+const contactEmail = resolveLink('email');
+
+const navGroups = [
+  { label: 'Engineering', ariaLabel: 'Engineering', items: engineeringLinks },
+  { label: 'Studio', ariaLabel: 'Studio', items: studioLinks },
+  { label: 'Explore', ariaLabel: 'Explore', items: exploreLinks },
+];
+---
+
+<footer class="site-footer" data-site-footer>
+  <div class="site-footer__links">
+    <section class="site-footer__contact" aria-label="Studio contact">
+      <WorkouseLockup tone="ivory" href="/" />
+      <p class="site-footer__tagline">
+        {TAGLINE_LINES.map((line) => (
+          <span class="site-footer__tagline-line">{line}</span>
+        ))}
+      </p>
+      <TextLink href={contactEmail.href} label={contactEmail.label} size={13} tone="ivory" />
+    </section>
+
+    <div class="site-footer__groups">
+      {
+        navGroups.map((group) => (
+          <nav class="site-footer__group" aria-label={group.ariaLabel}>
+            <p class="site-footer__eyebrow">{group.label.toUpperCase()}</p>
+            {group.items.map((item) => (
+              <TextLink href={item.href} label={item.label} size={12} tone="ivory" external={item.external} />
+            ))}
+          </nav>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="site-footer__legal">
+    {
+      legalLinks.map((item) => (
+        <TextLink href={item.href} label={item.label} size={11} tone="ivory" />
+      ))
+    }
+    <button type="button" class="site-footer__cookie-button" id={COOKIE_PREFERENCES_BUTTON_ID}>
+      Cookie preferences
+    </button>
+  </div>
+
+  <p class="site-footer__signature">{SIGNATURE_TEXT}</p>
+</footer>
+
+<script>
+  const COOKIE_PREFERENCES_BUTTON_ID = 'footer-cookie-preferences';
+
+  type CookiePreferencesWindow = Window & {
+    openCookiePreferences?: () => void;
+  };
+
+  const trigger = document.getElementById(COOKIE_PREFERENCES_BUTTON_ID);
+
+  trigger?.addEventListener('click', () => {
+    const openPreferences = (window as CookiePreferencesWindow).openCookiePreferences;
+    openPreferences?.();
+  });
+</script>
+
+<style>
+  .site-footer {
+    --footer-ink: #24354f;
+    --footer-ivory: #faf8f4;
+    --footer-border: #53658e;
+    --footer-focus-ivory: #faf8f4;
+
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding: 40px 24px 32px;
+    background: var(--footer-ink);
+    border-top: 1px solid var(--footer-border);
+    color: var(--footer-ivory);
+    font-family: var(--font-sans);
+  }
+
+  .site-footer__links {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .site-footer__contact {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .site-footer__tagline {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--footer-ivory);
+  }
+
+  .site-footer__tagline-line {
+    display: block;
+  }
+
+  .site-footer__groups {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .site-footer__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .site-footer__eyebrow {
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.55;
+    color: var(--footer-ivory);
+  }
+
+  .site-footer__legal {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .site-footer__cookie-button {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 12px 0;
+    margin: 0;
+    border: 0;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--footer-ivory);
+    font: inherit;
+    font-size: 11px;
+    line-height: 1.55;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    cursor: pointer;
+    transition: text-decoration-color 140ms ease-out;
+  }
+
+  .site-footer__cookie-button:hover,
+  .site-footer__cookie-button:active {
+    text-decoration-color: currentColor;
+  }
+
+  .site-footer__cookie-button:focus-visible {
+    outline: 2px solid var(--footer-focus-ivory);
+    outline-offset: 3px;
+  }
+
+  .site-footer__signature {
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.55;
+    color: var(--footer-ivory);
+  }
+
+  /* Tablet */
+  @media (min-width: 768px) {
+    .site-footer {
+      padding-left: 40px;
+      padding-right: 40px;
+    }
+
+    .site-footer__links {
+      flex-direction: row;
+      gap: 32px;
+    }
+
+    .site-footer__contact {
+      width: 200px;
+      flex-shrink: 0;
+    }
+
+    .site-footer__groups {
+      width: 456px;
+    }
+
+    .site-footer__legal {
+      flex-direction: column;
+      gap: 0;
+    }
+  }
+
+  /* Desktop */
+  @media (min-width: 1280px) {
+    .site-footer {
+      padding-left: 96px;
+      padding-right: 96px;
+    }
+
+    .site-footer__links {
+      gap: 64px;
+    }
+
+    .site-footer__contact {
+      width: 400px;
+    }
+
+    .site-footer__groups {
+      flex-direction: row;
+      gap: 48px;
+      width: auto;
+    }
+
+    .site-footer__group:nth-child(1) {
+      width: 280px;
+    }
+
+    .site-footer__group:nth-child(2) {
+      width: 160px;
+    }
+
+    .site-footer__group:nth-child(3) {
+      width: 248px;
+    }
+
+    .site-footer__legal {
+      flex-direction: row;
+      gap: 32px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-footer__cookie-button {
+      transition: none;
+    }
+  }
+</style>

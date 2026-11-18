@@ -1,0 +1,133 @@
+---
+/**
+ * ServiceShopify — secondary service block of SpecialistServices (homepage
+ * section 04). Narrower than ServicePhpSymfony on desktop and visually
+ * lighter: no capability borders, a status line in place of a partner badge.
+ * Copy comes from the site data module.
+ */
+import DirectionalLink from '../ui/DirectionalLink.astro';
+import { resolveLink, services } from '../../data/site';
+
+const { eyebrow, status, headingLines, body, list, link } = services.shopify;
+const cta = resolveLink(link.ref, link.label);
+---
+
+<div class="service-shopify">
+  <div class="service-shopify__status">
+    <p class="service-shopify__eyebrow">{eyebrow}</p>
+    <p class="service-shopify__partner">{status}</p>
+  </div>
+  <h3 class="service-shopify__title">
+    {headingLines[0]}<br />
+    {headingLines[1]}
+  </h3>
+  <p class="service-shopify__body">{body}</p>
+  <ul class="service-shopify__list">
+    {list.map((item) => <li class="service-shopify__item">{item}</li>)}
+  </ul>
+  <div class="service-shopify__cta">
+    <DirectionalLink href={cta.href} label={cta.label} arrow="→" />
+  </div>
+</div>
+
+<style>
+  .service-shopify {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-top: 8px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .service-shopify__status {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  .service-shopify__eyebrow,
+  .service-shopify__partner,
+  .service-shopify__title,
+  .service-shopify__body,
+  .service-shopify__list {
+    margin: 0;
+  }
+
+  .service-shopify__eyebrow,
+  .service-shopify__partner {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 1.58;
+  }
+
+  .service-shopify__eyebrow {
+    color: #53658e;
+  }
+
+  .service-shopify__partner {
+    color: #5b6574;
+  }
+
+  .service-shopify__title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 40px;
+    line-height: 1.06;
+    color: #24354f;
+    overflow-wrap: break-word;
+  }
+
+  .service-shopify__body {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.58;
+    color: #5b6574;
+  }
+
+  .service-shopify__list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .service-shopify__item {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 1.58;
+    color: #24354f;
+  }
+
+  .service-shopify__cta {
+    align-self: flex-start;
+  }
+
+  @media (min-width: 768px) {
+    .service-shopify__title {
+      font-size: 44px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .service-shopify {
+      width: 416px;
+      flex: 0 0 416px;
+    }
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .service-shopify {
+      width: 688px;
+    }
+  }
+</style>

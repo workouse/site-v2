@@ -1,0 +1,118 @@
+---
+/**
+ * TeamProfile — single person card used by PeopleBehindWorkouse.
+ *
+ * Renders media (a real photo via `MediaFrame` when `member.photo` is set,
+ * otherwise a labeled portrait placeholder), name, role, bio, optional focus
+ * line, an optional verification note, and an external profile link.
+ * The verification note is a design annotation: it renders only outside
+ * production builds and must be removed from data once the statement is verified.
+ */
+import MediaFrame from '../ui/MediaFrame.astro';
+import TextLink from '../ui/TextLink.astro';
+import type { TeamMember } from '../../data/site';
+
+export interface MediaRatios {
+  readonly desktop: string;
+  readonly tablet: string;
+  readonly mobile: string;
+}
+
+export interface Props {
+  member: TeamMember;
+  ratios: MediaRatios;
+  class?: string;
+}
+
+const { member, ratios, class: className } = Astro.props;
+
+const showVerificationNote =
+  typeof member.verificationNote === 'string' &&
+  member.verificationNote.length > 0 &&
+  !import.meta.env.PROD;
+
+const classes = ['team-profile', className].filter(Boolean).join(' ');
+---
+
+<article class={classes}>
+  <MediaFrame
+    src={member.photo}
+    alt={member.alt ?? ''}
+    ratio={ratios.desktop}
+    tabletRatio={ratios.tablet}
+    mobileRatio={ratios.mobile}
+    variant="portrait"
+    lines={member.placeholder ?? []}
+    class="team-profile__media"
+    aria-label={member.photo ? undefined : member.name}
+  />
+  <div class="team-profile__body">
+    <h3 class="team-profile__name">{member.name}</h3>
+    <p class="team-profile__role">{member.role}</p>
+    <p class="team-profile__bio">{member.bio}</p>
+    {member.focus && <p class="team-profile__focus">{member.focus}</p>}
+    {
+      showVerificationNote && (
+        <p class="team-profile__verification">{member.verificationNote}</p>
+      )
+    }
+  </div>
+  <TextLink href={member.href} label={member.linkLabel} size={14} external />
+</article>
+
+<style>
+  .team-profile {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .team-profile__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .team-profile__name {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 1.06;
+    color: #24354f;
+  }
+
+  .team-profile__role,
+  .team-profile__bio,
+  .team-profile__focus,
+  .team-profile__verification {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    line-height: 1.55;
+  }
+
+  .team-profile__role {
+    font-size: 13px;
+    color: #53658e;
+  }
+
+  .team-profile__bio {
+    font-size: 16px;
+    color: #5b6574;
+  }
+
+  .team-profile__focus {
+    font-size: 14px;
+    color: #5b6574;
+  }
+
+  .team-profile__verification {
+    font-size: 11px;
+    color: #5b6574;
+  }
+</style>

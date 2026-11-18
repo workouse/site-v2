@@ -1,0 +1,344 @@
+---
+import { workPage, type WorkFilterId, type WorkFilterOption } from '../../data/site';
+import EngagementFilter from './EngagementFilter.astro';
+
+export interface FilterOptionItem {
+  readonly id: WorkFilterId | string;
+  readonly label: string;
+}
+
+export interface EngagementFilterChangeDetail {
+  value: string;
+  label: string;
+  previousValue: string | null;
+  visibleCount: number;
+  totalCount: number;
+  matchedElements: HTMLElement[];
+  button: HTMLButtonElement;
+  announce: (message: string) => void;
+}
+
+export interface Props {
+  /** Filter buttons to render (defaults to `workPage.filters`). */
+  filters?: readonly FilterOptionItem[] | readonly WorkFilterOption[];
+  /** Initially selected filter ID (defaults to `'all'`). */
+  defaultValue?: WorkFilterId | string;
+  /** Accessible label for the `<div role="group">` container. */
+  ariaLabel?: string;
+  'aria-label'?: string;
+  /** Optional ID of the target container holding `[data-filters]` items. */
+  controls?: string;
+  /** CSS selector for filterable items (defaults to `'[data-filters]'`). */
+  targetSelector?: string;
+  /** Optional precomputed counts per filter ID when items are managed externally. */
+  counts?: Readonly<Record<string, number>>;
+  /** Set `false` for non-interactive visual layout specimens. */
+  interactive?: boolean;
+  class?: string;
+  groupClass?: string;
+  id?: string;
+  [key: `data-${string}`]: unknown;
+}
+
+const {
+  filters = workPage.filters,
+  defaultValue = 'all',
+  ariaLabel,
+  'aria-label': ariaLabelAttr,
+  controls,
+  targetSelector = '[data-filters]',
+  counts,
+  interactive = true,
+  class: className,
+  groupClass,
+  id,
+  ...rest
+} = Astro.props;
+
+const resolvedAriaLabel = ariaLabelAttr ?? ariaLabel ?? 'Filter engagements';
+const hasCustomSlot = Astro.slots.has('default');
+
+const containerClasses = ['wo-engagement-filter-container', className]
+  .filter(Boolean)
+  .join(' ');
+
+const groupClasses = ['wo-engagement-filter-group', groupClass]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<div
+  id={id}
+  class={containerClasses}
+  data-engagement-filter-root
+  data-filter-controls={controls}
+  data-filter-target-selector={targetSelector}
+  data-filter-counts={counts ? JSON.stringify(counts) : undefined}
+  data-filter-interactive={interactive ? 'true' : 'false'}
+  {...rest}
+>
+  <div
+    role="group"
+    aria-label={resolvedAriaLabel}
+    class={groupClasses}
+    data-engagement-filter-group
+  >
+    {
+      hasCustomSlot ? (
+        <slot />
+      ) : (
+        filters.map((option) => (
+          <EngagementFilter
+            value={option.id}
+            label={option.label}
+            selected={option.id === defaultValue}
+            aria-controls={controls}
+            data-preview-static={interactive ? undefined : 'true'}
+          />
+        ))
+      )
+    }
+  </div>
+  <div
+    class="wo-engagement-filter__live"
+    aria-live="polite"
+    aria-atomic="true"
+    data-engagement-filter-live
+  ></div>
+</div>
+
+<script>
+  const boundContainers = new WeakSet<HTMLElement>();
+
+  function parseDataFilters(raw: string | null): string[] {
+    if (!raw) return [];
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed: unknown = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.map((entry) => String(entry).trim()).filter(Boolean);
+        }
+      } catch {
+        // Fall through to whitespace/comma token splitting.
+      }
+    }
+    return trimmed
+      .split(/[\s,]+/)
+      .map((token) => token.trim())
+      .filter(Boolean);
+  }
+
+  function parseCountsMap(raw: string | undefined): Record<string, number> | null {
+    if (!raw) return null;
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, number>;
+      }
+    } catch {
+      // Ignore malformed JSON.
+    }
+    return null;
+  }
+
+  function formatEngagementCount(count: number): string {
+    return `Showing ${count} ${count === 1 ? 'engagement' : 'engagements'}`;
+  }
+
+  function resolveFilterItems(
+    container: HTMLElement,
+    selector: string,
+  ): HTMLElement[] {
+    const controlsId = container.dataset.filterControls;
+    const explicitTarget = controlsId ? document.getElementById(controlsId) : null;
+    const localScope = container.closest<HTMLElement>('[data-filter-scope]');
+    const queryRoot = explicitTarget ?? localScope ?? document;
+
+    const candidates = Array.from(queryRoot.querySelectorAll<HTMLElement>(selector));
+    return candidates.filter((el) => {
+      if (el.closest('[data-filter-ignore]')) return false;
+      if (queryRoot === document && el.closest('[data-filter-scope]')) return false;
+      return true;
+    });
+  }
+
+  function applyDomFilter(
+    container: HTMLElement,
+    selectedValue: string,
+  ): { totalCount: number; visibleCount: number; matchedElements: HTMLElement[] } {
+    const selector = container.dataset.filterTargetSelector || '[data-filters]';
+    const items = resolveFilterItems(container, selector);
+    const matchedElements: HTMLElement[] = [];
+
+    items.forEach((item) => {
+      const tokens = parseDataFilters(item.getAttribute('data-filters'));
+      const matches = selectedValue === 'all' || tokens.includes(selectedValue);
+      const hideTarget = item.closest<HTMLElement>('[data-filter-item]') ?? item;
+      hideTarget.hidden = !matches;
+      if (matches) {
+        matchedElements.push(item);
+      }
+    });
+
+    return {
+      totalCount: items.length,
+      visibleCount: matchedElements.length,
+      matchedElements,
+    };
+  }
+
+  function updateLiveRegion(liveEl: HTMLElement | null, message: string): void {
+    if (!liveEl) return;
+    liveEl.replaceChildren(message ? document.createTextNode(message) : '');
+  }
+
+  function initEngagementFilterGroups(): void {
+    const containers = document.querySelectorAll<HTMLElement>(
+      '[data-engagement-filter-root]',
+    );
+
+    containers.forEach((container) => {
+      if (boundContainers.has(container)) return;
+      boundContainers.add(container);
+
+      if (container.dataset.filterInteractive === 'false') return;
+
+      const group = container.querySelector<HTMLElement>(
+        '[data-engagement-filter-group]',
+      );
+      const liveEl = container.querySelector<HTMLElement>(
+        '[data-engagement-filter-live]',
+      );
+      if (!group) return;
+
+      const getGroupButtons = (): HTMLButtonElement[] =>
+        Array.from(
+          group.querySelectorAll<HTMLButtonElement>('button.wo-engagement-filter'),
+        );
+
+      // Apply non-'all' initial selection silently (progressive enhancement keeps all visible by default).
+      const initialActive = getGroupButtons().find(
+        (btn) => btn.getAttribute('aria-pressed') === 'true',
+      );
+      const initialValue = initialActive?.dataset.filter;
+      if (initialValue && initialValue !== 'all') {
+        applyDomFilter(container, initialValue);
+      }
+
+      group.addEventListener('click', (event) => {
+        const target = event.target as Element | null;
+        const button = target?.closest<HTMLButtonElement>(
+          'button.wo-engagement-filter',
+        );
+        if (!button || !group.contains(button)) return;
+
+        if (
+          button.disabled ||
+          button.getAttribute('aria-disabled') === 'true' ||
+          button.getAttribute('data-preview-static') === 'true'
+        ) {
+          return;
+        }
+
+        const buttons = getGroupButtons();
+        const previousActive = buttons.find(
+          (btn) => btn.getAttribute('aria-pressed') === 'true',
+        );
+        const previousValue = previousActive?.dataset.filter ?? null;
+
+        buttons.forEach((btn) => {
+          btn.setAttribute('aria-pressed', btn === button ? 'true' : 'false');
+        });
+
+        if (document.activeElement !== button) {
+          button.focus({ preventScroll: true });
+        }
+
+        const labelText = (button.textContent ?? '').trim();
+        const selectedValue =
+          button.dataset.filter ?? labelText.toLowerCase().replace(/\s+/g, '-');
+
+        const { totalCount, visibleCount, matchedElements } = applyDomFilter(
+          container,
+          selectedValue,
+        );
+
+        const countsMap = parseCountsMap(container.dataset.filterCounts);
+        let announcement = '';
+        if (totalCount > 0) {
+          announcement = formatEngagementCount(visibleCount);
+        } else if (
+          countsMap &&
+          typeof countsMap[selectedValue] === 'number'
+        ) {
+          announcement = formatEngagementCount(countsMap[selectedValue]);
+        }
+
+        let dispatched = false;
+        const announce = (customMessage: string): void => {
+          announcement = customMessage;
+          if (dispatched) {
+            updateLiveRegion(liveEl, customMessage);
+          }
+        };
+
+        group.dispatchEvent(
+          new CustomEvent('engagement-filter:change', {
+            bubbles: true,
+            composed: true,
+            detail: {
+              value: selectedValue,
+              label: labelText,
+              previousValue,
+              visibleCount,
+              totalCount,
+              matchedElements,
+              button,
+              announce,
+            },
+          }),
+        );
+        dispatched = true;
+
+        updateLiveRegion(liveEl, announcement);
+      });
+    });
+  }
+
+  initEngagementFilterGroups();
+  document.addEventListener('astro:page-load', initEngagementFilterGroups);
+</script>
+
+<style>
+  .wo-engagement-filter-container {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+    padding-bottom: var(--space-24, 24px);
+  }
+
+  .wo-engagement-filter-group {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: var(--space-4, 4px);
+    column-gap: var(--space-16, 16px);
+    overflow: visible;
+  }
+
+  .wo-engagement-filter__live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

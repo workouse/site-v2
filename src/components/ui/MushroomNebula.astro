@@ -1,0 +1,186 @@
+---
+/**
+ * MushroomNebula — decorative editorial studio signature illustration
+ * (lilac/indigo mushroom with pigment ribbons and an amber dot), displayed
+ * alongside the "The people behind the engineering." heading.
+ * Not the Workouse logo; strictly decorative (aria-hidden, non-focusable, no title).
+ */
+export type MushroomNebulaSize = 'responsive' | 'desktop' | 'mobile';
+
+export interface Props {
+  size?: MushroomNebulaSize;
+  class?: string;
+  id?: string;
+  style?: string;
+  [key: `data-${string}`]: unknown;
+}
+
+const {
+  size = 'responsive',
+  class: className,
+  ...rawRest
+} = Astro.props;
+
+// Decorative-only contract: strip any accidentally passed naming/focus attributes.
+const rest = { ...rawRest } as Record<string, unknown>;
+delete rest.title;
+delete rest['aria-label'];
+delete rest['aria-labelledby'];
+delete rest['aria-hidden'];
+delete rest.focusable;
+delete rest.role;
+
+const intrinsicWidth = size === 'mobile' ? 100 : 140;
+const intrinsicHeight = size === 'mobile' ? 89 : 124;
+
+const classes = ['wo-mushroom-nebula', `wo-mushroom-nebula--${size}`, className]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 180 160"
+  width={intrinsicWidth}
+  height={intrinsicHeight}
+  preserveAspectRatio="xMidYMid meet"
+  fill="none"
+  class={classes}
+  {...rest}
+  aria-hidden="true"
+  focusable="false"
+>
+  <g transform="translate(71 37)" data-part="pigment-ribbons">
+    <path
+      d="M0 35C13 19 29 28 43 20C56 13 55 2 73 0C61 5 64 18 49 26C37 33 22 29 14 39L0 35Z"
+      fill="#C2A4C7"
+      fill-opacity="0.24"
+    />
+    <path
+      d="M17 33C34 28 49 37 62 28C69 23 71 16 78 14C73 19 74 26 66 32C52 43 37 34 29 41L17 33Z"
+      fill="#53658E"
+      fill-opacity="0.19"
+    />
+    <path
+      d="M9 29C20 20 32 26 45 18C53 13 54 8 59 5C54 12 55 18 45 24C33 31 23 27 16 36L9 29Z"
+      fill="#C2A4C7"
+      fill-opacity="0.43"
+    />
+    <path
+      d="M21 31C32 27 43 30 53 24C60 20 61 14 64 11"
+      stroke="#24354F"
+      stroke-opacity="0.65"
+      stroke-width="0.55"
+      stroke-linecap="round"
+    />
+    <path
+      d="M37 35C48 36 57 38 66 33"
+      stroke="#24354F"
+      stroke-opacity="0.45"
+      stroke-width="0.45"
+      stroke-linecap="round"
+    />
+  </g>
+  <g transform="translate(68.54 82.65)" data-part="mushroom-stem">
+    <path
+      d="M5.45906 0.35C6.45906 12.35 4.45906 24.35 0.45906 35.35C-0.54094 39.35 5.45906 42.35 13.4591 41.35C17.4591 41.35 19.4591 39.35 17.4591 36.35C12.4591 27.35 14.4591 13.35 16.4591 0.35H5.45906Z"
+      fill="#C2A4C7"
+      fill-opacity="0.23"
+      stroke="#24354F"
+      stroke-width="0.7"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M11.4591 4.35C9.45906 20.35 8.45906 31.35 12.4591 40.35C15.4591 40.35 18.4591 39.35 16.4591 36.35C12.4591 27.35 14.4591 13.35 16.4591 3.35L11.4591 4.35Z"
+      fill="#53658E"
+      fill-opacity="0.15"
+    />
+    <path
+      d="M8.45906 11.35C8.45906 20.35 6.45906 28.35 4.45906 34.35M11.4591 25.35C10.4591 30.35 11.4591 35.35 12.4591 37.35"
+      stroke="#24354F"
+      stroke-opacity="0.65"
+      stroke-width="0.45"
+      stroke-linecap="round"
+    />
+  </g>
+  <g transform="translate(37.85 60.08)" data-part="mushroom-cap">
+    <path
+      d="M1.1547 23.9214C7.1547 17.9214 13.1547 7.9214 25.1547 2.9214C35.1547 -1.0786 42.1547 -0.0786002 51.1547 3.9214C59.1547 7.9214 68.1547 9.9214 80.1547 6.9214C72.1547 12.9214 65.1547 16.9214 61.1547 22.9214C57.1547 28.9214 47.1547 31.9214 35.1547 31.9214C21.1547 31.9214 9.1547 28.9214 1.1547 26.9214C-0.845299 25.9214 0.154701 24.9214 1.1547 23.9214Z"
+      fill="#C2A4C7"
+      fill-opacity="0.66"
+    />
+    <path
+      d="M2.1547 24.9214C16.1547 22.9214 26.1547 20.9214 40.1547 22.9214C53.1547 25.9214 60.1547 19.9214 66.1547 15.9214C62.1547 23.9214 56.1547 28.9214 44.1547 30.9214C28.1547 33.9214 12.1547 28.9214 2.1547 26.9214V24.9214Z"
+      fill="#53658E"
+      fill-opacity="0.28"
+    />
+    <path
+      d="M1.1547 25.9214C13.1547 21.9214 25.1547 22.9214 37.1547 24.9214C48.1547 27.9214 59.1547 22.9214 64.1547 19.9214C59.1547 27.9214 48.1547 32.9214 35.1547 31.9214C20.1547 31.9214 10.1547 28.9214 1.1547 25.9214Z"
+      fill="#FAF8F4"
+      fill-opacity="0.7"
+      stroke="#24354F"
+      stroke-width="0.65"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M1.1547 25.9214C8.1547 17.9214 13.1547 7.9214 25.1547 2.9214C35.1547 -1.0786 42.1547 -0.0786002 51.1547 3.9214C60.1547 7.9214 67.1547 9.9214 77.1547 7.9214"
+      stroke="#24354F"
+      stroke-width="0.75"
+      stroke-linecap="round"
+    />
+    <path
+      d="M9.1547 25.9214L31.1547 28.9214M16.1547 24.9214L35.1547 28.9214M24.1547 24.9214L38.1547 28.9214M33.1547 25.9214L40.1547 29.9214M47.1547 26.9214L43.1547 29.9214M54.1547 24.9214L46.1547 29.9214M60.1547 22.9214L51.1547 28.9214"
+      stroke="#24354F"
+      stroke-opacity="0.76"
+      stroke-width="0.45"
+      stroke-linecap="round"
+    />
+    <path
+      d="M11.1547 17.9214C16.1547 11.9214 20.1547 7.9214 26.1547 5.9214M16.1547 17.9214C20.1547 12.9214 23.1547 10.9214 27.1547 8.9214M32.1547 3.9214C38.1547 2.9214 44.1547 4.9214 49.1547 6.9214"
+      stroke="#24354F"
+      stroke-opacity="0.53"
+      stroke-width="0.45"
+      stroke-linecap="round"
+    />
+  </g>
+  <g transform="translate(122.26 76.26)" data-part="amber-pigment">
+    <path
+      d="M0.75 0.75C1.75 -0.25 3.75 -0.25 3.75 0.75C3.75 2.75 1.75 3.75 0.75 2.75C-0.25 2.75 -0.25 1.75 0.75 0.75Z"
+      fill="#E8BC57"
+    />
+  </g>
+</svg>
+
+<style>
+  .wo-mushroom-nebula {
+    display: block;
+    flex-shrink: 0;
+    overflow: visible;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .wo-mushroom-nebula--responsive,
+  .wo-mushroom-nebula--mobile {
+    width: 100px;
+    height: 89px;
+  }
+
+  .wo-mushroom-nebula--desktop {
+    width: 140px;
+    height: 124px;
+  }
+
+  @media (min-width: 768px) {
+    .wo-mushroom-nebula--responsive:not([data-preview-viewport='390']) {
+      width: 140px;
+      height: 124px;
+    }
+  }
+
+  .wo-mushroom-nebula--responsive[data-preview-viewport='768'],
+  .wo-mushroom-nebula--responsive[data-preview-viewport='1440'] {
+    width: 140px;
+    height: 124px;
+  }
+</style>

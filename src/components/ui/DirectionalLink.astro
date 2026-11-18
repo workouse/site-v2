@@ -1,0 +1,177 @@
+---
+export type DirectionalLinkArrow = '→' | '↗';
+export type DirectionalLinkTone = 'ink' | 'ivory';
+
+export interface Props {
+  href?: string;
+  label?: string;
+  arrow?: DirectionalLinkArrow;
+  external?: boolean;
+  tone?: DirectionalLinkTone;
+  disabled?: boolean;
+  class?: string;
+  id?: string;
+  title?: string;
+  target?: string;
+  rel?: string;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-current'?: 'page' | 'step' | 'location' | 'date' | 'time' | 'true' | 'false' | boolean;
+  [key: `data-${string}`]: unknown;
+  [key: `aria-${string}`]: unknown;
+}
+
+const {
+  href,
+  label,
+  arrow = '→',
+  external = false,
+  tone = 'ink',
+  disabled = false,
+  class: className,
+  target,
+  rel,
+  'aria-label': rawAriaLabel,
+  ...rest
+} = Astro.props;
+
+const isUnavailable = disabled || typeof href !== 'string' || href.length === 0;
+
+const computedTarget = external ? '_blank' : target;
+const computedRel = external
+  ? Array.from(new Set([...(rel ? rel.split(/\s+/) : []), 'noopener', 'noreferrer']))
+      .filter(Boolean)
+      .join(' ')
+  : rel;
+
+const computedAriaLabel =
+  external &&
+  typeof rawAriaLabel === 'string' &&
+  !rawAriaLabel.toLowerCase().includes('opens in a new tab')
+    ? `${rawAriaLabel} (opens in a new tab)`
+    : rawAriaLabel;
+
+const classes = ['wo-dir-link', `wo-dir-link--${tone}`, className]
+  .filter(Boolean)
+  .join(' ');
+---
+
+{
+  isUnavailable ? (
+    <a
+      role="link"
+      aria-disabled="true"
+      tabindex="-1"
+      aria-label={rawAriaLabel}
+      class={classes}
+      {...rest}
+    >
+      <span class="wo-dir-link__label"><slot>{label}</slot></span><span class="wo-dir-link__arrow" aria-hidden="true">{arrow}</span>
+    </a>
+  ) : (
+    <a
+      href={href}
+      target={computedTarget}
+      rel={computedRel}
+      aria-label={computedAriaLabel}
+      class={classes}
+      {...rest}
+    >
+      <span class="wo-dir-link__label"><slot>{label}</slot></span>{external && !computedAriaLabel && <span class="wo-dir-link__sr-only"> (opens in a new tab)</span>}<span class="wo-dir-link__arrow" aria-hidden="true">{arrow}</span>
+    </a>
+  )
+}
+
+<style>
+  .wo-dir-link {
+    position: relative;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-12, 12px);
+    padding: var(--space-12, 12px) var(--space-4, 4px);
+    min-height: 44px;
+    box-sizing: border-box;
+    border-radius: var(--radius-2, 2px);
+    text-decoration: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+  }
+
+  .wo-dir-link--ink {
+    color: var(--text-primary, #24354f);
+  }
+
+  .wo-dir-link--ivory {
+    color: var(--surface-page, #faf8f4);
+  }
+
+  .wo-dir-link__label {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 1.55;
+    font-variation-settings: var(--font-sans-opsz);
+    color: inherit;
+    text-decoration-line: underline;
+    text-underline-position: from-font;
+    text-decoration-thickness: from-font;
+    text-decoration-color: transparent;
+    transition: text-decoration-color var(--dur-fast, 140ms) var(--ease-out, ease-out);
+  }
+
+  .wo-dir-link__arrow {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 1.55;
+    font-variation-settings: var(--font-sans-opsz);
+    color: inherit;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+
+  .wo-dir-link__sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Hover & Active — underline label only, arrow stays undecorated, zero layout shift */
+  .wo-dir-link:not([aria-disabled='true']):hover .wo-dir-link__label,
+  .wo-dir-link:not([aria-disabled='true']):active .wo-dir-link__label,
+  .wo-dir-link[data-preview-state='hover'] .wo-dir-link__label,
+  .wo-dir-link[data-preview-state='active'] .wo-dir-link__label {
+    text-decoration-line: underline;
+    text-underline-position: from-font;
+    text-decoration-thickness: from-font;
+    text-decoration-color: currentColor;
+  }
+
+  /* Focus-visible */
+  .wo-dir-link--ink:focus-visible,
+  .wo-dir-link--ink[data-preview-state='focus'] {
+    outline: var(--focus-width, 2px) solid var(--focus-color, #53658e);
+    outline-offset: var(--focus-offset, 3px);
+  }
+
+  .wo-dir-link--ivory:focus-visible,
+  .wo-dir-link--ivory[data-preview-state='focus'] {
+    outline: var(--focus-width, 2px) solid var(--surface-page, #faf8f4);
+    outline-offset: var(--focus-offset, 3px);
+  }
+
+  /* Disabled */
+  .wo-dir-link[aria-disabled='true'] {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: default;
+  }
+</style>

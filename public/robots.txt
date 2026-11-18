@@ -3,6 +3,8 @@
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api/
 
 # AI Crawlers - allow indexing, disallow training
 User-agent: GPTBot
@@ -21,3 +23,5 @@ User-agent: ClaudeBot
 Disallow: /
 
 Sitemap: https://workouse.com/sitemap.xml
+Sitemap: https://workouse.com/sitemap-index.xml
+

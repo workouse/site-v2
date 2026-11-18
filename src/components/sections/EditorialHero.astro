@@ -1,0 +1,128 @@
+---
+/**
+ * EditorialHero — homepage section 02. Centered editorial hero over the
+ * Atmosphere pigment background. Contains the page's only <h1>.
+ *
+ * The H1 size is fluid: 60px at 390px viewport, 112px at 1440px, with the
+ * tracking expressed in em so it scales with the heading (-0.02em).
+ * Atmosphere is absolutely positioned behind content (z-index -1 inside this
+ * section's isolation context), so hero text is never moved by the effect.
+ * No entrance animation is applied; all content renders without JS.
+ */
+import Atmosphere from '../ui/Atmosphere.astro';
+import Button from '../ui/Button.astro';
+import DirectionalLink from '../ui/DirectionalLink.astro';
+import { hero, resolveLink } from '../../data/site';
+
+const [headlineFirst, headlineSecond] = hero.headingLines;
+const primary = resolveLink('booking', hero.primaryCta.label);
+const secondary = resolveLink(hero.secondaryCta.ref, hero.secondaryCta.label);
+---
+
+<section class="editorial-hero">
+  <Atmosphere />
+  <p class="editorial-hero__eyebrow">{hero.eyebrow}</p>
+  <h1 class="editorial-hero__title">
+    {headlineFirst}<br />
+    {headlineSecond}
+  </h1>
+  <p class="editorial-hero__lead">{hero.body}</p>
+  <div class="editorial-hero__actions">
+    <Button kind="primary" href={primary.href} external label={hero.primaryCta.label} />
+    <DirectionalLink href={secondary.href} label={hero.secondaryCta.label} arrow="→" />
+  </div>
+  <p class="editorial-hero__footnote">{hero.footnote}</p>
+</section>
+
+<style>
+  .editorial-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 64px 24px;
+    background-color: #faf8f4;
+    text-align: center;
+  }
+
+  .editorial-hero__eyebrow,
+  .editorial-hero__footnote {
+    margin: 0;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .editorial-hero__eyebrow {
+    letter-spacing: 0.14em;
+    color: #24354f;
+  }
+
+  .editorial-hero__footnote {
+    letter-spacing: 0.08em;
+    color: #53658e;
+    white-space: pre-wrap;
+  }
+
+  .editorial-hero__title {
+    margin: 0;
+    max-width: 100%;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(60px, calc(60px + (100vw - 390px) * 52 / 1050), 112px);
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    color: #24354f;
+    overflow-wrap: break-word;
+  }
+
+  .editorial-hero__lead {
+    margin: 0;
+    max-width: 620px;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 1.55;
+    color: #5b6574;
+  }
+
+  .editorial-hero__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  @media (min-width: 768px) {
+    .editorial-hero {
+      padding: 88px 40px;
+    }
+
+    .editorial-hero__actions {
+      flex-direction: row;
+      gap: 24px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .editorial-hero {
+      padding: 88px 96px;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .editorial-hero__lead {
+      font-size: 16px;
+    }
+  }
+</style>

@@ -1,0 +1,246 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import BlogCard from '../../components/BlogCard.astro';
+import LanguageSwitch from '../../components/LanguageSwitch.astro';
+import NewsletterSubscribe from '../../components/NewsletterSubscribe.astro';
+import { getPostsByLang } from '../../lib/blog';
+
+export const prerender = true;
+
+const posts = await getPostsByLang('en');
+
+// Extract unique tags and count occurrences
+const tagCounts = posts.reduce((acc, p) => {
+  p.data.tags.forEach((tag) => {
+    acc[tag] = (acc[tag] || 0) + 1;
+  });
+  return acc;
+}, {} as Record<string, number>);
+
+const allTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
+---
+
+<Layout
+  title="Blog & Engineering Insights | Workouse"
+  description="Technical insights, system architecture patterns, and production engineering practices from Workouse."
+  lang="en"
+>
+  <Fragment slot="head">
+    <link rel="alternate" hreflang="en" href="https://workouse.com/blog" />
+    <link rel="alternate" hreflang="tr" href="https://workouse.com/blog/tr" />
+    <link rel="alternate" hreflang="x-default" href="https://workouse.com/blog" />
+  </Fragment>
+
+  <Header />
+
+  <main id="main-content" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-10 border-b border-zinc-200 dark:border-zinc-900 mb-12">
+      <div class="space-y-3 max-w-2xl">
+        <div class="inline-flex items-center gap-2 text-xs font-mono font-bold tracking-widest text-brand-blue dark:text-brand-yellow uppercase">
+          <span>// ENGINEERING JOURNAL</span>
+        </div>
+        <h1 class="font-display text-4xl sm:text-5xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+          Technical Blog
+        </h1>
+        <p class="text-zinc-600 dark:text-zinc-400 text-base sm:text-lg leading-relaxed">
+          Deep dives into software architecture, edge performance, Haskell, Rust, and building resilient systems for scale.
+        </p>
+      </div>
+
+      <!-- Language Selector -->
+      <div class="shrink-0">
+        <LanguageSwitch currentLang="en" targetPathEn="/blog" targetPathTr="/blog/tr" />
+      </div>
+    </div>
+
+    <!-- Tags Filter Bar -->
+    {allTags.length > 0 && (
+      <div class="flex flex-wrap items-center gap-2 mb-10" id="tag-filter-container">
+        <span class="text-xs font-mono text-zinc-600 dark:text-zinc-500 uppercase mr-1">Topics:</span>
+        <button
+          type="button"
+          data-tag="all"
+          class="tag-filter-btn active text-xs font-mono px-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer border font-semibold bg-brand-yellow text-zinc-950 border-brand-yellow shadow-[0_0_12px_rgba(254,197,0,0.2)]"
+          aria-pressed="true"
+        >
+          ⚡ All <span class="ml-1 opacity-75 font-normal">({posts.length})</span>
+        </button>
+        {allTags.map((tag) => (
+          <button
+            type="button"
+            data-tag={tag.toLowerCase()}
+            class="tag-filter-btn text-xs font-mono px-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer border bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-zinc-50 hover:border-zinc-300 dark:hover:border-zinc-700"
+            aria-pressed="false"
+          >
+            #{tag} <span class="ml-1 text-[11px] opacity-60">({tagCounts[tag]})</span>
+          </button>
+        ))}
+      </div>
+    )}
+
+    <!-- Posts Grid -->
+    {posts.length > 0 ? (
+      <div id="posts-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+        {posts.map((post) => (
+          <BlogCard post={post} lang="en" />
+        ))}
+      </div>
+    ) : (
+      <div class="text-center py-20 glow-card rounded-2xl p-8 mb-16">
+        <p class="text-zinc-400 text-base">No blog posts found yet. Check back soon!</p>
+      </div>
+    )}
+
+    <!-- Filter Empty State -->
+    <div id="no-tag-results" class="hidden text-center py-16 glow-card rounded-2xl p-8 mb-16">
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 mb-4">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <h3 class="font-display text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">No matching articles</h3>
+      <p class="text-zinc-600 dark:text-zinc-400 text-sm max-w-md mx-auto mb-6">
+        No articles found for topic <span id="active-tag-name" class="font-mono font-bold text-brand-blue dark:text-brand-yellow"></span>.
+      </p>
+      <button
+        type="button"
+        id="clear-tag-filter"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono font-semibold uppercase tracking-wider bg-brand-yellow text-zinc-950 hover:opacity-90 transition duration-200"
+      >
+        <span>Show All Articles</span>
+      </button>
+    </div>
+
+    <!-- Newsletter Subscription Section -->
+    <NewsletterSubscribe lang="en" />
+  </main>
+
+  <Footer />
+</Layout>
+
+<script>
+  function setupTagFilter() {
+    const filterButtons = document.querySelectorAll<HTMLButtonElement>('.tag-filter-btn');
+    const postCards = document.querySelectorAll<HTMLElement>('.blog-post-card');
+    const noResults = document.getElementById('no-tag-results');
+    const activeTagName = document.getElementById('active-tag-name');
+    const clearBtn = document.getElementById('clear-tag-filter');
+
+    if (!filterButtons.length || !postCards.length) return;
+
+    function applyFilter(selectedTag: string, updateUrl = true) {
+      const normalizedTag = (selectedTag || 'all').toLowerCase().trim();
+      let matchCount = 0;
+
+      postCards.forEach((card) => {
+        const rawTags = card.getAttribute('data-tags') || '[]';
+        let tags: string[] = [];
+        try {
+          tags = JSON.parse(rawTags);
+        } catch {
+          tags = rawTags.split(',').map((t) => t.trim().toLowerCase());
+        }
+
+        if (normalizedTag === 'all' || tags.includes(normalizedTag)) {
+          card.classList.remove('hidden');
+          matchCount++;
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      // Update button styling
+      filterButtons.forEach((btn) => {
+        const btnTag = (btn.getAttribute('data-tag') || '').toLowerCase();
+        const isActive = (normalizedTag === 'all' && btnTag === 'all') || (btnTag === normalizedTag);
+
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        if (isActive) {
+          btn.className = 'tag-filter-btn active text-xs font-mono px-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer border font-semibold bg-brand-yellow text-zinc-950 border-brand-yellow shadow-[0_0_12px_rgba(254,197,0,0.2)]';
+        } else {
+          btn.className = 'tag-filter-btn text-xs font-mono px-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer border bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-zinc-50 hover:border-zinc-300 dark:hover:border-zinc-700';
+        }
+      });
+
+      // Show / hide no results state
+      if (noResults) {
+        if (matchCount === 0) {
+          noResults.classList.remove('hidden');
+          if (activeTagName) activeTagName.textContent = `#${normalizedTag}`;
+        } else {
+          noResults.classList.add('hidden');
+        }
+      }
+
+      // Sync URL
+      if (updateUrl) {
+        const url = new URL(window.location.href);
+        if (normalizedTag === 'all') {
+          url.searchParams.delete('tag');
+        } else {
+          url.searchParams.set('tag', normalizedTag);
+        }
+        window.history.pushState({ tag: normalizedTag }, '', url.toString());
+      }
+    }
+
+    // Button click listeners
+    filterButtons.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tag = btn.getAttribute('data-tag') || 'all';
+        const isCurrentlyActive = btn.getAttribute('aria-pressed') === 'true';
+        if (isCurrentlyActive && tag !== 'all') {
+          applyFilter('all');
+        } else {
+          applyFilter(tag);
+        }
+      });
+    });
+
+    // Card tag click listener (delegate to document for instant filtering on page)
+    document.addEventListener('click', (e) => {
+      const target = (e.target as HTMLElement).closest('[data-tag-link]');
+      if (target) {
+        const tag = target.getAttribute('data-tag-link');
+        if (tag) {
+          e.preventDefault();
+          applyFilter(tag);
+          const filterContainer = document.getElementById('tag-filter-container');
+          if (filterContainer) {
+            filterContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => applyFilter('all'));
+    }
+
+    // Popstate handling (back/forward navigation)
+    window.addEventListener('popstate', () => {
+      const params = new URLSearchParams(window.location.search);
+      const tag = params.get('tag') || 'all';
+      applyFilter(tag, false);
+    });
+
+    // Initial load from URL
+    const initialParams = new URLSearchParams(window.location.search);
+    const initialTag = initialParams.get('tag');
+    if (initialTag) {
+      applyFilter(initialTag, false);
+    }
+  }
+
+  // Execute on load & page transitions
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupTagFilter);
+  } else {
+    setupTagFilter();
+  }
+  document.addEventListener('astro:page-load', setupTagFilter);
+</script>

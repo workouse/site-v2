@@ -1,9 +1,9 @@
-# Cloudflare Pages redirects
+# Cloudflare Workers & Pages redirects
 # https://developers.cloudflare.com/pages/configuration/redirects/
 
-# Force HTTPS (handled by Cloudflare, but listed for clarity)
-# http://workouse.com/* https://workouse.com/:splat 301
-# http://www.workouse.com/* https://workouse.com/:splat 301
+# Redirect legacy /sitemap.xml requests to auto-generated sitemap index
+/sitemap.xml /sitemap-index.xml 301
 
-# Redirect www to apex domain
-https://www.workouse.com/* https://workouse.com/:splat 301
+# Note: www -> apex domain redirect is handled natively in worker entry
+
+

@@ -1,0 +1,217 @@
+---
+export type TextLinkSize = 14 | 13 | 12 | 11;
+export type TextLinkTone = 'ink' | 'ivory' | 'link';
+
+export interface Props {
+  href?: string;
+  label?: string;
+  size?: TextLinkSize;
+  tone?: TextLinkTone;
+  external?: boolean;
+  current?: boolean;
+  disabled?: boolean;
+  class?: string;
+  id?: string;
+  title?: string;
+  target?: string;
+  rel?: string;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-current'?: 'page' | 'step' | 'location' | 'date' | 'time' | 'true' | 'false' | boolean;
+  [key: `data-${string}`]: unknown;
+  [key: `aria-${string}`]: unknown;
+}
+
+const {
+  href,
+  label,
+  size = 14,
+  tone = 'ink',
+  external = false,
+  current = false,
+  disabled = false,
+  class: className,
+  target,
+  rel,
+  'aria-label': rawAriaLabel,
+  'aria-current': rawAriaCurrent,
+  ...rest
+} = Astro.props;
+
+const isUnavailable = disabled || typeof href !== 'string' || href.length === 0;
+
+const computedTarget = external ? '_blank' : target;
+const computedRel = external
+  ? Array.from(new Set([...(rel ? rel.split(/\s+/) : []), 'noopener', 'noreferrer']))
+      .filter(Boolean)
+      .join(' ')
+  : rel;
+
+const computedAriaCurrent = current ? 'page' : rawAriaCurrent;
+
+const computedAriaLabel =
+  external &&
+  typeof rawAriaLabel === 'string' &&
+  !rawAriaLabel.toLowerCase().includes('opens in a new tab')
+    ? `${rawAriaLabel} (opens in a new tab)`
+    : rawAriaLabel;
+
+const hasSlot = Astro.slots.has('default');
+const slotHtml = hasSlot ? await Astro.slots.render('default') : '';
+const slotArrowMatch =
+  hasSlot && !slotHtml.includes('<') ? slotHtml.match(/^([\s\S]*?\S)(\s*[↗→])(\s*)$/) : null;
+const labelArrowMatch =
+  !hasSlot && typeof label === 'string' ? label.match(/^([\s\S]*?\S)(\s*[↗→])(\s*)$/) : null;
+
+const classes = [
+  'wo-text-link',
+  `wo-text-link--${size}`,
+  `wo-text-link--${tone}`,
+  current ? 'wo-text-link--current' : null,
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+{
+  isUnavailable ? (
+    <a
+      role="link"
+      aria-disabled="true"
+      tabindex="-1"
+      aria-label={rawAriaLabel}
+      class={classes}
+      {...rest}
+    >
+      <span class="wo-text-link__label">{hasSlot ? (slotArrowMatch ? <><Fragment set:html={slotArrowMatch[1]} /><span aria-hidden="true">{slotArrowMatch[2]}</span></> : <Fragment set:html={slotHtml} />) : labelArrowMatch ? <>{labelArrowMatch[1]}<span aria-hidden="true">{labelArrowMatch[2]}</span></> : label}</span>
+    </a>
+  ) : (
+    <a
+      href={href}
+      target={computedTarget}
+      rel={computedRel}
+      aria-current={computedAriaCurrent}
+      aria-label={computedAriaLabel}
+      class={classes}
+      {...rest}
+    >
+      <span class="wo-text-link__label">{hasSlot ? (slotArrowMatch ? <><Fragment set:html={slotArrowMatch[1]} /><span aria-hidden="true">{slotArrowMatch[2]}</span></> : <Fragment set:html={slotHtml} />) : labelArrowMatch ? <>{labelArrowMatch[1]}<span aria-hidden="true">{labelArrowMatch[2]}</span></> : label}</span>{external && !computedAriaLabel && <span class="wo-text-link__sr-only"> (opens in a new tab)</span>}
+    </a>
+  )
+}
+
+<style>
+  .wo-text-link {
+    position: relative;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    min-height: 44px;
+    padding: var(--space-12, 12px) 0;
+    gap: var(--space-8, 8px);
+    box-sizing: border-box;
+    border-radius: var(--radius-2, 2px);
+    text-decoration: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.55;
+    white-space: nowrap;
+    font-variation-settings: var(--font-sans-opsz);
+  }
+
+  /* Sizes */
+  .wo-text-link--14 {
+    font-size: 14px;
+  }
+
+  .wo-text-link--13 {
+    font-size: 13px;
+  }
+
+  .wo-text-link--12 {
+    font-size: 12px;
+  }
+
+  .wo-text-link--11 {
+    font-size: 11px;
+  }
+
+  /* Tones */
+  .wo-text-link--ink {
+    color: var(--text-primary, #24354f);
+  }
+
+  .wo-text-link--ivory {
+    color: var(--surface-page, #faf8f4);
+  }
+
+  .wo-text-link--link {
+    color: var(--text-link, #53658e);
+  }
+
+  /* Active / current page nav item */
+  .wo-text-link--current {
+    color: var(--text-link, #53658e);
+  }
+
+  .wo-text-link__label {
+    font-family: inherit;
+    font-weight: 400;
+    font-size: inherit;
+    line-height: 1.55;
+    white-space: nowrap;
+    font-variation-settings: var(--font-sans-opsz);
+    color: inherit;
+    text-decoration-line: underline;
+    text-underline-position: from-font;
+    text-decoration-thickness: from-font;
+    text-decoration-color: transparent;
+    transition: text-decoration-color var(--dur-fast, 140ms) var(--ease-out, ease-out);
+  }
+
+  .wo-text-link__sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Hover, Active & Current — underline with zero layout shift */
+  .wo-text-link:not([aria-disabled='true']):hover .wo-text-link__label,
+  .wo-text-link:not([aria-disabled='true']):active .wo-text-link__label,
+  .wo-text-link[data-preview-state='hover'] .wo-text-link__label,
+  .wo-text-link[data-preview-state='active'] .wo-text-link__label,
+  .wo-text-link--current .wo-text-link__label {
+    text-decoration-line: underline;
+    text-underline-position: from-font;
+    text-decoration-thickness: from-font;
+    text-decoration-color: currentColor;
+  }
+
+  /* Focus-visible */
+  .wo-text-link:focus-visible,
+  .wo-text-link[data-preview-state='focus'] {
+    outline: var(--focus-width, 2px) solid var(--focus-color, #53658e);
+    outline-offset: var(--focus-offset, 3px);
+  }
+
+  .wo-text-link--ivory:focus-visible,
+  .wo-text-link--ivory[data-preview-state='focus'] {
+    outline: var(--focus-width, 2px) solid var(--surface-page, #faf8f4);
+    outline-offset: var(--focus-offset, 3px);
+  }
+
+  /* Disabled */
+  .wo-text-link[aria-disabled='true'] {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: default;
+  }
+</style>

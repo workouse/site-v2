@@ -1,0 +1,289 @@
+---
+import type { DistributedWebDiagnostics } from '../lib/types';
+
+interface Props {
+  distributed?: DistributedWebDiagnostics;
+}
+
+const { distributed } = Astro.props;
+
+if (!distributed) {
+  return null;
+}
+
+const verifications = [
+  {
+    name: 'Google Search Console',
+    detected: distributed.hasGoogleSiteVerification,
+    detail: distributed.googleVerificationToken ? `Token: ${distributed.googleVerificationToken.substring(0, 16)}...` : 'google-site-verification meta tag',
+    badge: 'Search Console',
+  },
+  {
+    name: 'Meta Domain Verification',
+    detected: distributed.hasMetaDomainVerification,
+    detail: 'facebook-domain-verification meta tag',
+    badge: 'Facebook / Meta',
+  },
+  {
+    name: 'Bing Webmaster Tools',
+    detected: distributed.hasBingVerification,
+    detail: 'msvalidate.01 meta tag',
+    badge: 'Microsoft Bing',
+  },
+  {
+    name: 'Yandex & Pinterest Verification',
+    detected: distributed.hasYandexVerification || distributed.hasPinterestVerification,
+    detail: distributed.hasYandexVerification ? 'Yandex verified' : distributed.hasPinterestVerification ? 'Pinterest domain verified' : 'No Yandex/Pinterest meta tags',
+    badge: 'Regional & Social',
+  },
+];
+
+const pixels = [
+  {
+    name: 'Google Analytics 4 / GTM',
+    detected: distributed.hasGoogleAnalyticsOrGtm,
+    detail: distributed.gtmOrGaId ? `Container/Property ID: ${distributed.gtmOrGaId}` : 'gtag.js / gtm.js script tag',
+    badge: 'Google Tag',
+  },
+  {
+    name: 'Meta / Facebook Pixel',
+    detected: distributed.hasMetaPixel,
+    detail: 'fbevents.js / fbq("init") tracking script',
+    badge: 'Meta Ads',
+  },
+  {
+    name: 'TikTok Pixel',
+    detected: distributed.hasTikTokPixel,
+    detail: 'analytics.tiktok.com / ttq.load script',
+    badge: 'TikTok Ads',
+  },
+  {
+    name: 'LinkedIn Insight Tag',
+    detected: distributed.hasLinkedInInsight,
+    detail: 'snap.licdn.com analytics script',
+    badge: 'B2B Marketing',
+  },
+];
+
+const decentralized = [
+  {
+    name: 'Nostr Identity (NIP-05)',
+    detected: distributed.hasNostrJson,
+    detail: '/.well-known/nostr.json cryptographic identity provider',
+    badge: 'Nostr Protocol',
+  },
+  {
+    name: 'AT Protocol (Bluesky Handle)',
+    detected: distributed.hasAtprotoDid,
+    detail: distributed.atprotoDidValue ? `DID: ${distributed.atprotoDidValue}` : '/.well-known/atproto-did or meta tag',
+    badge: 'Bluesky / ATProto',
+  },
+  {
+    name: 'ActivityPub / Fediverse',
+    detected: distributed.hasFediverseLink,
+    detail: distributed.fediverseHandle ? `Verified Profile Link: ${distributed.fediverseHandle}` : '<link rel="me"> / Webfinger verification',
+    badge: 'Mastodon / Fediverse',
+  },
+  {
+    name: 'Matrix Protocol Discovery',
+    detected: distributed.hasMatrixServer,
+    detail: '/.well-known/matrix/client discovery endpoint',
+    badge: 'Matrix Chat',
+  },
+];
+
+const openWeb = [
+  {
+    name: 'RSS / Atom Syndication Feed',
+    detected: distributed.hasRssFeed,
+    detail: distributed.rssFeedUrl ? `Feed URL: ${distributed.rssFeedUrl}` : '<link rel="alternate" type="application/rss+xml">',
+    badge: 'RSS Reader Ready',
+  },
+  {
+    name: 'Webmention Endpoint',
+    detected: distributed.hasWebmention,
+    detail: '<link rel="webmention"> IndieWeb cross-site comment signal',
+    badge: 'IndieWeb',
+  },
+  {
+    name: 'AI Agent Context (`/llms.txt`)',
+    detected: distributed.hasLlmsTxt,
+    detail: '/llms.txt structured context file for AI crawlers',
+    badge: 'AI Ready',
+  },
+  {
+    name: 'Security Contact (`security.txt`)',
+    detected: distributed.hasSecurityTxt,
+    detail: '/.well-known/security.txt vulnerability disclosure policy',
+    badge: 'SecOps Standard',
+    isWarning: false,
+  },
+  {
+    name: 'Universal Commerce Protocol (`/ucp`)',
+    detected: distributed.hasUcp,
+    detail: distributed.hasUcp
+      ? (distributed.ucpVersion ? `UCP v${distributed.ucpVersion} enabled (${distributed.ucpEndpoint || '/.well-known/ucp'})` : '/.well-known/ucp agentic commerce ready')
+      : (distributed.isEcommerce ? 'Missing /.well-known/ucp (Agentic AI Commerce Disabled)' : 'Not an e-commerce storefront (Optional)'),
+    badge: 'Agentic Commerce',
+    isWarning: distributed.isEcommerce && !distributed.hasUcp,
+  },
+];
+---
+
+<div class="glow-card p-6 sm:p-8 rounded-3xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 space-y-6 shadow-sm dark:shadow-none transition-colors duration-300">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20">
+          INFORMATIONAL AUDIT EXTRA
+        </span>
+        <span class="text-xs font-mono text-zinc-600 dark:text-zinc-500">Score-Neutral Extra Diagnostics</span>
+      </div>
+      <h2 class="font-display text-xl font-bold text-zinc-950 dark:text-white mt-1">Webmaster Verifications, Pixels & Open Web Features</h2>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span class="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-300 font-mono text-xs font-bold flex items-center gap-1.5">
+        <span>🌐 {distributed.detectedCount} of {distributed.totalChecked} Detected</span>
+      </span>
+    </div>
+  </div>
+
+  <p class="text-xs text-zinc-600 dark:text-zinc-400 font-sans leading-relaxed">
+    These optional features highlight domain ownership verifications, tracking pixel readiness, open web syndication, and decentralized protocol integrations. They serve as informative indicators and <strong class="text-zinc-900 dark:text-zinc-200">do not impact your health score</strong>.
+  </p>
+
+  <!-- 4 Feature Grid Categories -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- 1. Search Console & Domain Verifications -->
+    <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-base">🔍</span>
+          <span class="font-mono font-bold text-sm text-zinc-950 dark:text-white">Domain & Search Verifications</span>
+        </div>
+        <span class="text-[10px] font-mono text-zinc-600 dark:text-zinc-400">Webmaster Meta</span>
+      </div>
+
+      <div class="space-y-3 font-mono text-xs">
+        {verifications.map((item) => (
+          <div class="flex items-start justify-between gap-2 p-2 rounded-lg bg-white dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-850">
+            <div class="space-y-0.5 min-w-0">
+              <div class="text-zinc-900 dark:text-zinc-200 font-semibold truncate">{item.name}</div>
+              <div class="text-[10px] text-zinc-600 dark:text-zinc-400 font-sans truncate">{item.detail}</div>
+            </div>
+            {item.detected ? (
+              <span class="shrink-0 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px]">
+                ✅ Verified
+              </span>
+            ) : (
+              <span class="shrink-0 text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded text-[10px]">
+                ⚪ Not Set
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- 2. Pixels & Analytics Tracking -->
+    <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-base">📊</span>
+          <span class="font-mono font-bold text-sm text-zinc-950 dark:text-white">Pixels & Analytics Integration</span>
+        </div>
+        <span class="text-[10px] font-mono text-zinc-600 dark:text-zinc-400">Marketing Tags</span>
+      </div>
+
+      <div class="space-y-3 font-mono text-xs">
+        {pixels.map((item) => (
+          <div class="flex items-start justify-between gap-2 p-2 rounded-lg bg-white dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-850">
+            <div class="space-y-0.5 min-w-0">
+              <div class="text-zinc-900 dark:text-zinc-200 font-semibold truncate">{item.name}</div>
+              <div class="text-[10px] text-zinc-600 dark:text-zinc-400 font-sans truncate">{item.detail}</div>
+            </div>
+            {item.detected ? (
+              <span class="shrink-0 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px]">
+                ✅ Active
+              </span>
+            ) : (
+              <span class="shrink-0 text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded text-[10px]">
+                ⚪ Inactive
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- 3. Decentralized Identity Protocols -->
+    <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-base">⚡</span>
+          <span class="font-mono font-bold text-sm text-zinc-950 dark:text-white">Decentralized & Identity Protocols</span>
+        </div>
+        <span class="text-[10px] font-mono text-zinc-600 dark:text-zinc-400">Open Protocols</span>
+      </div>
+
+      <div class="space-y-3 font-mono text-xs">
+        {decentralized.map((item) => (
+          <div class="flex items-start justify-between gap-2 p-2 rounded-lg bg-white dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-850">
+            <div class="space-y-0.5 min-w-0">
+              <div class="text-zinc-900 dark:text-zinc-200 font-semibold truncate">{item.name}</div>
+              <div class="text-[10px] text-zinc-600 dark:text-zinc-400 font-sans truncate">{item.detail}</div>
+            </div>
+            {item.detected ? (
+              <span class="shrink-0 text-purple-600 dark:text-purple-400 font-bold bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded text-[10px]">
+                ✅ Found
+              </span>
+            ) : (
+              <span class="shrink-0 text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded text-[10px]">
+                ⚪ None
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- 4. Open Web Syndication & Agent Standards -->
+    <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-4">
+      <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-base">📡</span>
+          <span class="font-mono font-bold text-sm text-zinc-950 dark:text-white">Open Web & Agent Standards</span>
+        </div>
+        <span class="text-[10px] font-mono text-zinc-600 dark:text-zinc-400">Syndication</span>
+      </div>
+
+      <div class="space-y-3 font-mono text-xs">
+        {openWeb.map((item) => (
+          <div class="flex items-start justify-between gap-2 p-2 rounded-lg bg-white dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-850">
+            <div class="space-y-0.5 min-w-0">
+              <div class="text-zinc-900 dark:text-zinc-200 font-semibold truncate">{item.name}</div>
+              <div class="text-[10px] text-zinc-600 dark:text-zinc-400 font-sans truncate">{item.detail}</div>
+            </div>
+            {item.detected ? (
+              <span class="shrink-0 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px]">
+                ✅ Ready
+              </span>
+            ) : item.isWarning ? (
+              <span class="shrink-0 text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px]">
+                ⚠️ Missing
+              </span>
+            ) : (
+              <span class="shrink-0 text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded text-[10px]">
+                ⚪ Missing
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+
+  </div>
+</div>

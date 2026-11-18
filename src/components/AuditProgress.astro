@@ -1,0 +1,228 @@
+---
+interface Props {
+  auditId: string;
+  initialStatus: string;
+}
+
+const { auditId, initialStatus } = Astro.props;
+---
+
+<div class="max-w-xl mx-auto w-full" id="progressContainer" data-audit-id={auditId} data-status={initialStatus}>
+  <div class="glow-card p-6 sm:p-10 rounded-3xl bg-white/90 dark:bg-zinc-950/90 border border-zinc-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl backdrop-blur-xl space-y-8 transition-colors duration-300">
+    
+    <!-- Header -->
+    <div class="text-center space-y-2">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-yellow/10 border border-brand-yellow/30 text-brand-blue dark:text-brand-yellow text-xs font-mono font-semibold uppercase">
+        <span class="w-2 h-2 rounded-full bg-brand-yellow animate-pulse"></span>
+        <span id="statusBadgeText">Audit In Progress</span>
+      </div>
+      <h2 class="font-display text-2xl font-bold text-zinc-950 dark:text-white tracking-tight">
+        Analyzing Site Infrastructure
+      </h2>
+      <p class="text-xs text-zinc-600 dark:text-zinc-400 font-mono" id="statusMessage">
+        Connecting to diagnostic engine...
+      </p>
+    </div>
+
+    <!-- Stepper List -->
+    <div class="space-y-4 font-mono text-xs">
+      
+      <!-- Step 1: Email Verification -->
+      <div id="step-verification" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/50">
+        <div class="flex items-center gap-3">
+          <span class="step-icon w-6 h-6 rounded-full flex items-center justify-center bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 font-bold text-[10px]">1</span>
+          <span class="text-zinc-900 dark:text-zinc-300">Email Verification</span>
+        </div>
+        <span class="step-status text-[11px] text-zinc-500">Completed</span>
+      </div>
+
+      <!-- Step 2: Queue Placement -->
+      <div id="step-queued" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/50">
+        <div class="flex items-center gap-3">
+          <span class="step-icon w-6 h-6 rounded-full flex items-center justify-center bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 font-bold text-[10px]">2</span>
+          <span class="text-zinc-900 dark:text-zinc-300">Cloudflare Queue Consumer</span>
+        </div>
+        <span class="step-status text-[11px] text-zinc-500">Waiting...</span>
+      </div>
+
+      <!-- Step 3: Diagnostic Scrapers -->
+      <div id="step-running" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/50">
+        <div class="flex items-center gap-3">
+          <span class="step-icon w-6 h-6 rounded-full flex items-center justify-center bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 font-bold text-[10px]">3</span>
+          <span class="text-zinc-900 dark:text-zinc-300">PageSpeed, Security & SEO Collector</span>
+        </div>
+        <span class="step-status text-[11px] text-zinc-500">Waiting...</span>
+      </div>
+
+      <!-- Step 4: Scoring Engine -->
+      <div id="step-scoring" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/50">
+        <div class="flex items-center gap-3">
+          <span class="step-icon w-6 h-6 rounded-full flex items-center justify-center bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 font-bold text-[10px]">4</span>
+          <span class="text-zinc-900 dark:text-zinc-300">Multi-Dimension Score Engine</span>
+        </div>
+        <span class="step-status text-[11px] text-zinc-500">Waiting...</span>
+      </div>
+
+      <!-- Step 5: Gemini Copy Enrichment -->
+      <div id="step-enriching" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/50">
+        <div class="flex items-center gap-3">
+          <span class="step-icon w-6 h-6 rounded-full flex items-center justify-center bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 font-bold text-[10px]">5</span>
+          <span class="text-zinc-900 dark:text-zinc-300">Translating Findings for Your Business</span>
+        </div>
+        <span class="step-status text-[11px] text-zinc-500">Waiting...</span>
+      </div>
+
+      <!-- Step 6: Report Synthesis -->
+      <div id="step-complete" class="flex items-center justify-between p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-900/50">
+        <div class="flex items-center gap-3">
+          <span class="step-icon w-6 h-6 rounded-full flex items-center justify-center bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 font-bold text-[10px]">6</span>
+          <span class="text-zinc-900 dark:text-zinc-300">Generating Full Audit Report</span>
+        </div>
+        <span class="step-status text-[11px] text-zinc-500">Waiting...</span>
+      </div>
+
+    </div>
+
+    <div class="pt-4 border-t border-zinc-200 dark:border-zinc-900 text-center">
+      <p class="text-[11px] text-zinc-600 dark:text-zinc-500 font-mono">
+        Session ID: <span class="text-zinc-900 dark:text-zinc-400 font-bold">{auditId}</span>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  import { trackAuditVerified, trackAuditCompleted } from '../lib/analytics';
+
+  const container = document.getElementById('progressContainer');
+  if (container) {
+    const auditId = container.dataset.auditId || '';
+    let currentStatus = container.dataset.status || 'pending_verification';
+
+    // Track email verification landing
+    if (auditId && window.location.search.includes('verified=true')) {
+      trackAuditVerified({ auditId });
+      // Remove query parameter cleanly without reload
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('verified');
+        window.history.replaceState({}, document.title, url.pathname + (url.search ? url.search : ''));
+      } catch {}
+    }
+
+    const statusMessage = document.getElementById('statusMessage');
+
+    const stages = ['verification', 'queued', 'running', 'scoring', 'enriching', 'complete'];
+
+    function updateStepUI(status: string) {
+      const idx = stages.indexOf(status);
+
+      stages.forEach((stg, i) => {
+        const row = document.getElementById(`step-${stg}`);
+        if (!row) return;
+
+        const icon = row.querySelector('.step-icon') as HTMLElement;
+        const statusText = row.querySelector('.step-status') as HTMLElement;
+
+        if (i < idx || status === 'complete') {
+          // Completed step
+          row.className = 'flex items-center justify-between p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5';
+          if (icon) icon.className = 'step-icon w-6 h-6 rounded-full flex items-center justify-center bg-emerald-500 text-zinc-950 font-bold text-[10px]';
+          if (statusText) {
+            statusText.textContent = 'Completed ✓';
+            statusText.className = 'step-status text-[11px] text-emerald-400 font-bold';
+          }
+        } else if (i === idx) {
+          // Active step
+          row.className = 'flex items-center justify-between p-3.5 rounded-xl border border-brand-yellow/30 bg-brand-yellow/5 animate-pulse';
+          if (icon) icon.className = 'step-icon w-6 h-6 rounded-full flex items-center justify-center bg-brand-yellow text-zinc-950 font-bold text-[10px]';
+          if (statusText) {
+            statusText.textContent = 'Processing...';
+            statusText.className = 'step-status text-[11px] text-brand-yellow font-bold';
+          }
+        } else {
+          // Pending step
+          row.className = 'flex items-center justify-between p-3.5 rounded-xl border border-zinc-850 bg-zinc-900/50';
+          if (icon) icon.className = 'step-icon w-6 h-6 rounded-full flex items-center justify-center bg-zinc-800 text-zinc-500 font-bold text-[10px]';
+          if (statusText) {
+            statusText.textContent = 'Waiting...';
+            statusText.className = 'step-status text-[11px] text-zinc-600';
+          }
+        }
+      });
+
+      if (statusMessage) {
+        switch (status) {
+          case 'pending_verification':
+            statusMessage.textContent = 'Please check your email inbox to verify your audit session.';
+            break;
+          case 'queued':
+            statusMessage.textContent = 'Audit request enqueued on Cloudflare Workers edge...';
+            break;
+          case 'running':
+            statusMessage.textContent = 'Scraping PageSpeed metrics, security headers & HTML tags...';
+            break;
+          case 'scoring':
+            statusMessage.textContent = 'Computing your performance, security, SEO, and standards scores...';
+            break;
+          case 'enriching':
+            statusMessage.textContent = 'Translating technical findings into clear business insights...';
+            break;
+          case 'complete':
+            statusMessage.textContent = 'Audit complete! Loading full report...';
+            if (auditId) {
+              trackAuditCompleted({ auditId });
+            }
+            setTimeout(() => window.location.reload(), 800);
+            break;
+        }
+      }
+    }
+
+    updateStepUI(currentStatus);
+
+    // WebSocket / Polling Connection
+    function connectWS() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/api/audit/${auditId}`;
+      const ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'progress' && data.stage) {
+            currentStatus = data.stage;
+            updateStepUI(currentStatus);
+          }
+        } catch {}
+      };
+
+      ws.onclose = () => {
+        // Fallback polling if WS disconnects
+        setTimeout(pollStatus, 3000);
+      };
+    }
+
+    async function pollStatus() {
+      if (currentStatus === 'complete') return;
+      try {
+        const res = await fetch(`/api/audit/${auditId}`);
+        if (res.ok) {
+          const data: any = await res.json();
+
+          if (data.audit?.status && data.audit.status !== currentStatus) {
+            currentStatus = data.audit.status;
+            updateStepUI(currentStatus);
+          }
+        }
+      } catch {}
+      if (currentStatus !== 'complete') {
+        setTimeout(pollStatus, 3000);
+      }
+    }
+
+    connectWS();
+    pollStatus();
+  }
+</script>
