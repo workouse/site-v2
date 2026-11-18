@@ -1,0 +1,9 @@
+# Local Development Environment Variables (DO NOT COMMIT REAL SECRETS)
+# Copy this file to .dev.vars for local wrangler dev testing
+
+RESEND_API_KEY=your_resend_api_key_here
+PAGESPEED_API_KEY=your_pagespeed_api_key_here
+CF_AI_GATEWAY_TOKEN=your_cf_ai_gateway_token_here
+CF_AI_GATEWAY_URL=https://ai.workouse.com/compat/chat/completions
+CF_ACCESS_CLIENT_ID=your_cf_access_client_id_here
+CF_ACCESS_CLIENT_SECRET=your_cf_access_client_secret_here

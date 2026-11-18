@@ -1,40 +1,25 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Hero from '../components/Hero.astro';
-import SoloEdge from '../components/SoloEdge.astro';
-import Competencies from '../components/Competencies.astro';
-import Projects from '../components/Projects.astro';
-import Philosophy from '../components/Philosophy.astro';
-import Expertise from '../components/Expertise.astro';
-import Footer from '../components/Footer.astro';
+import EditorialHero from '../components/sections/EditorialHero.astro';
+import ClientLogoStrip from '../components/sections/ClientLogoStrip.astro';
+import SpecialistServices from '../components/sections/SpecialistServices.astro';
+import SelectedClientEngagements from '../components/sections/SelectedClientEngagements.astro';
+import StudioProducts from '../components/sections/StudioProducts.astro';
+import PeopleBehindWorkouse from '../components/sections/PeopleBehindWorkouse.astro';
+import FinalContactCTA from '../components/sections/FinalContactCTA.astro';
+import AuditHashRedirect from '../components/audit/AuditHashRedirect.astro';
 ---
 
 <Layout>
-  <!-- Sticky Nav Bar -->
-  <Header />
+  <!-- Forwards legacy /#audit links to the dedicated audit route -->
+  <AuditHashRedirect />
 
-  <!-- Single Page Content Sections -->
-  <main id="main-content" class="flex-grow">
-    <!-- Hero Header Block -->
-    <Hero />
+  <EditorialHero />
+  <ClientLogoStrip />
+  <SpecialistServices />
+  <SelectedClientEngagements />
+  <StudioProducts />
+  <PeopleBehindWorkouse />
 
-    <!-- Solo Architect Pitch & Profile -->
-    <SoloEdge />
-
-    <!-- Core Services/Competencies Cards -->
-    <Competencies />
-
-    <!-- Projects Section -->
-    <Projects />
-
-    <!-- Simplicity Quote Axiom -->
-    <Philosophy />
-
-    <!-- Stack, Niche tech, and OSS work -->
-    <Expertise />
-  </main>
-
-  <!-- Connect channels and legal info -->
-  <Footer />
+  <FinalContactCTA slot="cta" />
 </Layout>

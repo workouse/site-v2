@@ -1,0 +1,8 @@
+/*
+ * Global stylesheet: design tokens, self-hosted fonts and base rules.
+ * Fonts are bundled from node_modules (no Google Fonts CDN requests).
+ * tokens.css is the source of truth for the design tokens and base styles.
+ */
+@import './tokens.css';
+@import '@fontsource/instrument-serif/400.css';
+@import '@fontsource-variable/dm-sans/opsz.css';

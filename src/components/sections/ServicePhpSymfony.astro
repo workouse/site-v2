@@ -1,0 +1,129 @@
+---
+/**
+ * ServicePhpSymfony — primary service block of SpecialistServices (homepage
+ * section 04). Rendered first and wider than ServiceShopify. Copy comes from
+ * the site data module; the capability list is two columns on tablet and up,
+ * one column on mobile.
+ */
+import DirectionalLink from '../ui/DirectionalLink.astro';
+import { resolveLink, services } from '../../data/site';
+
+const { eyebrow, headingLines, body, listA, listB, link } = services.php;
+const cta = resolveLink(link.ref, link.label);
+const capabilities = [...listA, ...listB];
+---
+
+<div class="service-php">
+  <p class="service-php__eyebrow">{eyebrow}</p>
+  <h3 class="service-php__title">
+    {headingLines[0]}<br />
+    {headingLines[1]}
+  </h3>
+  <p class="service-php__body">{body}</p>
+  <ul class="service-php__list">
+    {capabilities.map((item) => <li class="service-php__item">{item}</li>)}
+  </ul>
+  <div class="service-php__cta">
+    <DirectionalLink href={cta.href} label={cta.label} arrow="→" />
+  </div>
+</div>
+
+<style>
+  .service-php {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .service-php__eyebrow,
+  .service-php__title,
+  .service-php__body,
+  .service-php__list {
+    margin: 0;
+  }
+
+  .service-php__eyebrow {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 1.58;
+    color: #53658e;
+  }
+
+  .service-php__title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 48px;
+    line-height: 1.06;
+    color: #24354f;
+    overflow-wrap: break-word;
+  }
+
+  .service-php__body {
+    max-width: 620px;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.58;
+    color: #5b6574;
+  }
+
+  .service-php__list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 32px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .service-php__item {
+    padding: 10px 0;
+    border-top: 1px solid #d7d9df;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 1.58;
+    color: #24354f;
+  }
+
+  .service-php__cta {
+    align-self: flex-start;
+  }
+
+  @media (min-width: 768px) {
+    .service-php__title {
+      font-size: 64px;
+    }
+
+    .service-php__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .service-php {
+      width: 752px;
+      flex: 0 0 752px;
+    }
+
+    .service-php__list {
+      width: 100%;
+      grid-template-columns: repeat(2, 360px);
+    }
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .service-php {
+      width: 688px;
+    }
+
+    .service-php__list {
+      grid-template-columns: repeat(2, 328px);
+    }
+  }
+</style>

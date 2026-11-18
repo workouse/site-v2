@@ -1,0 +1,3 @@
+-- Workouse Audit Tool D1 Database Seed File
+-- Production & Local development seed file placeholder.
+-- Tables are dynamically populated by audit job workflow runtime.

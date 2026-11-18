@@ -1,0 +1,23 @@
+---
+/**
+ * AuditHashRedirect — forwards legacy `/#audit` links to the dedicated audit route.
+ *
+ * Mount once on the homepage. Fragments are invisible to the server, so this
+ * runs as a client script: on load and on every hashchange it checks for the
+ * legacy anchor and replaces the history entry with links.audit.href.
+ */
+---
+
+<script>
+  import { links } from '../../data/site';
+  import { getLegacyAuditRedirect } from './audit-redirect';
+
+  function forwardLegacyAuditHash(): void {
+    const target = getLegacyAuditRedirect(window.location.hash, links.audit.href);
+    if (target === null) return;
+    window.location.replace(target);
+  }
+
+  forwardLegacyAuditHash();
+  window.addEventListener('hashchange', forwardLegacyAuditHash);
+</script>

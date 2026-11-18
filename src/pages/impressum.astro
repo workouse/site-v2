@@ -1,0 +1,117 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const lastUpdated = "August 13, 2026";
+---
+
+<Layout 
+  title="Impressum / Legal Notice | Workouse" 
+  description="Impressum and Legal Notice for Workouse. Legal provider identification, contact information, and disclaimer details."
+>
+
+  <div class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+    <!-- Header -->
+    <div class="space-y-4 mb-12 text-center sm:text-left">
+      <div class="inline-flex items-center gap-3">
+        <span class="text-xs font-mono font-bold tracking-widest text-brand-yellow uppercase">Provider Identification</span>
+        <span class="h-[1px] w-8 bg-zinc-800"></span>
+      </div>
+      <h1 class="font-display text-3xl sm:text-5xl font-bold text-zinc-950 tracking-tight">
+        Impressum / Legal Notice
+      </h1>
+      <p class="text-zinc-600 font-mono text-xs">
+        Information in accordance with section 5 TMG / MStV (Telemedia Act & Media Regulations)
+      </p>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="space-y-8 text-zinc-700 text-sm sm:text-base leading-relaxed">
+      
+      <!-- Provider Details Card -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-4">1. Service Provider Details</h2>
+        <div class="space-y-2 font-mono text-sm text-zinc-700">
+          <p class="text-zinc-950 font-bold text-base">WORKOUSE</p>
+          <p class="text-zinc-600">Boutique Solo Software Engineering & Architecture House</p>
+          <p class="text-zinc-700"><strong class="text-zinc-950">Operator & Founder:</strong> Emre Yılmaz</p>
+          <p class="text-zinc-700"><strong class="text-zinc-950">Primary Channel:</strong> <a href="mailto:z@emre.xyz" class="text-brand-yellow hover:underline">z@emre.xyz</a></p>
+          <p class="text-zinc-700"><strong class="text-zinc-950">Website:</strong> <a href="https://workouse.com" class="text-brand-yellow hover:underline">https://workouse.com</a></p>
+          <p class="text-zinc-700"><strong class="text-zinc-950">Upwork Agency:</strong> <a href="https://www.upwork.com/agencies/workouse" target="_blank" rel="noopener noreferrer" class="text-brand-yellow hover:underline">workouse</a></p>
+        </div>
+      </section>
+
+      <!-- Responsible for Content -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-3">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">2. Responsible for Content</h2>
+        <p class="text-zinc-700">
+          Responsible for content under Section 18 (2) MStV (State Media Treaty) and relevant telemedia regulations:
+        </p>
+        <div class="p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 font-mono text-sm space-y-1">
+          <p class="text-zinc-950 font-semibold">Emre Yılmaz</p>
+          <p class="text-zinc-600">Software Architect & Founder, Workouse</p>
+          <p class="text-brand-yellow">z@emre.xyz</p>
+        </div>
+      </section>
+
+      <!-- EU Dispute Resolution -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-3">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">3. Online Dispute Resolution (OS)</h2>
+        <p class="text-zinc-700">
+          The European Commission provides a platform for online dispute resolution (OS), accessible at:
+        </p>
+        <p class="font-mono text-sm">
+          <a 
+            href="https://ec.europa.eu/consumers/odr" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="text-brand-yellow hover:underline inline-flex items-center gap-1.5"
+          >
+            <span>https://ec.europa.eu/consumers/odr</span>
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </p>
+        <p class="text-zinc-600 text-sm">
+          We are neither obligated nor willing to participate in dispute resolution proceedings before a consumer arbitration board.
+        </p>
+      </section>
+
+      <!-- Liability for Contents & Links -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-4">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">4. Liability & Copyright Disclaimers</h2>
+        
+        <div>
+          <h3 class="font-semibold text-zinc-950 text-base">Liability for Contents</h3>
+          <p class="text-zinc-600 text-sm mt-1">
+            As a service provider, we are responsible for our own content on these pages according to general laws. However, we are not obligated to monitor transmitted or stored third-party information or to investigate circumstances indicating illegal activity.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="font-semibold text-zinc-950 text-base">Liability for Links</h3>
+          <p class="text-zinc-600 text-sm mt-1">
+            Our offer contains links to external third-party websites over whose content we have no influence. Therefore, we cannot accept any liability for this third-party content. The respective provider or operator of the linked pages is always responsible for their content.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="font-semibold text-zinc-950 text-base">Copyright Notice</h3>
+          <p class="text-zinc-600 text-sm mt-1">
+            The content, design elements, benchmarks, and software created by the site operator on these pages are subject to copyright law. Reproduction, editing, distribution, and any kind of exploitation outside the limits of copyright law require written consent.
+          </p>
+        </div>
+      </section>
+
+      <!-- Technical Infrastructure Notice -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl border-brand-yellow/30 bg-zinc-900/30">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-2">5. Infrastructure & Hosting</h2>
+        <p class="text-zinc-700 text-sm">
+          This platform is distributed globally on Cloudflare Workers and Cloudflare Edge Network to guarantee low latency, zero cold starts, and resilience.
+        </p>
+      </section>
+
+    </div>
+  </div>
+
+</Layout>

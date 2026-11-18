@@ -1,0 +1,201 @@
+---
+/**
+ * EngagementRow — one client engagement in the SelectedClientEngagements
+ * section. Identity (index, client name, logo placeholder) | details (summary,
+ * tags, "Visit" link) | media (screenshot placeholder). Desktop lays the three
+ * columns out horizontally; below 1024px the row stacks vertically.
+ * The client name is the row's <h3>. The logo placeholder is hidden once an
+ * approved logo is supplied through `logo`, which replaces it.
+ */
+import type { ImageMetadata } from 'astro';
+import MediaFrame from '../ui/MediaFrame.astro';
+import TextLink from '../ui/TextLink.astro';
+import type { HomeEngagementItem } from '../../data/site';
+
+export interface Props {
+  item: HomeEngagementItem;
+  class?: string;
+}
+
+const { item, class: className } = Astro.props;
+
+const assetLoaders = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/assets/**/*.{svg,png,webp,avif,jpg,jpeg,gif}',
+  { eager: true },
+);
+
+function resolveLogoSrc(logo: string | null | undefined): string | null {
+  if (!logo) return null;
+  const trimmed = logo.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('src/assets/') || trimmed.startsWith('/src/assets/')) {
+    const key = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    const loaded = assetLoaders[key];
+    if (loaded) return loaded.default.src;
+  }
+  return trimmed;
+}
+
+const resolvedLogo = resolveLogoSrc(item.logo);
+const screenshotSrc = item.screenshot?.src ?? null;
+const screenshotAlt = item.screenshot?.alt ?? item.client;
+const DESKTOP_MEDIA_RATIO = '368 / 200';
+const TABLET_MEDIA_RATIO = '688 / 240';
+const MOBILE_MEDIA_RATIO = '342 / 192';
+const VISIT_ACCESSIBLE_LABEL = `Visit ${item.client} website`;
+---
+
+<article class:list={['engagement-row', className]}>
+  <div class="engagement-row__identity">
+    <p class="engagement-row__index">{item.index}</p>
+    <h3 class="engagement-row__client">{item.client}</h3>
+    {
+      resolvedLogo && (
+        <img class="engagement-row__logo" src={resolvedLogo} alt={item.client} loading="lazy" decoding="async" />
+      )
+    }
+  </div>
+
+  <div class="engagement-row__details">
+    <p class="engagement-row__summary">{item.summary}</p>
+    <p class="engagement-row__tags">{item.tags}</p>
+    <TextLink
+      href={item.href}
+      external
+      size={14}
+      aria-label={VISIT_ACCESSIBLE_LABEL}
+    >
+      {item.linkLabel}
+    </TextLink>
+  </div>
+
+  <div class="engagement-row__media">
+    <MediaFrame
+      variant="card"
+      src={screenshotSrc}
+      alt={screenshotAlt}
+      ratio={DESKTOP_MEDIA_RATIO}
+      tabletRatio={TABLET_MEDIA_RATIO}
+      mobileRatio={MOBILE_MEDIA_RATIO}
+      lines={screenshotSrc ? [] : [item.client, item.screenshotLabel]}
+    />
+  </div>
+</article>
+
+<style>
+  .engagement-row {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 32px 0;
+    border-top: 1px solid #d7d9df;
+  }
+
+  .engagement-row__identity,
+  .engagement-row__details {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .engagement-row__identity {
+    gap: 16px;
+  }
+
+  .engagement-row__details {
+    gap: 20px;
+  }
+
+  .engagement-row__media {
+    width: 100%;
+  }
+
+  .engagement-row__index {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-size: 11px;
+    line-height: 1.55;
+    letter-spacing: 0.14em;
+    color: #53658e;
+  }
+
+  .engagement-row__client {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 1.05;
+    color: #24354f;
+  }
+
+  .engagement-row__logo-placeholder {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 9px;
+    line-height: 1.55;
+    letter-spacing: 0.14em;
+    color: #5b6574;
+  }
+
+  .engagement-row__logo {
+    display: block;
+    width: auto;
+    max-width: 160px;
+    height: 40px;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  .engagement-row__summary {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-size: 17px;
+    line-height: 1.55;
+    color: #24354f;
+  }
+
+  .engagement-row__tags {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-size: 12px;
+    line-height: 1.55;
+    color: #5b6574;
+  }
+
+  @media (min-width: 768px) {
+    .engagement-row__client {
+      font-size: 40px;
+    }
+
+    .engagement-row__summary {
+      font-size: 20px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .engagement-row {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 48px;
+    }
+
+    .engagement-row__identity {
+      flex: 0 0 200px;
+      width: 200px;
+    }
+
+    .engagement-row__details {
+      flex: 0 0 584px;
+      width: 584px;
+    }
+
+    .engagement-row__media {
+      flex: 0 0 368px;
+      width: 368px;
+    }
+  }
+</style>

@@ -1,0 +1,112 @@
+---
+/**
+ * FeaturedProduct — Bitig, the featured studio product in StudioProducts
+ * (homepage section 06). Media sits beside the details on desktop and above
+ * them on tablet and mobile, so the media is always rendered first in the DOM.
+ * The external TextLink opens in a new tab with an accessible suffix.
+ */
+import MediaFrame from '../ui/MediaFrame.astro';
+import TextLink from '../ui/TextLink.astro';
+import { products } from '../../data/site';
+
+const { featured } = products;
+const screenshotSrc = featured.screenshot?.src ?? null;
+const screenshotAlt = featured.screenshot?.alt ?? featured.name;
+---
+
+<article class="featured-product">
+  <MediaFrame
+    class="featured-product__media"
+    variant="feature"
+    src={screenshotSrc}
+    alt={screenshotAlt}
+    ratio="760/360"
+    tabletRatio="688/300"
+    mobileRatio="342/224"
+    lines={featured.placeholder}
+  />
+  <div class="featured-product__details">
+    <p class="featured-product__eyebrow">{featured.eyebrow}</p>
+    <h3 class="featured-product__title">{featured.name}</h3>
+    <p class="featured-product__body">{featured.body}</p>
+    <TextLink href={featured.href} label={featured.linkLabel} size={14} tone="link" external />
+  </div>
+</article>
+
+<style>
+  .featured-product {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .featured-product__media {
+    width: 100%;
+  }
+
+  .featured-product__details {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .featured-product__eyebrow,
+  .featured-product__title,
+  .featured-product__body {
+    margin: 0;
+  }
+
+  .featured-product__eyebrow {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 10px;
+    line-height: 1.55;
+    color: #53658e;
+  }
+
+  .featured-product__title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 44px;
+    line-height: 1.08;
+    color: #24354f;
+  }
+
+  .featured-product__body {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.55;
+    color: #5b6574;
+  }
+
+  @media (min-width: 768px) {
+    .featured-product__title {
+      font-size: 56px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .featured-product {
+      flex-direction: row;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .featured-product__media {
+      flex: 0 0 760px;
+      width: 760px;
+    }
+
+    .featured-product__details {
+      flex: 0 0 448px;
+      width: 448px;
+    }
+  }
+</style>

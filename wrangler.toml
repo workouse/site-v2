@@ -1,4 +1,53 @@
-name = "workouse-portfolio"
-pages_build_output_dir = "dist"
-compatibility_date = "2024-04-03"
+name = "workouse"
+main = "dist/worker.js"
+compatibility_date = "2026-08-07"
 compatibility_flags = ["nodejs_compat"]
+
+browser = { binding = "MY_BROWSER" }
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+
+[[d1_databases]]
+binding = "DB"
+database_name = "workouse-db"
+database_id = "a6d92918-e93f-4282-82da-2778120e90ff"
+
+[[kv_namespaces]]
+binding = "EMAIL_TOKENS"
+id = "5f407f36d2504e0d943eccb5066d3312"
+
+[[kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "8bfdd8617dd4431a9765bc2f7df193ea"
+
+[[r2_buckets]]
+binding = "AUDIT_RESULTS"
+bucket_name = "audit-results"
+
+[[queues.producers]]
+binding = "AUDIT_QUEUE"
+queue = "audit-jobs"
+
+[[queues.consumers]]
+queue = "audit-jobs"
+max_batch_size = 1
+max_retries = 3
+dead_letter_queue = "audit-jobs-dlq"
+
+[ai]
+binding = "AI"
+
+[[durable_objects.bindings]]
+name = "AUDIT_STATUS_DO"
+class_name = "AuditStatusDO"
+
+[vars]
+# Production secrets (CF_AI_GATEWAY_TOKEN, CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET) are managed via: wrangler secret put <KEY>
+CF_AI_GATEWAY_URL = "https://ai.workouse.com/compat/chat/completions"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AuditStatusDO"]

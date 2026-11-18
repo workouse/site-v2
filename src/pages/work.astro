@@ -1,0 +1,356 @@
+---
+/**
+ * Work page (/work): selected engagements, engineering capabilities, and
+ * related services. Copy and engagement data come from `workPage`,
+ * `engagementsWork`, and `cta.work` in src/data/site.ts.
+ *
+ * Filtering is handled by EngagementFilterGroup, which hides the
+ * `[data-filter-item]` wrappers inside #work-engagements. Every engagement is
+ * rendered in the markup, so the full list is visible without JavaScript.
+ */
+import Layout from '../layouts/Layout.astro';
+import ClientEngagement from '../components/work/ClientEngagement.astro';
+import EngagementFilterGroup from '../components/ui/EngagementFilterGroup.astro';
+import DirectionalLink from '../components/ui/DirectionalLink.astro';
+import FinalContactCTA from '../components/sections/FinalContactCTA.astro';
+import { cta, engagementsWork, resolveLink, workPage } from '../data/site';
+
+export const prerender = true;
+
+const PAGE_TITLE = 'Work | Workouse';
+const PAGE_DESCRIPTION = workPage.intro.body;
+const ENGAGEMENTS_ID = 'work-engagements';
+const ENGAGEMENT_FILTER_LABEL = 'Filter engagements';
+const RELATED_ARROW = '→';
+
+// MediaFrame resolves `src/assets/...` paths itself (same as EngagementRow), so
+// the screenshot path from site.ts is passed through unchanged.
+const engagements = engagementsWork.map((item) => ({
+  ...item,
+  filters: [...item.filters],
+  screenshot: item.screenshot
+    ? { src: item.screenshot.src, alt: item.screenshot.alt }
+    : undefined,
+}));
+
+const relatedServices = workPage.relatedServices.items.map((item) => ({
+  title: item.title,
+  body: item.body,
+  link: resolveLink(item.link.ref, item.link.label),
+}));
+---
+
+<Layout title={PAGE_TITLE} description={PAGE_DESCRIPTION} currentPath="/work">
+  <section class="work-intro" aria-labelledby="work-title">
+    <p class="work-eyebrow">{workPage.intro.eyebrow}</p>
+    <h1 id="work-title" class="work-intro__title">{workPage.intro.heading}</h1>
+    <p class="work-intro__body">{workPage.intro.body}</p>
+    <p class="work-eyebrow">{workPage.intro.tags}</p>
+  </section>
+
+  <section class="work-filters" aria-label={ENGAGEMENT_FILTER_LABEL}>
+    <EngagementFilterGroup
+      controls={ENGAGEMENTS_ID}
+      ariaLabel={ENGAGEMENT_FILTER_LABEL}
+    />
+  </section>
+
+  <section class="work-engagements" aria-label="Engagements">
+    <div id={ENGAGEMENTS_ID} class="work-engagements__list">
+      {
+        engagements.map((item) => (
+          <div class="work-engagements__item" data-filter-item>
+            <ClientEngagement
+              layout={item.layout}
+              client={item.client}
+              category={item.category}
+              headline={item.headline}
+              description={item.description}
+              technologies={item.technologies}
+              href={item.href}
+              screenshot={item.screenshot}
+              screenshotLabel={item.screenshotLabel}
+              filters={item.filters}
+            />
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="work-capabilities" aria-labelledby="work-capabilities-title">
+    <p class="work-eyebrow">{workPage.capabilities.eyebrow}</p>
+    <div class="work-capabilities__intro">
+      <h2 id="work-capabilities-title" class="work-capabilities__title">
+        {workPage.capabilities.heading}
+      </h2>
+      <p class="work-capabilities__body">{workPage.capabilities.body}</p>
+    </div>
+    <ul class="work-capabilities__list">
+      {
+        workPage.capabilities.items.map((item) => (
+          <li class="work-capabilities__item">
+            <p class="work-eyebrow">{item.index}</p>
+            <h3 class="work-capabilities__item-title">{item.title}</h3>
+            <p class="work-capabilities__item-body">{item.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="work-related" aria-labelledby="work-related-title">
+    <p id="work-related-title" class="work-eyebrow">{workPage.relatedServices.eyebrow}</p>
+    <ul class="work-related__list">
+      {
+        relatedServices.map((item) => (
+          <li class="work-related__row">
+            <div class="work-related__overview">
+              <h3 class="work-related__title">{item.title}</h3>
+              <p class="work-related__body">{item.body}</p>
+            </div>
+            <DirectionalLink
+              href={item.link.href}
+              label={item.link.label}
+              arrow={RELATED_ARROW}
+            />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <FinalContactCTA
+    slot="cta"
+    eyebrow={cta.work.eyebrow}
+    heading={cta.work.heading}
+    body={cta.work.body}
+  />
+</Layout>
+
+<style>
+  /* Mobile (<768px) is the base; tablet and desktop are layered on top. */
+  .work-eyebrow {
+    margin: 0;
+    font: 500 12px/18px var(--font-sans);
+    color: var(--text-link);
+  }
+
+  .work-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    box-sizing: border-box;
+    padding: 64px var(--page-margin) 80px;
+  }
+
+  .work-intro__title {
+    margin: 0;
+    max-width: 950px;
+    font: 400 40px/44px var(--font-serif);
+    color: var(--text-primary);
+  }
+
+  .work-intro__body {
+    margin: 0;
+    font: 400 20px/32px var(--font-sans);
+    color: var(--text-secondary);
+  }
+
+  .work-filters {
+    box-sizing: border-box;
+    padding: 0 var(--page-margin) 24px;
+  }
+
+  .work-engagements {
+    box-sizing: border-box;
+    padding: 0 var(--page-margin);
+  }
+
+  .work-engagements__item {
+    padding-bottom: 64px;
+  }
+
+  .work-capabilities {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    box-sizing: border-box;
+    padding: 64px var(--page-margin);
+    background-color: var(--surface-subtle);
+  }
+
+  .work-capabilities__intro {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .work-capabilities__title {
+    margin: 0;
+    font: 400 40px/44px var(--font-serif);
+    color: var(--text-primary);
+  }
+
+  .work-capabilities__body {
+    margin: 0;
+    font: 400 16px/26px var(--font-sans);
+    color: var(--text-secondary);
+  }
+
+  .work-capabilities__list {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .work-capabilities__item {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .work-capabilities__item-title {
+    margin: 0;
+    font: 400 40px/44px var(--font-serif);
+    color: var(--text-primary);
+  }
+
+  .work-capabilities__item-body {
+    margin: 0;
+    font: 400 16px/26px var(--font-sans);
+    color: var(--text-secondary);
+  }
+
+  .work-related {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    box-sizing: border-box;
+    padding: 64px var(--page-margin);
+  }
+
+  .work-related__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .work-related__row {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 32px 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .work-related__overview {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .work-related__title {
+    margin: 0;
+    font: 400 40px/44px var(--font-serif);
+    color: var(--text-primary);
+  }
+
+  .work-related__body {
+    margin: 0;
+    font: 400 16px/26px var(--font-sans);
+    color: var(--text-secondary);
+  }
+
+  @media (min-width: 768px) {
+    .work-intro {
+      padding: 64px var(--page-margin) 80px;
+    }
+
+    .work-intro__title {
+      font-size: 64px;
+      line-height: 66px;
+    }
+
+    .work-intro__body {
+      max-width: 640px;
+    }
+
+    .work-engagements__item {
+      padding-bottom: 96px;
+    }
+
+    .work-capabilities {
+      padding: 64px var(--page-margin);
+    }
+
+    .work-related {
+      padding: 80px var(--page-margin) 80px;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .work-intro {
+      padding: 96px var(--page-margin) 80px;
+    }
+
+    .work-intro__title {
+      font-size: 80px;
+      line-height: 80px;
+    }
+
+    .work-intro__body {
+      max-width: 720px;
+    }
+
+    .work-capabilities {
+      padding: 80px var(--page-margin);
+      gap: 48px;
+    }
+
+    .work-capabilities__intro {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 64px;
+    }
+
+    .work-capabilities__title {
+      flex: 0 0 640px;
+      font-size: 64px;
+      line-height: 66px;
+    }
+
+    .work-capabilities__body {
+      flex: 1 1 0;
+    }
+
+    .work-capabilities__list {
+      flex-direction: row;
+      gap: 48px;
+    }
+
+    .work-capabilities__item {
+      flex: 1 1 0;
+    }
+
+    .work-related {
+      padding: 80px var(--page-margin) 96px;
+    }
+
+    .work-related__row {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 48px;
+    }
+
+    .work-related__overview {
+      max-width: 820px;
+    }
+  }
+</style>

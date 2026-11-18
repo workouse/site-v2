@@ -1,0 +1,136 @@
+---
+export type WorkouseLockupTone = 'ink' | 'ivory';
+
+export interface Props {
+  tone?: WorkouseLockupTone;
+  href?: string | null | false;
+  class?: string;
+  id?: string;
+  title?: string;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-current'?: 'page' | 'step' | 'location' | 'date' | 'time' | 'true' | 'false' | boolean;
+  [key: `data-${string}`]: unknown;
+  [key: `aria-${string}`]: unknown;
+}
+
+const {
+  tone = 'ink',
+  href = '/',
+  class: className,
+  'aria-label': rawAriaLabel,
+  ...rest
+} = Astro.props;
+
+const isLinked = typeof href === 'string' && href.length > 0;
+const symbolSize = tone === 'ivory' ? 32 : 36;
+
+const classes = ['wo-lockup', `wo-lockup--${tone}`, className]
+  .filter(Boolean)
+  .join(' ');
+---
+
+{
+  isLinked ? (
+    <a
+      href={href}
+      aria-label={rawAriaLabel ?? 'Workouse — home'}
+      class={classes}
+      {...rest}
+    >
+      <img
+        src="/brand/workouse-symbol.png"
+        alt=""
+        width={symbolSize}
+        height={symbolSize}
+        decoding="async"
+        class="wo-lockup__symbol"
+      /><span class="wo-lockup__wordmark">workouse</span>
+    </a>
+  ) : (
+    <span aria-label={rawAriaLabel} class={classes} {...rest}>
+      <img
+        src="/brand/workouse-symbol.png"
+        alt=""
+        width={symbolSize}
+        height={symbolSize}
+        decoding="async"
+        class="wo-lockup__symbol"
+      /><span class="wo-lockup__wordmark">workouse</span>
+    </span>
+  )
+}
+
+<style>
+  .wo-lockup {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-12, 12px);
+    box-sizing: border-box;
+    border-radius: var(--radius-2, 2px);
+    text-decoration: none;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+  }
+
+  a.wo-lockup {
+    cursor: pointer;
+  }
+
+  .wo-lockup--ink {
+    color: var(--text-primary, #24354f);
+  }
+
+  .wo-lockup--ivory {
+    color: var(--surface-page, #faf8f4);
+  }
+
+  .wo-lockup__symbol {
+    display: block;
+    flex-shrink: 0;
+    object-fit: contain;
+    filter: none;
+  }
+
+  .wo-lockup--ink .wo-lockup__symbol {
+    width: 36px;
+    height: 36px;
+  }
+
+  .wo-lockup--ivory .wo-lockup__symbol {
+    width: 32px;
+    height: 32px;
+  }
+
+  .wo-lockup__wordmark {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    line-height: 1.55;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+    color: inherit;
+    font-variation-settings: var(--font-sans-opsz);
+  }
+
+  .wo-lockup--ink .wo-lockup__wordmark {
+    font-size: 28px;
+  }
+
+  .wo-lockup--ivory .wo-lockup__wordmark {
+    font-size: 26px;
+  }
+
+  /* Focus-visible */
+  a.wo-lockup--ink:focus-visible,
+  .wo-lockup--ink[data-preview-state='focus'] {
+    outline: var(--focus-width, 2px) solid var(--focus-color, #53658e);
+    outline-offset: var(--focus-offset, 3px);
+  }
+
+  a.wo-lockup--ivory:focus-visible,
+  .wo-lockup--ivory[data-preview-state='focus'] {
+    outline: var(--focus-width, 2px) solid var(--surface-page, #faf8f4);
+    outline-offset: var(--focus-offset, 3px);
+  }
+</style>

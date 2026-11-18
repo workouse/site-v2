@@ -158,7 +158,7 @@ Delivered via `public/_headers` on Cloudflare Pages:
 | `X-Frame-Options` | `DENY` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 | `Permissions-Policy` | Camera, mic, geolocation, payment, USB disabled |
-| `Content-Security-Policy` | Scoped to self + Google Fonts + GitHub avatars |
+| `Content-Security-Policy` | Scoped to self + Google Tag Manager/GA4 + Google Fonts + GitHub avatars |
 
 ---
 

@@ -1,0 +1,143 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const lastUpdated = "August 13, 2026";
+---
+
+<Layout 
+  title="Privacy Policy | Workouse" 
+  description="Privacy Policy for Workouse. Learn how we handle data, maintain security, respect user privacy, and manage cookies."
+>
+
+  <div class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+    <!-- Header -->
+    <div class="space-y-4 mb-12 text-center sm:text-left">
+      <div class="inline-flex items-center gap-3">
+        <span class="text-xs font-mono font-bold tracking-widest text-brand-blue dark:text-brand-yellow uppercase">Legal & Transparency</span>
+        <span class="h-[1px] w-8 bg-zinc-300 dark:bg-zinc-800"></span>
+      </div>
+      <h1 class="font-display text-3xl sm:text-5xl font-bold text-zinc-950 dark:text-white tracking-tight">
+        Privacy Policy
+      </h1>
+      <p class="text-zinc-500 dark:text-zinc-400 font-mono text-xs">
+        Last Updated: {lastUpdated}
+      </p>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="space-y-8 text-zinc-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed">
+      
+      <!-- Intro Card -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl">
+        <h2 class="text-xl font-bold font-display text-zinc-950 dark:text-white mb-3">1. Introduction</h2>
+        <p class="text-zinc-700 dark:text-zinc-300 mb-3">
+          At <strong class="text-zinc-950 dark:text-white">Workouse</strong> ("we", "us", or "our"), handcrafted and operated by Emre Yılmaz, we respect your privacy and are committed to protecting personal data. This Privacy Policy explains how information is collected, used, processed, and safeguarded when you visit <a href="https://workouse.com" class="text-brand-blue dark:text-brand-yellow hover:underline">workouse.com</a>, use our automated site audit tools, or contact us.
+        </p>
+        <p class="text-zinc-600 dark:text-zinc-400 text-sm">
+          We operate strictly under the principles of data minimization and privacy by design (compliant with GDPR, CCPA, and applicable international privacy frameworks).
+        </p>
+      </section>
+
+      <!-- Data We Collect -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-4">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">2. Information We Collect</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <h3 class="font-semibold text-zinc-950 text-base">A. Automated Site Audit Requests</h3>
+            <p class="text-zinc-600 text-sm mt-1">
+              When you submit a URL to our Automated Audit Tool, we process the target domain URL, fetch publicly accessible webpage markup and performance metrics, and store audit results. If you opt to submit your email address to receive an audit report or lead follow-up, your email address is recorded securely in our database.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="font-semibold text-zinc-950 text-base">B. Communication & Support Data</h3>
+            <p class="text-zinc-600 text-sm mt-1">
+              If you email us directly (e.g., at <a href="mailto:z@emre.xyz" class="text-brand-yellow hover:underline">z@emre.xyz</a>) or subscribe to our newsletter, we retain your email address and any message history to respond to inquiries and provide consulting services.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="font-semibold text-zinc-950 text-base">C. Technical & Telemetry Logs</h3>
+            <p class="text-zinc-600 text-sm mt-1">
+              Our website is hosted on Cloudflare's Edge Infrastructure. Standard server logs (IP address, user agent, requested path, HTTP status code, and timestamp) may be automatically collected by edge nodes for network security, DDoS protection, and rate limiting.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- How We Use Data -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">3. How We Use Your Information</h2>
+        <ul class="list-disc list-inside space-y-2 text-zinc-700 text-sm sm:text-base">
+          <li>To run and deliver automated site performance, SEO, accessibility, and security audits.</li>
+          <li>To communicate project proposals, architectural feedback, or requested consultation details.</li>
+          <li>To prevent abuse, bot attacks, rate-limit violations, and malicious exploitation of our API endpoints.</li>
+          <li>To comply with legal obligations and enforce our Terms of Service.</li>
+        </ul>
+      </section>
+
+      <!-- Cookies & Storage -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-3">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">4. Cookies & Local Storage</h2>
+        <p class="text-zinc-700">
+          We use browser local storage and cookies strictly to manage session state and user preferences:
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div class="p-4 rounded-xl border border-zinc-800 bg-zinc-900/40">
+            <span class="text-xs font-mono font-bold text-brand-yellow uppercase">Essential Storage</span>
+            <p class="text-xs text-zinc-600 mt-1">Stores your cookie consent preferences (<code class="text-zinc-700">workouse_cookie_consent</code>) and necessary authentication tokens for administrative areas.</p>
+          </div>
+          <div class="p-4 rounded-xl border border-zinc-800 bg-zinc-900/40">
+            <span class="text-xs font-mono font-bold text-brand-yellow uppercase">Performance & Analytics</span>
+            <p class="text-xs text-zinc-600 mt-1">Used only if you consent to help us understand aggregate traffic trends without invasive cross-site tracking.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data Sharing & Third Parties -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-3">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">5. Data Sharing & Third-Party Infrastructure</h2>
+        <p class="text-zinc-700">
+          We do <strong class="text-zinc-950">NOT</strong> sell, rent, or trade your personal information to third-party advertisers. We rely only on essential service providers to deliver our infrastructure:
+        </p>
+        <ul class="list-disc list-inside space-y-1 text-zinc-600 text-sm">
+          <li><strong class="text-zinc-950">Cloudflare Inc.</strong> — Edge hosting, D1 database storage, KV state, and DDoS protection.</li>
+          <li><strong class="text-zinc-950">Resend / Email Services</strong> — Delivery of transactional emails and audit result links.</li>
+        </ul>
+      </section>
+
+      <!-- Your Rights -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl space-y-3">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-3">6. Your Rights & Data Control</h2>
+        <p class="text-zinc-700">
+          Depending on your location, you hold the following rights regarding your personal data:
+        </p>
+        <ul class="list-disc list-inside space-y-1.5 text-zinc-600 text-sm">
+          <li><strong class="text-zinc-950">Right to Access:</strong> Request a copy of the personal data we store about you.</li>
+          <li><strong class="text-zinc-950">Right to Rectification:</strong> Request correction of inaccurate information.</li>
+          <li><strong class="text-zinc-950">Right to Erasure ("Right to be Forgotten"):</strong> Request full deletion of your email or audit record.</li>
+          <li><strong class="text-zinc-950">Right to Object/Opt-Out:</strong> Withdraw consent for marketing emails at any time.</li>
+        </ul>
+        <p class="text-zinc-700 pt-2 text-sm">
+          To exercise any of these rights, contact us directly at <a href="mailto:z@emre.xyz" class="text-brand-yellow hover:underline font-mono">z@emre.xyz</a>.
+        </p>
+      </section>
+
+      <!-- Contact Section -->
+      <section class="glow-card p-6 sm:p-8 rounded-2xl border-brand-yellow/30 bg-zinc-900/30">
+        <h2 class="text-xl font-bold font-display text-zinc-950 mb-2">7. Contact Information</h2>
+        <p class="text-zinc-700 text-sm mb-4">
+          For any privacy questions or requests regarding your data, please contact:
+        </p>
+        <div class="font-mono text-sm space-y-1 text-zinc-700">
+          <p class="text-zinc-950 font-bold">WORKOUSE — Emre Yılmaz</p>
+          <p>Email: <a href="mailto:z@emre.xyz" class="text-brand-yellow hover:underline">z@emre.xyz</a></p>
+          <p>Website: <a href="https://workouse.com" class="text-brand-yellow hover:underline">https://workouse.com</a></p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+</Layout>

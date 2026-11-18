@@ -1,0 +1,73 @@
+---
+import AdminHeader from '../../components/AdminHeader.astro';
+import AdminDashboard from '../../components/AdminDashboard.astro';
+import AdminLoginForm from '../../components/AdminLoginForm.astro';
+
+export const prerender = false;
+---
+
+<!DOCTYPE html>
+<html lang="en" class="dark h-full bg-zinc-950 text-zinc-100">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Executive Admin Console | Workouse Audit Platform</title>
+    <meta name="description" content="Executive portal for Workouse Audit Tool analytics, lead management, and platform operations." />
+    <link rel="icon" type="image/png" href="/brand/workouse-symbol.png" />
+    <link rel="apple-touch-icon" href="/brand/workouse-symbol.png" />
+    <meta name="theme-color" content="#09090b" />
+  </head>
+  <body class="min-h-full flex flex-col font-sans antialiased selection:bg-[#FEC500] selection:text-zinc-950">
+    <!-- Admin Header -->
+    <AdminHeader activeTab="overview" />
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col justify-center">
+      <!-- Login Section -->
+      <div id="adminLoginSection" class="w-full">
+        <AdminLoginForm />
+      </div>
+
+      <!-- Dashboard Section -->
+      <div id="adminDashboardSection" class="hidden w-full">
+        <AdminDashboard />
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-zinc-800/80 py-6 text-center text-xs text-zinc-400 font-mono">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div>Workouse Platform Engine v4.0 • Enterprise RBAC Guarded</div>
+        <div>Cloudflare Workers + D1 + R2 + Durable Objects</div>
+      </div>
+    </footer>
+
+    <script>
+      const loginSection = document.getElementById('adminLoginSection');
+      const dashboardSection = document.getElementById('adminDashboardSection');
+
+      function updateAuthViewState() {
+        const token = localStorage.getItem('workouse_admin_token');
+        if (token) {
+          if (loginSection) loginSection.classList.add('hidden');
+          if (dashboardSection) dashboardSection.classList.remove('hidden');
+        } else {
+          if (loginSection) loginSection.classList.remove('hidden');
+          if (dashboardSection) dashboardSection.classList.add('hidden');
+        }
+      }
+
+      window.addEventListener('admin-login-success', () => {
+        updateAuthViewState();
+        window.location.reload();
+      });
+
+      window.addEventListener('admin-logout', () => {
+        updateAuthViewState();
+      });
+
+      // Initial view check on DOM ready
+      updateAuthViewState();
+    </script>
+  </body>
+</html>

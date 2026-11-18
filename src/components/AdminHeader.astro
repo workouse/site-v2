@@ -1,0 +1,89 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+  activeTab?: 'overview' | 'leads' | 'logs' | 'settings';
+}
+
+const { activeTab = 'overview' } = Astro.props;
+---
+
+<header class="w-full bg-white/90 dark:bg-zinc-950/90 border-b border-zinc-200 dark:border-zinc-800/80 backdrop-blur-md sticky top-0 z-50 transition-colors duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <!-- Brand / Title -->
+    <div class="flex items-center gap-3">
+      <a href="/" class="flex items-center gap-2 text-zinc-900 dark:text-white font-bold tracking-tight text-lg hover:opacity-90 transition">
+        <span class="w-8 h-8 rounded-lg bg-[#FEC500] text-zinc-950 font-black flex items-center justify-center text-sm shadow-md">
+          W
+        </span>
+        <span>Workouse</span>
+      </a>
+      <span class="text-zinc-400 dark:text-zinc-600 text-sm font-medium">/</span>
+      <span class="bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-400 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-800/50 flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400"></span>
+        Admin Console
+      </span>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="hidden md:flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900/90 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
+      <a
+        href="#overview"
+        data-tab="overview"
+        class={`px-4 py-1.5 rounded-lg text-xs font-medium transition ${
+          activeTab === 'overview'
+            ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-sm font-semibold'
+            : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50'
+        }`}
+      >
+        Executive Overview
+      </a>
+      <a
+        href="#leads"
+        data-tab="leads"
+        class={`px-4 py-1.5 rounded-lg text-xs font-medium transition ${
+          activeTab === 'leads'
+            ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-sm font-semibold'
+            : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50'
+        }`}
+      >
+        Audit Leads
+      </a>
+      <a
+        href="#re-audit"
+        data-tab="re-audit"
+        class="px-4 py-1.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50 transition"
+      >
+        Batch Re-audit
+      </a>
+      <a
+        href="#audit-logs"
+        data-tab="logs"
+        class={`px-4 py-1.5 rounded-lg text-xs font-medium transition ${
+          activeTab === 'logs'
+            ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-sm font-semibold'
+            : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50'
+        }`}
+      >
+        Audit Logs & API Debug
+      </a>
+    </nav>
+
+    <!-- Platform Telemetry & Theme Toggle -->
+    <div class="flex items-center gap-3">
+      <ThemeToggle />
+
+      <div class="hidden sm:flex items-center gap-2 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-400 text-xs font-mono px-3 py-1 rounded-full border border-emerald-300 dark:border-emerald-800/40">
+        <span class="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse"></span>
+        <span>Systems Operational</span>
+      </div>
+
+      <div class="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 text-xs px-2.5 py-1 rounded-lg font-mono flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-[#FEC500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        </svg>
+        <span>RBAC Admin</span>
+      </div>
+    </div>
+  </div>
+</header>

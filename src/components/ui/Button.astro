@@ -1,0 +1,272 @@
+---
+export type ButtonKind = 'primary' | 'secondary' | 'inverse';
+export type ButtonIcon = '↗' | '→' | 'none';
+
+export interface Props {
+  kind?: ButtonKind;
+  href?: string;
+  external?: boolean;
+  disabled?: boolean;
+  icon?: ButtonIcon;
+  block?: boolean;
+  label?: string;
+  type?: 'button' | 'submit' | 'reset';
+  class?: string;
+  id?: string;
+  title?: string;
+  target?: string;
+  rel?: string;
+  name?: string;
+  value?: string;
+  form?: string;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  [key: `data-${string}`]: unknown;
+  [key: `aria-${string}`]: unknown;
+}
+
+const {
+  kind = 'primary',
+  href,
+  external = false,
+  disabled = false,
+  icon = '↗',
+  block = false,
+  label = 'Book a discovery call',
+  type = 'button',
+  class: className,
+  target,
+  rel,
+  ...rest
+} = Astro.props;
+
+const isLink = typeof href === 'string' && href.length > 0;
+const showIcon = icon !== 'none';
+
+const computedTarget = external ? '_blank' : target;
+const computedRel = external
+  ? Array.from(new Set([...(rel ? rel.split(/\s+/) : []), 'noopener', 'noreferrer']))
+      .filter(Boolean)
+      .join(' ')
+  : rel;
+
+const classes = [
+  'wo-btn',
+  `wo-btn--${kind}`,
+  block ? 'wo-btn--block' : null,
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+{
+  isLink ? (
+    disabled ? (
+      <a
+        role="link"
+        aria-disabled="true"
+        tabindex="-1"
+        class={classes}
+        {...rest}
+      >
+        <span class="wo-btn__label"><slot>{label}</slot></span>{showIcon && <span class="wo-btn__icon" aria-hidden="true">{icon}</span>}
+      </a>
+    ) : (
+      <a
+        href={href}
+        target={computedTarget}
+        rel={computedRel}
+        class={classes}
+        {...rest}
+      >
+        <span class="wo-btn__label"><slot>{label}</slot></span>{external && <span class="wo-btn__sr-only"> (opens in a new tab)</span>}{showIcon && <span class="wo-btn__icon" aria-hidden="true">{icon}</span>}
+      </a>
+    )
+  ) : (
+    <button
+      type={type}
+      disabled={disabled || undefined}
+      aria-disabled={disabled ? 'true' : undefined}
+      class={classes}
+      {...rest}
+    >
+      <span class="wo-btn__label"><slot>{label}</slot></span>{showIcon && <span class="wo-btn__icon" aria-hidden="true">{icon}</span>}
+    </button>
+  )
+}
+
+<style>
+  .wo-btn {
+    position: relative;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 44px;
+    border: none;
+    border-radius: var(--radius-2, 2px);
+    box-shadow: none;
+    text-decoration: none;
+    cursor: pointer;
+    vertical-align: middle;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    transition:
+      background-color var(--dur-fast, 140ms) ease-out,
+      color var(--dur-fast, 140ms) ease-out,
+      border-color var(--dur-fast, 140ms) ease-out;
+  }
+
+  .wo-btn__label {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.55;
+    font-variation-settings: var(--font-sans-opsz);
+  }
+
+  .wo-btn__icon {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 1.55;
+    font-variation-settings: var(--font-sans-opsz);
+    flex-shrink: 0;
+  }
+
+  .wo-btn__sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Primary */
+  .wo-btn--primary {
+    padding: 14px 24px;
+    gap: 12px;
+    background-color: var(--action-primary, #24354f);
+    color: var(--surface-page, #faf8f4);
+  }
+
+  .wo-btn--primary .wo-btn__label {
+    font-weight: 500;
+  }
+
+  .wo-btn--primary:not(:disabled):not([aria-disabled='true']):hover,
+  .wo-btn--primary[data-preview-state='hover'] {
+    background-color: var(--action-primary-hover, #53658e);
+    color: var(--surface-page, #faf8f4);
+  }
+
+  .wo-btn--primary:not(:disabled):not([aria-disabled='true']):active,
+  .wo-btn--primary[data-preview-state='active'] {
+    background-color: var(--action-primary-hover, #53658e);
+    color: var(--surface-page, #faf8f4);
+  }
+
+  .wo-btn--primary:focus-visible,
+  .wo-btn--primary[data-preview-state='focus'] {
+    outline: var(--focus-width, 2px) solid var(--focus-color, #53658e);
+    outline-offset: var(--focus-offset, 3px);
+    border-radius: var(--radius-2, 2px);
+  }
+
+  /* Secondary */
+  .wo-btn--secondary {
+    padding: 14px 24px;
+    gap: 12px;
+    background-color: transparent;
+    color: var(--text-primary, #24354f);
+    border: 1px solid var(--border-subtle, #d7d9df);
+  }
+
+  .wo-btn--secondary .wo-btn__label {
+    font-weight: 500;
+  }
+
+  .wo-btn--secondary:not(:disabled):not([aria-disabled='true']):hover,
+  .wo-btn--secondary[data-preview-state='hover'] {
+    background-color: transparent;
+    border-color: var(--border-subtle, #d7d9df);
+    color: var(--text-link, #53658e);
+  }
+
+  .wo-btn--secondary:not(:disabled):not([aria-disabled='true']):active,
+  .wo-btn--secondary[data-preview-state='active'] {
+    background-color: var(--surface-subtle, #f0eef2);
+    border-color: var(--border-subtle, #d7d9df);
+    color: var(--text-primary, #24354f);
+  }
+
+  .wo-btn--secondary:focus-visible,
+  .wo-btn--secondary[data-preview-state='focus'] {
+    outline: var(--focus-width, 2px) solid var(--focus-color, #53658e);
+    outline-offset: var(--focus-offset, 3px);
+    border-radius: var(--radius-2, 2px);
+  }
+
+  /* Inverse (on ink #24354F background) */
+  .wo-btn--inverse {
+    padding: 16px 24px;
+    gap: 16px;
+    background-color: var(--surface-page, #faf8f4);
+    color: var(--text-primary, #24354f);
+  }
+
+  .wo-btn--inverse .wo-btn__label {
+    font-weight: 400;
+  }
+
+  .wo-btn--inverse:not(:disabled):not([aria-disabled='true']):hover,
+  .wo-btn--inverse[data-preview-state='hover'] {
+    background-color: var(--surface-subtle, #f0eef2);
+    color: var(--text-primary, #24354f);
+  }
+
+  .wo-btn--inverse:not(:disabled):not([aria-disabled='true']):active,
+  .wo-btn--inverse[data-preview-state='active'] {
+    background-color: var(--surface-subtle, #f0eef2);
+    color: var(--text-primary, #24354f);
+  }
+
+  .wo-btn--inverse:focus-visible,
+  .wo-btn--inverse[data-preview-state='focus'] {
+    outline: var(--focus-width, 2px) solid var(--surface-page, #faf8f4);
+    outline-offset: var(--focus-offset, 3px);
+    border-radius: var(--radius-2, 2px);
+  }
+
+  /* Block (mobile-menu CTA variant) */
+  .wo-btn--block {
+    display: flex;
+    width: 100%;
+    justify-content: flex-start;
+    padding: 12px 16px;
+    min-height: 44px;
+    border-radius: var(--radius-0, 0px);
+  }
+
+  .wo-btn--block .wo-btn__label {
+    font-weight: 400;
+  }
+
+  .wo-btn--block:focus-visible,
+  .wo-btn--block[data-preview-state='focus'] {
+    border-radius: var(--radius-0, 0px);
+  }
+
+  /* Disabled */
+  .wo-btn:disabled,
+  .wo-btn[aria-disabled='true'] {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: default;
+  }
+</style>

@@ -1,0 +1,211 @@
+---
+import type { WorkFilterId } from '../../data/site';
+
+export interface EngagementFilterToggleDetail {
+  value: string;
+  label: string;
+  pressed: boolean;
+  button: HTMLButtonElement;
+}
+
+export interface Props {
+  /** Filter key matched against `[data-filters]` tokens (e.g. 'all', 'php-symfony'). */
+  value?: WorkFilterId | string;
+  /** Visible button text when no default slot content is passed. */
+  label?: string;
+  /** Initial pressed state (`aria-pressed="true"` when selected). */
+  selected?: boolean;
+  disabled?: boolean;
+  class?: string;
+  id?: string;
+  name?: string;
+  title?: string;
+  'aria-label'?: string;
+  'aria-controls'?: string;
+  'aria-describedby'?: string;
+  [key: `data-${string}`]: unknown;
+  [key: `aria-${string}`]: unknown;
+}
+
+const {
+  value,
+  label = 'All Work',
+  selected = false,
+  disabled = false,
+  class: className,
+  ...rawRest
+} = Astro.props;
+
+const rest = { ...rawRest } as Record<string, unknown>;
+const explicitPressed = rest['aria-pressed'];
+delete rest['aria-pressed'];
+
+const isSelected =
+  explicitPressed === true || explicitPressed === 'true'
+    ? true
+    : explicitPressed === false || explicitPressed === 'false'
+      ? false
+      : Boolean(selected);
+
+const explicitDataFilter = rest['data-filter'];
+delete rest['data-filter'];
+const computedFilter =
+  typeof explicitDataFilter === 'string' ? explicitDataFilter : value;
+
+const classes = ['wo-engagement-filter', className].filter(Boolean).join(' ');
+---
+
+<button
+  type="button"
+  aria-pressed={isSelected ? 'true' : 'false'}
+  disabled={disabled || undefined}
+  aria-disabled={disabled ? 'true' : undefined}
+  data-filter={computedFilter}
+  class={classes}
+  {...rest}
+><span class="wo-engagement-filter__label"><slot>{label}</slot></span></button>
+
+<script>
+  const boundStandaloneButtons = new WeakSet<HTMLButtonElement>();
+
+  function initStandaloneEngagementFilters(): void {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      'button.wo-engagement-filter',
+    );
+
+    buttons.forEach((button) => {
+      if (boundStandaloneButtons.has(button)) return;
+      if (button.closest('[data-engagement-filter-group]')) return;
+      boundStandaloneButtons.add(button);
+
+      button.addEventListener('click', () => {
+        if (
+          button.disabled ||
+          button.getAttribute('aria-disabled') === 'true' ||
+          button.getAttribute('data-preview-static') === 'true'
+        ) {
+          return;
+        }
+
+        const nextPressed = button.getAttribute('aria-pressed') !== 'true';
+        button.setAttribute('aria-pressed', nextPressed ? 'true' : 'false');
+
+        if (document.activeElement !== button) {
+          button.focus({ preventScroll: true });
+        }
+
+        const labelText = (button.textContent ?? '').trim();
+        const filterValue = button.dataset.filter ?? labelText.toLowerCase();
+
+        button.dispatchEvent(
+          new CustomEvent('engagement-filter:toggle', {
+            bubbles: true,
+            composed: true,
+            detail: {
+              value: filterValue,
+              label: labelText,
+              pressed: nextPressed,
+              button,
+            },
+          }),
+        );
+      });
+    });
+  }
+
+  initStandaloneEngagementFilters();
+  document.addEventListener('astro:page-load', initStandaloneEngagementFilters);
+</script>
+
+<style>
+  .wo-engagement-filter {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: var(--space-48, 48px);
+    margin: 0;
+    padding: var(--space-12, 12px) var(--space-8, 8px);
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 2px solid transparent;
+    border-left: 0;
+    border-radius: var(--radius-0, 0px);
+    background-color: transparent;
+    color: var(--text-secondary, #5b6574);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color var(--dur-fast, 140ms) ease-out,
+      color var(--dur-fast, 140ms) ease-out,
+      border-color var(--dur-fast, 140ms) ease-out;
+  }
+
+  .wo-engagement-filter__label {
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  /* Unselected Hover */
+  .wo-engagement-filter[aria-pressed='false']:not(:disabled):not([aria-disabled='true']):hover,
+  .wo-engagement-filter[aria-pressed='false'][data-preview-state='hover'] {
+    background-color: var(--surface-subtle, #f0eef2);
+    color: var(--text-secondary, #5b6574);
+    border-bottom-color: transparent;
+  }
+
+  /* Selected Default */
+  .wo-engagement-filter[aria-pressed='true'] {
+    color: var(--text-primary, #24354f);
+    background-color: transparent;
+    border-bottom-color: var(--text-primary, #24354f);
+  }
+
+  /* Selected Hover */
+  .wo-engagement-filter[aria-pressed='true']:not(:disabled):not([aria-disabled='true']):hover,
+  .wo-engagement-filter[aria-pressed='true'][data-preview-state='hover'] {
+    background-color: var(--surface-subtle, #f0eef2);
+    color: var(--text-primary, #24354f);
+    border-bottom-color: var(--text-primary, #24354f);
+  }
+
+  /* Focus-visible (2px #53658E outline, zero radius, same for unselected & selected) */
+  .wo-engagement-filter:focus-visible,
+  .wo-engagement-filter[data-preview-state='focus'] {
+    outline: var(--focus-width, 2px) solid var(--focus-color, #53658e);
+    outline-offset: 0;
+    border-radius: var(--radius-0, 0px);
+  }
+
+  /* Disabled */
+  .wo-engagement-filter:disabled,
+  .wo-engagement-filter[aria-disabled='true'] {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: default;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wo-engagement-filter {
+      transition: none;
+    }
+  }
+</style>

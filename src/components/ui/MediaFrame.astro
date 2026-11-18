@@ -1,0 +1,391 @@
+---
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+
+export type MediaFrameVariant = 'card' | 'feature' | 'work' | 'portrait' | 'generic';
+export type MediaFrameGap = 8 | 12 | 16;
+
+export interface Props {
+  src?: ImageMetadata | string | null;
+  alt?: string;
+  ratio: string;
+  tabletRatio?: string;
+  mobileRatio?: string;
+  variant?: MediaFrameVariant;
+  lines?: readonly string[];
+  bordered?: boolean;
+  gap?: MediaFrameGap;
+  loading?: 'lazy' | 'eager';
+  decoding?: 'async' | 'sync' | 'auto';
+  objectPosition?: string;
+  sizes?: string;
+  widths?: readonly number[];
+  class?: string;
+  id?: string;
+  style?: string;
+  role?: string;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+  'aria-hidden'?: 'true' | 'false' | boolean;
+  [key: `data-${string}`]: unknown;
+  [key: `aria-${string}`]: unknown;
+}
+
+function isImageMetadata(value: unknown): value is ImageMetadata {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'src' in value &&
+    typeof (value as ImageMetadata).src === 'string' &&
+    'width' in value &&
+    'height' in value &&
+    'format' in value
+  );
+}
+
+function parseRatioDimensions(rawRatio: string): { width: number; height: number } {
+  const slashMatch = rawRatio.match(/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/);
+  if (slashMatch) {
+    const rawW = Number(slashMatch[1]);
+    const rawH = Number(slashMatch[2]);
+    if (Number.isFinite(rawW) && Number.isFinite(rawH) && rawW > 0 && rawH > 0) {
+      const scale = rawW < 64 ? Math.ceil(640 / rawW) : 1;
+      return {
+        width: Math.max(1, Math.round(rawW * scale)),
+        height: Math.max(1, Math.round(rawH * scale)),
+      };
+    }
+  }
+  const numeric = Number(rawRatio);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return {
+      width: 1200,
+      height: Math.max(1, Math.round(1200 / numeric)),
+    };
+  }
+  return { width: 480, height: 280 };
+}
+
+const {
+  src,
+  alt,
+  ratio,
+  tabletRatio,
+  mobileRatio,
+  variant = 'generic',
+  lines = [],
+  bordered,
+  gap,
+  loading = 'lazy',
+  decoding = 'async',
+  objectPosition = 'center',
+  sizes,
+  widths,
+  class: className,
+  style,
+  role: explicitRole,
+  'aria-label': explicitAriaLabel,
+  'aria-labelledby': explicitAriaLabelledby,
+  'aria-hidden': explicitAriaHidden,
+  ...rest
+} = Astro.props;
+
+const defaultBordered = variant === 'generic' || variant === 'work';
+const isBordered = bordered ?? defaultBordered;
+const defaultGap: MediaFrameGap = variant === 'work' ? 16 : 12;
+const resolvedGap = gap ?? defaultGap;
+
+const normalizedRatio = ratio.trim();
+const normalizedTabletRatio = (tabletRatio ?? normalizedRatio).trim();
+const normalizedMobileRatio = (mobileRatio ?? normalizedTabletRatio).trim();
+
+const trimmedSrc = typeof src === 'string' ? src.trim() : '';
+let resolvedMetadata: ImageMetadata | null = isImageMetadata(src) ? src : null;
+let stringSrc: string | null = !resolvedMetadata && trimmedSrc.length > 0 ? trimmedSrc : null;
+
+if (stringSrc && (stringSrc.startsWith('src/assets/') || stringSrc.startsWith('/src/assets/'))) {
+  const assetLoaders = import.meta.glob<{ default: ImageMetadata }>(
+    '/src/assets/**/*.{jpg,jpeg,png,webp,avif,gif}',
+    { eager: true },
+  );
+  const assetKey = stringSrc.startsWith('/') ? stringSrc : `/${stringSrc}`;
+  const loaded = assetLoaders[assetKey];
+  if (loaded) {
+    resolvedMetadata = loaded.default;
+    stringSrc = null;
+  }
+}
+
+const hasImage = Boolean(resolvedMetadata || stringSrc);
+const canUseAstroImage = Boolean(
+  resolvedMetadata ||
+    (stringSrc && (stringSrc.startsWith('/') || /^https?:\/\//i.test(stringSrc))),
+);
+
+const resolvedAlt = typeof alt === 'string' ? alt : '';
+if (import.meta.env.DEV && hasImage && alt === undefined) {
+  console.warn(
+    '[MediaFrame] `alt` prop was not supplied for an image source. Pass meaningful `alt` copy from data.',
+  );
+}
+
+const ratioDimensions = parseRatioDimensions(normalizedRatio);
+
+const placeholderHasExplicitLabel = Boolean(
+  (typeof explicitAriaLabel === 'string' && explicitAriaLabel.trim().length > 0) ||
+    (typeof explicitAriaLabelledby === 'string' && explicitAriaLabelledby.trim().length > 0),
+);
+
+const containerAriaHidden = hasImage
+  ? explicitAriaHidden
+  : explicitAriaHidden ?? (placeholderHasExplicitLabel ? undefined : 'true');
+
+const containerRole = hasImage
+  ? explicitRole
+  : explicitRole ?? (placeholderHasExplicitLabel ? 'img' : undefined);
+
+const classes = [
+  'wo-media-frame',
+  `wo-media-frame--${variant}`,
+  hasImage ? 'wo-media-frame--image' : 'wo-media-frame--placeholder',
+  isBordered ? 'wo-media-frame--bordered' : null,
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+
+const inlineStyle = [
+  `--wo-media-ratio-desktop: ${normalizedRatio}`,
+  `--wo-media-ratio-tablet: ${normalizedTabletRatio}`,
+  `--wo-media-ratio-mobile: ${normalizedMobileRatio}`,
+  `--wo-media-gap: ${resolvedGap}px`,
+  style,
+]
+  .filter(Boolean)
+  .join('; ');
+
+const imgStyle = objectPosition !== 'center' ? `object-position: ${objectPosition}` : undefined;
+const cleanLines = lines.filter((line) => typeof line === 'string' && line.length > 0);
+---
+
+<div
+  class={classes}
+  style={inlineStyle}
+  role={containerRole}
+  aria-label={hasImage || placeholderHasExplicitLabel ? explicitAriaLabel : undefined}
+  aria-labelledby={hasImage || placeholderHasExplicitLabel ? explicitAriaLabelledby : undefined}
+  aria-hidden={containerAriaHidden}
+  {...rest}
+>
+  {
+    hasImage ? (
+      canUseAstroImage ? (
+        resolvedMetadata ? (
+          <Image
+            src={resolvedMetadata}
+            alt={resolvedAlt}
+            loading={loading}
+            decoding={decoding}
+            sizes={sizes}
+            widths={widths ? [...widths] : undefined}
+            class="wo-media-frame__img"
+            style={imgStyle}
+          />
+        ) : (
+          <Image
+            src={stringSrc as string}
+            alt={resolvedAlt}
+            width={ratioDimensions.width}
+            height={ratioDimensions.height}
+            loading={loading}
+            decoding={decoding}
+            class="wo-media-frame__img"
+            style={imgStyle}
+          />
+        )
+      ) : (
+        <img
+          src={stringSrc as string}
+          alt={resolvedAlt}
+          width={ratioDimensions.width}
+          height={ratioDimensions.height}
+          loading={loading}
+          decoding={decoding}
+          class="wo-media-frame__img"
+          style={imgStyle}
+        />
+      )
+    ) : (
+      <div class="wo-media-frame__placeholder" aria-hidden={placeholderHasExplicitLabel ? 'true' : undefined}>
+        {cleanLines.map((line, index) => (
+          <p class={`wo-media-frame__line wo-media-frame__line--${Math.min(index + 1, 3)}`}>{line}</p>
+        ))}
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .wo-media-frame {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: var(--wo-media-ratio-mobile);
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: var(--radius-0, 0px);
+    margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    .wo-media-frame:not([data-preview-viewport='390']) {
+      aspect-ratio: var(--wo-media-ratio-tablet);
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .wo-media-frame:not([data-preview-viewport='390']):not([data-preview-viewport='768']) {
+      aspect-ratio: var(--wo-media-ratio-desktop);
+    }
+  }
+
+  .wo-media-frame[data-preview-viewport='768'] {
+    aspect-ratio: var(--wo-media-ratio-tablet);
+  }
+
+  .wo-media-frame[data-preview-viewport='1440'] {
+    aspect-ratio: var(--wo-media-ratio-desktop);
+  }
+
+  .wo-media-frame--bordered {
+    border: 1px solid var(--border-subtle, #d7d9df);
+  }
+
+  .wo-media-frame--placeholder {
+    background-color: var(--surface-subtle, #f0eef2);
+  }
+
+  .wo-media-frame__img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .wo-media-frame__placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: var(--wo-media-gap, 12px);
+    padding: 16px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+  }
+
+  .wo-media-frame--feature .wo-media-frame__placeholder,
+  .wo-media-frame--portrait .wo-media-frame__placeholder {
+    padding-inline: 20px;
+  }
+
+  .wo-media-frame--work .wo-media-frame__placeholder {
+    align-items: flex-start;
+    text-align: left;
+    padding: var(--space-24, 24px);
+  }
+
+  .wo-media-frame__line {
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.55;
+    letter-spacing: 0;
+  }
+
+  /* Variant: generic (480x280) */
+  .wo-media-frame--generic .wo-media-frame__line--1 {
+    font-size: 11px;
+    color: var(--text-link, #53658e);
+  }
+
+  .wo-media-frame--generic .wo-media-frame__line--2,
+  .wo-media-frame--generic .wo-media-frame__line--3 {
+    font-size: 14px;
+    color: var(--text-secondary, #5b6574);
+  }
+
+  /* Variant: card (homepage engagements, supporting products) */
+  .wo-media-frame--card .wo-media-frame__line--1 {
+    font-size: 10px;
+    color: var(--text-link, #53658e);
+  }
+
+  .wo-media-frame--card .wo-media-frame__line--2,
+  .wo-media-frame--card .wo-media-frame__line--3 {
+    font-size: 12px;
+    color: var(--text-secondary, #5b6574);
+  }
+
+  /* Variant: feature (Bitig) */
+  .wo-media-frame--feature .wo-media-frame__line--1 {
+    font-size: 11px;
+    color: var(--text-link, #53658e);
+  }
+
+  .wo-media-frame--feature .wo-media-frame__line--2,
+  .wo-media-frame--feature .wo-media-frame__line--3 {
+    font-size: 13px;
+    color: var(--text-secondary, #5b6574);
+  }
+
+  /* Variant: portrait (Sarp) */
+  .wo-media-frame--portrait .wo-media-frame__line--1 {
+    font-size: 11px;
+    color: var(--text-link, #53658e);
+  }
+
+  .wo-media-frame--portrait .wo-media-frame__line--2 {
+    font-family: var(--font-serif);
+    font-variation-settings: normal;
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 1.06;
+    color: var(--text-primary, #24354f);
+  }
+
+  .wo-media-frame--portrait .wo-media-frame__line--3 {
+    font-size: 12px;
+    color: var(--text-secondary, #5b6574);
+  }
+
+  /* Variant: work (/work page) */
+  .wo-media-frame--work .wo-media-frame__line {
+    width: 100%;
+    font-weight: 500;
+    color: var(--text-primary, #24354f);
+  }
+
+  .wo-media-frame--work .wo-media-frame__line--1 {
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .wo-media-frame--work .wo-media-frame__line--2,
+  .wo-media-frame--work .wo-media-frame__line--3 {
+    font-size: 14px;
+    line-height: 20px;
+  }
+</style>
