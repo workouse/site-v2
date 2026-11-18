@@ -1,0 +1,124 @@
+---
+/**
+ * Free website audit request page (/audit).
+ *
+ * Replaces the audit section that used to live on the homepage at /#audit.
+ * Prerendered: the form is client-side and posts to /api/audit, so the page
+ * itself needs no server work. Reports live at /audit/[id].
+ */
+import Layout from '../../layouts/Layout.astro';
+import AuditForm from '../../components/audit/AuditForm.astro';
+
+export const prerender = true;
+
+const PAGE_TITLE = 'Free Website Audit | Workouse';
+const PAGE_DESCRIPTION =
+  'A 30-second website diagnostic covering loading speed, security headers and search visibility, with a repair cost estimate at a flat $35/hr engineering rate.';
+const DELIVERABLES = [
+  'Speed & LCP',
+  'Security & privacy',
+  'Search visibility',
+] as const;
+---
+
+<Layout title={PAGE_TITLE} description={PAGE_DESCRIPTION}>
+  <section class="audit-page" aria-labelledby="audit-page-title">
+    <div class="audit-page__intro">
+      <p class="audit-page__eyebrow">30-Second Website Diagnostic</p>
+      <h1 id="audit-page-title" class="audit-page__title">
+        Get your website health and repair cost breakdown
+      </h1>
+      <p class="audit-page__lede">
+        We analyze mobile loading speed, security and privacy, and Google search visibility,
+        then price the fixes at a flat <span class="audit-page__rate">$35/hr</span> engineering rate.
+      </p>
+      <ul class="audit-page__deliverables" aria-label="What the audit checks">
+        {DELIVERABLES.map((item) => (
+          <li class="audit-page__deliverable">{item}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="audit-page__form">
+      <AuditForm />
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .audit-page {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-48, 48px);
+    max-width: 640px;
+    margin: 0 auto;
+    padding: var(--space-64, 64px) var(--space-24, 24px) var(--space-96, 96px);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+  }
+
+  .audit-page__intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16, 16px);
+  }
+
+  .audit-page__eyebrow {
+    margin: 0;
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-link, #53658e);
+  }
+
+  .audit-page__title {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 40px;
+    line-height: 44px;
+    font-weight: 400;
+    color: var(--text-primary);
+  }
+
+  .audit-page__lede {
+    margin: 0;
+    font-size: 16px;
+    line-height: 26px;
+    color: var(--text-secondary, #5b6574);
+  }
+
+  .audit-page__rate {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .audit-page__deliverables {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8, 8px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .audit-page__deliverable {
+    padding: var(--space-8, 8px) var(--space-12, 12px);
+    border: 1px solid var(--border-subtle, #d7d9df);
+    border-radius: var(--radius-2, 2px);
+    background-color: var(--surface-raised, #ffffff);
+    font-size: 12px;
+    line-height: 18px;
+    color: var(--text-primary);
+  }
+
+  @media (min-width: 768px) {
+    .audit-page__title {
+      font-size: 48px;
+      line-height: 52px;
+    }
+  }
+</style>

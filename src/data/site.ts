@@ -68,9 +68,8 @@ export const links = {
     label: 'Blog',
   },
   audit: {
-    href: '/#audit',
+    href: '/audit',
     label: 'Website Audit',
-    note: 'move to dedicated route before homepage replacement',
   },
   privacy: {
     href: '/privacy',

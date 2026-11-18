@@ -1,5 +1,6 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
+import { links } from '../data/site';
 
 const logoURL = "https://avatars.githubusercontent.com/u/55496985?s=400&u=cf5cb2d74029d653813b39d624e44b8f74bc63c1&v=4";
 ---
@@ -26,7 +27,7 @@ const logoURL = "https://avatars.githubusercontent.com/u/55496985?s=400&u=cf5cb2
 
     <!-- Desktop Navigation Links -->
     <nav class="hidden md:flex items-center gap-8">
-      <a href="/#audit" class="text-sm font-semibold text-brand-blue dark:text-brand-yellow hover:opacity-80 transition duration-200">⚡ Free Audit</a>
+      <a href={links.audit.href} class="text-sm font-semibold text-brand-blue dark:text-brand-yellow hover:opacity-80 transition duration-200">⚡ Free Audit</a>
       <a href="/blog" class="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50 transition duration-200">Blog</a>
       <a href="/#engineer" class="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50 transition duration-200">The Engineer</a>
       <a href="/#competencies" class="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50 transition duration-200">Competencies</a>
