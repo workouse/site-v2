@@ -1,0 +1,288 @@
+---
+/**
+ * Dedicated Shopify engineering service page (/services/shopify).
+ *
+ * Composes SectionHeading (page H1), the existing ServiceShopify block,
+ * the Hello Cake client engagement via EngagementRow, and the closing
+ * FinalContactCTA in Layout's `cta` slot.
+ */
+import Layout from '../../layouts/Layout.astro';
+import SectionHeading from '../../components/ui/SectionHeading.astro';
+import Button from '../../components/ui/Button.astro';
+import DirectionalLink from '../../components/ui/DirectionalLink.astro';
+import ServiceShopify from '../../components/sections/ServiceShopify.astro';
+import EngagementRow from '../../components/sections/EngagementRow.astro';
+import FinalContactCTA from '../../components/sections/FinalContactCTA.astro';
+import { cta, engagementsHome, links, resolveLink, services } from '../../data/site';
+
+export const prerender = true;
+
+const PAGE_TITLE = `${links.shopify.label} — Workouse`;
+const PAGE_DESCRIPTION = services.shopify.body;
+
+const shopifyEngagements = engagementsHome.items
+  .filter((item) => item.client === 'Hello Cake')
+  .map((item, idx) => ({
+    ...item,
+    index: String(idx + 1).padStart(2, '0'),
+  }));
+
+const booking = resolveLink('booking', 'Book a discovery call');
+const workLink = resolveLink('work', 'Explore our work');
+const phpLink = resolveLink('phpSymfony', services.php.link.label);
+---
+
+<Layout
+  title={PAGE_TITLE}
+  description={PAGE_DESCRIPTION}
+  currentPath={links.shopify.href}
+>
+  <section class="service-page-intro" aria-labelledby="shopify-page-heading">
+    <SectionHeading
+      as="h1"
+      size="section"
+      eyebrow="SERVICES / SPECIALIST ENGINEERING"
+      heading={links.shopify.label}
+      headingId="shopify-page-heading"
+    />
+    <div class="service-page-intro__actions">
+      <Button kind="primary" href={booking.href} external label={booking.label} />
+      <DirectionalLink href={workLink.href} label={workLink.label} arrow="→" />
+    </div>
+  </section>
+
+  <section class="service-page-block" aria-labelledby="shopify-capabilities-heading">
+    <h2 id="shopify-capabilities-heading" class="service-page-block__label">
+      01 / CAPABILITIES &amp; SCOPE
+    </h2>
+    <ServiceShopify />
+  </section>
+
+  <section class="service-page-engagements" aria-labelledby="shopify-engagements-heading">
+    <div class="service-page-engagements__intro">
+      <p class="service-page-engagements__eyebrow">02 / SELECTED SHOPIFY ENGAGEMENT</p>
+      <h2 id="shopify-engagements-heading" class="service-page-engagements__heading">
+        <span class="service-page-engagements__heading-line">{engagementsHome.headingLines[0]}</span>
+        <span class="service-page-engagements__heading-line">{engagementsHome.headingLines[1]}</span>
+      </h2>
+    </div>
+
+    <div class="service-page-engagements__rows">
+      {shopifyEngagements.map((item) => <EngagementRow item={item} />)}
+    </div>
+
+    <div class="service-page-engagements__links">
+      <DirectionalLink href={workLink.href} label={workLink.label} arrow="→" />
+      <DirectionalLink href={phpLink.href} label={phpLink.label} arrow="→" />
+    </div>
+  </section>
+
+  <FinalContactCTA
+    slot="cta"
+    eyebrow={cta.work.eyebrow}
+    heading={cta.work.heading}
+    body={cta.work.body}
+  />
+</Layout>
+
+<style>
+  .service-page-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-32, 32px);
+    box-sizing: border-box;
+    width: 100%;
+    padding: 64px 24px 48px;
+    background-color: var(--surface-page, #faf8f4);
+    border-bottom: 1px solid var(--border-subtle, #d7d9df);
+  }
+
+  .service-page-intro :global(.wo-section-heading),
+  .service-page-intro :global(.wo-section-heading__title) {
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+
+  .service-page-intro__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-8, 8px);
+  }
+
+  .service-page-block {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 64px 24px;
+    background-color: var(--surface-page, #faf8f4);
+  }
+
+  .service-page-block__label {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1.58;
+    letter-spacing: 0.14em;
+    color: var(--text-link, #53658e);
+  }
+
+  /* Give ServiceShopify primary-column width on its dedicated page and hide self-link */
+  .service-page-block :global(.service-shopify) {
+    padding-top: 0;
+  }
+
+  .service-page-block :global(.service-shopify__body) {
+    max-width: 620px;
+  }
+
+  .service-page-block :global(.service-shopify__cta) {
+    display: none;
+  }
+
+  .service-page-engagements {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 64px 24px;
+    background-color: var(--surface-raised, #ffffff);
+  }
+
+  .service-page-engagements__intro {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .service-page-engagements__eyebrow {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1.55;
+    letter-spacing: 0.14em;
+    color: var(--text-link, #53658e);
+  }
+
+  .service-page-engagements__heading {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 48px;
+    line-height: 1.05;
+    color: var(--text-primary, #24354f);
+    overflow-wrap: break-word;
+  }
+
+  .service-page-engagements__heading-line {
+    display: block;
+  }
+
+  .service-page-engagements__rows {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .service-page-engagements__links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-8, 8px);
+    padding-top: var(--space-16, 16px);
+    border-top: 1px solid var(--border-subtle, #d7d9df);
+  }
+
+  @media (min-width: 768px) {
+    .service-page-intro {
+      padding: 80px 40px 64px;
+    }
+
+    .service-page-intro__actions {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-24, 24px);
+    }
+
+    .service-page-block {
+      padding: 96px 40px;
+    }
+
+    .service-page-engagements {
+      padding: 96px 40px;
+    }
+
+    .service-page-engagements__heading {
+      font-size: 64px;
+    }
+
+    .service-page-engagements__links {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-32, 32px);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .service-page-intro {
+      padding: 88px 96px 64px;
+    }
+
+    .service-page-block {
+      padding: 96px;
+    }
+
+    .service-page-block :global(.service-shopify) {
+      width: 100%;
+      max-width: 752px;
+      flex: 0 1 auto;
+    }
+
+    .service-page-engagements {
+      padding: 96px;
+    }
+
+    .service-page-engagements__intro {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 24px;
+    }
+
+    .service-page-engagements__eyebrow {
+      flex: 0 1 280px;
+      width: 280px;
+    }
+
+    .service-page-engagements__heading {
+      flex: 1 1 0%;
+      max-width: 780px;
+      min-width: 0;
+    }
+  }
+
+  @media (min-width: 1024px) and (max-width: 1439px) {
+    .service-page-engagements :global(.engagement-row__identity) {
+      flex: 0 1 200px;
+      min-width: 140px;
+    }
+
+    .service-page-engagements :global(.engagement-row__details) {
+      flex: 1 1 0%;
+      min-width: 0;
+    }
+
+    .service-page-engagements :global(.engagement-row__media) {
+      flex: 0 1 320px;
+      min-width: 220px;
+    }
+  }
+</style>

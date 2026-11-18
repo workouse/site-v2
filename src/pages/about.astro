@@ -1,0 +1,88 @@
+---
+/**
+ * Studio team introduction page (/about) — Emre Yılmaz and Sarp Doruk Aslan.
+ *
+ * Composes SectionHeading (page H1 + studio overview), the existing
+ * PeopleBehindWorkouse section (white surface), and FinalContactCTA in Layout's
+ * `cta` slot.
+ */
+import Layout from '../layouts/Layout.astro';
+import SectionHeading from '../components/ui/SectionHeading.astro';
+import PeopleBehindWorkouse from '../components/sections/PeopleBehindWorkouse.astro';
+import FinalContactCTA from '../components/sections/FinalContactCTA.astro';
+import { hero, links } from '../data/site';
+
+export const prerender = true;
+
+const PAGE_TITLE = `${links.about.label} — Workouse`;
+const PAGE_DESCRIPTION = hero.body;
+---
+
+<Layout
+  title={PAGE_TITLE}
+  description={PAGE_DESCRIPTION}
+  currentPath={links.about.href}
+>
+  <section class="studio-page-intro" aria-labelledby="about-page-heading">
+    <SectionHeading
+      as="h1"
+      size="section"
+      eyebrow={`STUDIO / ${hero.eyebrow}`}
+      heading={links.about.label}
+      headingId="about-page-heading"
+    />
+    <p class="studio-page-intro__lead">{hero.body}</p>
+  </section>
+
+  <PeopleBehindWorkouse />
+
+  <FinalContactCTA slot="cta" />
+</Layout>
+
+<style>
+  .studio-page-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-24, 24px);
+    box-sizing: border-box;
+    width: 100%;
+    padding: 64px 24px 48px;
+    background-color: var(--surface-page, #faf8f4);
+    border-bottom: 1px solid var(--border-subtle, #d7d9df);
+  }
+
+  .studio-page-intro :global(.wo-section-heading),
+  .studio-page-intro :global(.wo-section-heading__title) {
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+
+  .studio-page-intro__lead {
+    margin: 0;
+    max-width: 680px;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--font-sans-opsz);
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.58;
+    color: var(--text-secondary, #5b6574);
+  }
+
+  @media (min-width: 768px) {
+    .studio-page-intro {
+      padding: 80px 40px 64px;
+    }
+
+    .studio-page-intro__lead {
+      font-size: 20px;
+      line-height: 1.6;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .studio-page-intro {
+      padding: 88px 96px 64px;
+    }
+  }
+</style>
